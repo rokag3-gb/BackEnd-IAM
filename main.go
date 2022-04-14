@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"iam/api"
 	"net/http"
 
-	"github.com/Nerzal/gocloak"
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 )
 
@@ -18,121 +19,68 @@ var realm = "test_realm"
 var key_uri = "https://iam.cloudmt.co.kr"
 
 func main() {
-	http.Handle("/groups", introspect_middleware(http.HandlerFunc(group)))
-	http.Handle("/users", introspect_middleware(http.HandlerFunc(users)))
-	http.Handle("/secret_groups", introspect_middleware(http.HandlerFunc(secret_groups)))
-	http.Handle("/secrets", introspect_middleware(http.HandlerFunc(secrets)))
-	http.HandleFunc("/", badRequeset)
 
-	err := http.ListenAndServe(":9255", nil)
-	if err != nil {
-		fmt.Println(err)
+	route := gin.Default()
+	route.Use(introspect_middleware())
+
+	groups := route.Group("/groups")
+	{
+		groups.GET("/", api.GetGroup)
+		groups.POST("/", api.CreateGroup)
+		groups.DELETE("/:groupid", api.DeleteGroup)
+		groups.PUT("/:groupid", api.UpdateGroup)
+		groups.GET("/:groupid/members", api.GetGroupMember)
+	}
+
+	users := route.Group("/users")
+	{
+		users.GET("/", api.Users)
+	}
+
+	secret := route.Group("/secret")
+	{
+		secret.GET("/", api.Secret)
+	}
+
+	route.Run(":8085")
+}
+
+func introspect_middleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		// 클라이언트가 보낸 토큰에 대한 keycloak 인증 부분입니다.
+		/*
+			token := c.Request.Header.Get("token")
+			if token == "" {
+				c.String(http.StatusUnauthorized, "Unauthorized")
+				panic("Unauthorized")
+			}
+
+			username := getUsernameJWT(token)
+			if username == "" {
+				c.String(http.StatusUnauthorized, "Unauthorized")
+				panic("Unauthorized")
+			}
+			// 여기서 구한 username 으로 권한 체크를 해야합니다.
+			// 다만 keycloak 설정에 따라 토큰의 내용이 변경될 수도 있으므로 이후 테스트 필요...
+
+			var client = gocloak.NewClient(key_uri)
+			rptResult, err := client.RetrospectToken(token, clientID, clientSecret, realm)
+			if err != nil {
+				c.String(http.StatusUnauthorized, "Unauthorized")
+				panic("Unauthorized")
+			}
+
+			if !rptResult.Active {
+				c.String(http.StatusUnauthorized, "Unauthorized")
+				panic("Unauthorized")
+			}
+		*/
 	}
 }
 
 func badRequeset(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusBadRequest)
-}
-
-func introspect_middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !keycloak_introspect(w, r) {
-			badRequeset(w, r)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-func group(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		w.Write([]byte("group list"))
-		//그룹 목록을 보내주면 됩니다...
-		//각 그룹의 유저 수를 보내줘야 합니다.
-		//각 그룹별로 상세정보를 뽑아낸 다음에 유저의 수를 직접 세서 추가해서 같이 보내주어야 합니다...
-	} else if r.Method == "POST" {
-		w.Write([]byte("add group"))
-		//그룹 추가를 해주면 됩니다...
-	} else if r.Method == "PUT" {
-		w.Write([]byte("edit Group"))
-		//그룹 을 수정해주면 됩니다...
-	} else if r.Method == "DELETE" {
-		w.Write([]byte("delete Group"))
-		//그룹 을 삭제해주면 됩니다...
-	} else {
-		badRequeset(w, r)
-	}
-}
-
-func users(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		w.Write([]byte("user list"))
-		//유저 목록을 보내주면 됩니다...
-	} else if r.Method == "POST" {
-		w.Write([]byte("add user"))
-		//유저를 추가해주면 됩니다...
-	} else if r.Method == "PUT" {
-		w.Write([]byte("edit user"))
-		//유저 목록을 보내주면 됩니다...
-	} else if r.Method == "DELETE" {
-		w.Write([]byte("delete user"))
-		//유저 목록을 보내주면 됩니다...
-	} else {
-		badRequeset(w, r)
-	}
-}
-
-func secret_groups(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		w.Write([]byte("secret_groups list"))
-	} else if r.Method == "POST" {
-		w.Write([]byte("add secret_groups"))
-	} else if r.Method == "DELETE" {
-		w.Write([]byte("delete secret_groups"))
-	} else {
-		badRequeset(w, r)
-	}
-}
-
-func secrets(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		w.Write([]byte("secrets list"))
-	} else if r.Method == "POST" {
-		w.Write([]byte("add secrets"))
-	} else if r.Method == "PUT" {
-		w.Write([]byte("edit secrets"))
-	} else if r.Method == "DELETE" {
-		w.Write([]byte("delete secrets"))
-	} else {
-		badRequeset(w, r)
-	}
-}
-
-func keycloak_introspect(w http.ResponseWriter, r *http.Request) bool {
-	token := r.Header.Get("token")
-	if token == "" {
-		return false
-	}
-
-	username := getUsernameJWT(token)
-	if username == "" {
-		return false
-	}
-	// 여기서 구한 username 으로 권한 체크를 해야합니다.
-	// 다만 keycloak 설정에 따라 토큰의 내용이 변경될 수도 있으므로 이후 테스트 필요...
-
-	var client = gocloak.NewClient(key_uri)
-	rptResult, err := client.RetrospectToken(token, clientID, clientSecret, realm)
-	if err != nil {
-		return false
-	}
-
-	if !rptResult.Active {
-		return false
-	}
-
-	return true
 }
 
 func getUsernameJWT(token string) string {
