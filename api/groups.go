@@ -3,7 +3,6 @@ package api
 import (
 	"iam/clients"
 	"net/http"
-	"strconv"
 
 	"github.com/Nerzal/gocloak/v11"
 	"github.com/gin-gonic/gin"
@@ -11,25 +10,18 @@ import (
 
 func GetGroup(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
-	first, firstErr := strconv.Atoi(c.DefaultQuery("first", "0"))
-	if firstErr != nil {
-		c.String(http.StatusBadRequest, "'first' must be integer")
-		c.Abort()
-		return
-	}
-	max, maxErr := strconv.Atoi(c.DefaultQuery("max", "100"))
-	if maxErr != nil {
-		c.String(http.StatusBadRequest, "'max' must be integer")
-		c.Abort()
-		return
-	}
 
+	first := c.MustGet("first").(int)
+	max := c.MustGet("max").(int)
 	params := gocloak.GetGroupsParams{
 		First: &first,
 		Max:   &max,
 	}
 
-	groups, err := clients.KeycloakClient().GetGroups(c, token.AccessToken, clients.KeycloakConfig().Realm, params)
+	groups, err := clients.KeycloakClient().GetGroups(c,
+		token.AccessToken,
+		clients.KeycloakConfig().Realm,
+		params)
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
@@ -51,26 +43,21 @@ func UpdateGroup(c *gin.Context) {
 
 func GetGroupMember(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
-	first, firstErr := strconv.Atoi(c.DefaultQuery("first", "0"))
-	if firstErr != nil {
-		c.String(http.StatusBadRequest, "'first' must be integer")
-		c.Abort()
-		return
-	}
-	max, maxErr := strconv.Atoi(c.DefaultQuery("max", "100"))
-	if maxErr != nil {
-		c.String(http.StatusBadRequest, "'max' must be integer")
-		c.Abort()
-		return
-	}
+
 	groupid := c.Param("groupid")
 
+	first := c.MustGet("first").(int)
+	max := c.MustGet("max").(int)
 	params := gocloak.GetGroupsParams{
 		First: &first,
 		Max:   &max,
 	}
 
-	groups, err := clients.KeycloakClient().GetGroupMembers(c, token.AccessToken, clients.KeycloakConfig().Realm, groupid, params)
+	groups, err := clients.KeycloakClient().GetGroupMembers(c,
+		token.AccessToken,
+		clients.KeycloakConfig().Realm,
+		groupid,
+		params)
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return

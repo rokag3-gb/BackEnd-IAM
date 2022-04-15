@@ -30,11 +30,11 @@ func main() {
 
 	groups := route.Group("/groups")
 	{
-		groups.GET("/", api.GetGroup)
+		groups.GET("/", api.GetGroup, middlewares.ListQueryRangeMiddleware())
 		groups.POST("/", api.CreateGroup)
 		groups.DELETE("/:groupid", api.DeleteGroup)
 		groups.PUT("/:groupid", api.UpdateGroup)
-		groups.GET("/:groupid/members", api.GetGroupMember)
+		groups.GET("/:groupid/members", api.GetGroupMember, middlewares.ListQueryRangeMiddleware())
 	}
 
 	users := route.Group("/users")

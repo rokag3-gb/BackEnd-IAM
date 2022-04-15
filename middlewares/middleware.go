@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"iam/clients"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -59,5 +60,24 @@ func IntrospectMiddleware() gin.HandlerFunc {
 				panic("Unauthorized")
 			}
 		*/
+	}
+}
+
+func ListQueryRangeMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		first, firstErr := strconv.Atoi(c.DefaultQuery("first", "0"))
+		if firstErr != nil {
+			c.String(http.StatusBadRequest, "'first' must be integer")
+			c.Abort()
+			return
+		}
+		c.Set("first", first)
+		max, maxErr := strconv.Atoi(c.DefaultQuery("max", "100"))
+		if maxErr != nil {
+			c.String(http.StatusBadRequest, "'max' must be integer")
+			c.Abort()
+			return
+		}
+		c.Set("max", max)
 	}
 }
