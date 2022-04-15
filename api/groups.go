@@ -35,7 +35,7 @@ func CreateGroup(c *gin.Context) {
 	// TODO: 그룹 생성 시 이름 외에 다른 인자도 받아야 하는지 추후 논의.
 
 	token, _ := clients.KeycloakToken(c)
-	var json models.CreateGroupInfo
+	var json models.GroupInfo
 	if err := c.ShouldBindJSON(&json); err != nil {
 		c.String(http.StatusBadRequest, err.Error())
 		return
@@ -61,7 +61,30 @@ func DeleteGroup(c *gin.Context) {
 }
 
 func UpdateGroup(c *gin.Context) {
-	c.String(http.StatusOK, "updategroup")
+	// TODO: 그룹 수정 시 권한 체크 없음. 추후 Authority 기능 구현시 권한 체크 기능 넣을 것.
+	token, _ := clients.KeycloakToken(c)
+	groupid := c.Param("groupid")
+	var json models.GroupInfo
+	if err := c.ShouldBindJSON(&json); err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	groupToUpdate, err := clients.KeycloakClient().GetGroup(c, token.AccessToken, clients.KeycloakConfig().Realm, groupid)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	groupToUpdate.Name = gocloak.StringP(json.Name)
+
+	err = clients.KeycloakClient().UpdateGroup(c, token.AccessToken, clients.KeycloakConfig().Realm, *groupToUpdate)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }
 
 func GetGroupMember(c *gin.Context) {

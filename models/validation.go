@@ -1,5 +1,5 @@
 package models
 
-type CreateGroupInfo struct {
+type GroupInfo struct {
 	Name string `json:"name" binding:"required"`
 }
