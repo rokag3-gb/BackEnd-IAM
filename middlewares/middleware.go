@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"fmt"
 	"iam/clients"
 	"net/http"
 	"strconv"
@@ -19,11 +18,10 @@ func IntrospectMiddleware() gin.HandlerFunc {
 			return
 		}
 		token := strings.TrimPrefix(auth, "Bearer ")
-		result, err := clients.KeycloakClient().RetrospectToken(c, token,
+		_, err := clients.KeycloakClient().RetrospectToken(c, token,
 			clients.KeycloakConfig().ClientID,
 			clients.KeycloakConfig().ClientSecret,
 			clients.KeycloakConfig().Realm)
-		fmt.Print(result)
 		if err != nil {
 			c.String(http.StatusForbidden, "Authorization is not valid")
 			c.Abort()
