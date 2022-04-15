@@ -32,7 +32,7 @@ func main() {
 
 	route := gin.Default()
 
-	route.Use(middlewares.IntrospectMiddleware())
+	//	route.Use(middlewares.IntrospectMiddleware())
 
 	groups := route.Group("/groups")
 	{
@@ -50,7 +50,16 @@ func main() {
 
 	secret := route.Group("/secret")
 	{
-		secret.GET("/", api.Secret)
+		secret.GET("/", api.GetSecretGroup)
+		secret.POST("/", api.CreateSecretGroup)
+		secret.DELETE("/:groupName", api.DeleteSecretGroup)
+		secret.GET("/:groupName", api.GetSecretList)
+		secret.GET("/:groupName/data/:secretName", api.Secret)
+		secret.POST("/:groupName/data/:secretName", api.Secret)
+		secret.GET("/:groupName/metadata/:secretName", api.Secret)
+		secret.POST("/:groupName/delete/:secretName", api.Secret)
+		secret.POST("/:groupName/destroy/:secretName", api.Secret)
+		secret.DELETE("/:groupName/metadata/:secretName", api.Secret)
 	}
 
 	route.Run(":8085")
