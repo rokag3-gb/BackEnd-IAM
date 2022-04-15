@@ -2,6 +2,7 @@ package api
 
 import (
 	"iam/clients"
+	"iam/models"
 	"net/http"
 
 	"github.com/Nerzal/gocloak/v11"
@@ -30,7 +31,29 @@ func GetGroup(c *gin.Context) {
 }
 
 func CreateGroup(c *gin.Context) {
-	c.String(http.StatusOK, "creategroup")
+	// TODO: 그룹 생성 시 권한 체크 없음. 추후 Authority 기능 구현시 권한 체크 기능 넣을 것.
+	// TODO: 그룹 생성 시 이름 외에 다른 인자도 받아야 하는지 추후 논의.
+
+	token, _ := clients.KeycloakToken(c)
+	var json models.CreateGroupInfo
+	if err := c.ShouldBindJSON(&json); err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	group := gocloak.Group{
+		Name: gocloak.StringP(json.Name),
+	}
+
+	newGroup, err := clients.KeycloakClient().CreateGroup(c,
+		token.AccessToken,
+		clients.KeycloakConfig().Realm,
+		group)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gocloak.Group{ID: gocloak.StringP(newGroup)})
 }
 
 func DeleteGroup(c *gin.Context) {
