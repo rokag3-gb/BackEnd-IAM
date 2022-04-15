@@ -7,6 +7,7 @@ import (
 	"iam/api"
 	"iam/clients"
 	"net/http"
+	"os"
 
 	"iam/middlewares"
 
@@ -14,15 +15,15 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-var KeycloakClientID = "test_service"
-var KeycloakClientSecret = "d7c2424e-7dfc-4a74-a6c5-bd6588ba2d73"
-var KeycloakRealm = "test_realm"
-var KeycloakEndpoint = "https://iam.cloudmt.co.kr"
 var ctx = context.Background()
 
 func main() {
 
-	clients.InitKeycloakClient(KeycloakClientID, KeycloakClientSecret, KeycloakRealm, KeycloakEndpoint)
+	clients.InitKeycloakClient(
+		os.Getenv("KEYCLOAK_CLIENT_ID"),
+		os.Getenv("KEYCLOAK_CLIENT_SECRET"),
+		os.Getenv("KEYCLOAK_REALM"),
+		os.Getenv("KEYCLOAK_ENDPOINT"))
 
 	route := gin.Default()
 

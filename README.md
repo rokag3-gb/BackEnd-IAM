@@ -1,20 +1,23 @@
-# Introduction 
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
+# CLOUDMATE IAM Middleware Server
 
-# Getting Started
-TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
-1.	Installation process
-2.	Software dependencies
-3.	Latest releases
-4.	API references
+## 환경변수
 
-# Build and Test
-TODO: Describe and show how to build your code and run the tests. 
+- `KEYCLOAK_CLIENT_ID`: 연동할 Keycloak 서버에 등록한 Client의 ID
+- `KEYCLOAK_CLIENT_SECRET`: 연동할 Keycloak 서버가 발급한 Client Secret
+- `KEYCLOAK_REALM`: 연동할 Keycloak 서버에 등록한 Realm 이름
+- `KEYCLOAK_ENDPOINT`: 연동할 Keycloak 서버의 주소
 
-# Contribute
-TODO: Explain how other users and developers can contribute to make your code better. 
+## 실행
 
-If you want to learn more about creating good readme files then refer the following [guidelines](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops). You can also seek inspiration from the below readme files:
-- [ASP.NET Core](https://github.com/aspnet/Home)
-- [Visual Studio Code](https://github.com/Microsoft/vscode)
-- [Chakra Core](https://github.com/Microsoft/ChakraCore)
+실행 전 환경변수 설정 필요
+
+```bash
+go get -u
+
+# 빌드 후 실행
+go build .
+./iam
+
+# 바로 빌드 및 실행
+go run .
+```
