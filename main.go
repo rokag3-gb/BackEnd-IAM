@@ -22,7 +22,7 @@ var ctx = context.Background()
 
 func main() {
 
-	clients.InitKeycloakClient(ctx, KeycloakClientID, KeycloakClientSecret, KeycloakRealm, KeycloakEndpoint)
+	clients.InitKeycloakClient(KeycloakClientID, KeycloakClientSecret, KeycloakRealm, KeycloakEndpoint)
 
 	route := gin.Default()
 

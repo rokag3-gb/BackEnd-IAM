@@ -10,7 +10,7 @@ import (
 )
 
 func GetGroup(c *gin.Context) {
-	token := c.MustGet("accessToken").(string)
+	token, _ := clients.KeycloakToken(c)
 	first, firstErr := strconv.Atoi(c.DefaultQuery("first", "0"))
 	if firstErr != nil {
 		c.String(http.StatusBadRequest, "'first' must be integer")
@@ -29,7 +29,7 @@ func GetGroup(c *gin.Context) {
 		Max:   &max,
 	}
 
-	groups, err := clients.KeycloakClient().GetGroups(c, token, clients.KeycloakConfig().Realm, params)
+	groups, err := clients.KeycloakClient().GetGroups(c, token.AccessToken, clients.KeycloakConfig().Realm, params)
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return

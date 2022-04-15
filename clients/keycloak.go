@@ -16,7 +16,7 @@ type kcConfig struct {
 	Endpoint     string
 }
 
-func InitKeycloakClient(ctx context.Context, clientID string, clientSecret string, realm string, endpoint string) error {
+func InitKeycloakClient(clientID string, clientSecret string, realm string, endpoint string) error {
 	if keycloakConfig == (kcConfig{}) {
 		keycloakConfig = kcConfig{
 			ClientID:     clientID,
@@ -27,10 +27,6 @@ func InitKeycloakClient(ctx context.Context, clientID string, clientSecret strin
 	}
 	if keycloakClient == nil {
 		keycloakClient = gocloak.NewClient(keycloakConfig.Endpoint)
-		_, err := keycloakClient.LoginClient(ctx, keycloakConfig.ClientID, keycloakConfig.ClientSecret, keycloakConfig.Realm)
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -41,4 +37,15 @@ func KeycloakClient() gocloak.GoCloak {
 
 func KeycloakConfig() kcConfig {
 	return keycloakConfig
+}
+
+func KeycloakToken(ctx context.Context) (*gocloak.JWT, error) {
+	token, err := keycloakClient.LoginClient(ctx,
+		keycloakConfig.ClientID,
+		keycloakConfig.ClientSecret,
+		keycloakConfig.Realm)
+	if err != nil {
+		return nil, err
+	}
+	return token, nil
 }
