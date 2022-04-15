@@ -17,6 +17,9 @@ import (
 
 var ctx = context.Background()
 
+const VaultToken = "hvs.wiselTCiHpNilcjoAyfP7GDK"
+const VaultEndpoint = "http://20.214.161.230:8200"
+
 func main() {
 
 	clients.InitKeycloakClient(
@@ -24,6 +27,8 @@ func main() {
 		os.Getenv("KEYCLOAK_CLIENT_SECRET"),
 		os.Getenv("KEYCLOAK_REALM"),
 		os.Getenv("KEYCLOAK_ENDPOINT"))
+
+	clients.InitVaultClient(VaultToken, VaultEndpoint)
 
 	route := gin.Default()
 
