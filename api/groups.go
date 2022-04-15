@@ -29,7 +29,7 @@ func GetGroup(c *gin.Context) {
 		Max:   &max,
 	}
 
-	groups, err := clients.KeycloakClient().GetGroups(c, token, clients.KeycloakRealm, params)
+	groups, err := clients.KeycloakClient().GetGroups(c, token, clients.KeycloakConfig().Realm, params)
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return

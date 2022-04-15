@@ -6,25 +6,39 @@ import (
 	"github.com/Nerzal/gocloak/v11"
 )
 
-var KeycloakClientID = "vault"
-var KeycloakClientSecret = "ahvVBsKLPZXbt5PA5JicckZdx1sTriCR"
-var KeycloakRealm = "iam"
-var KeycloakEndpoint = "http://127.0.0.1:8080"
-
-// var KeycloakClientID = "test_service"
-// var KeyCloakClientSecret = "d7c2424e-7dfc-4a74-a6c5-bd6588ba2d73"
-// var KeyCloakRealm = "test_realm"
-// var KeycloakEndpoint = "https://iam.cloudmt.co.kr"
-
 var keycloakClient gocloak.GoCloak = nil
+var keycloakConfig kcConfig = kcConfig{}
 
-func InitKeycloakClient(ctx context.Context) {
-	if keycloakClient == nil {
-		keycloakClient = gocloak.NewClient(KeycloakEndpoint)
-		keycloakClient.LoginClient(ctx, KeycloakClientID, KeycloakClientSecret, KeycloakRealm)
+type kcConfig struct {
+	ClientID     string
+	ClientSecret string
+	Realm        string
+	Endpoint     string
+}
+
+func InitKeycloakClient(ctx context.Context, clientID string, clientSecret string, realm string, endpoint string) error {
+	if keycloakConfig == (kcConfig{}) {
+		keycloakConfig = kcConfig{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+			Realm:        realm,
+			Endpoint:     endpoint,
+		}
 	}
+	if keycloakClient == nil {
+		keycloakClient = gocloak.NewClient(keycloakConfig.Endpoint)
+		_, err := keycloakClient.LoginClient(ctx, keycloakConfig.ClientID, keycloakConfig.ClientSecret, keycloakConfig.Realm)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func KeycloakClient() gocloak.GoCloak {
 	return keycloakClient
+}
+
+func KeycloakConfig() kcConfig {
+	return keycloakConfig
 }
