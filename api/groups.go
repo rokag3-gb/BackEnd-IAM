@@ -55,7 +55,16 @@ func CreateGroup(c *gin.Context) {
 }
 
 func DeleteGroup(c *gin.Context) {
-	c.String(http.StatusOK, "deletegroup")
+	// TODO: 그룹 삭제 시 권한 체크 없음. 추후 Authority 기능 구현시 권한 체크 기능 넣을 것.
+	token, _ := clients.KeycloakToken(c)
+	groupid := c.Param("groupid")
+
+	err := clients.KeycloakClient().DeleteGroup(c, token.AccessToken, clients.KeycloakConfig().Realm, groupid)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.Status(http.StatusNoContent)
 }
 
 func UpdateGroup(c *gin.Context) {
