@@ -12,11 +12,9 @@ import (
 func GetGroup(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 
-	first := c.MustGet("first").(int)
-	max := c.MustGet("max").(int)
 	params := gocloak.GetGroupsParams{
-		First: &first,
-		Max:   &max,
+		First: gocloak.IntP(c.MustGet("first").(int)),
+		Max:   gocloak.IntP(c.MustGet("max").(int)),
 	}
 
 	groups, err := clients.KeycloakClient().GetGroups(c,
@@ -92,11 +90,9 @@ func GetGroupMember(c *gin.Context) {
 
 	groupid := c.Param("groupid")
 
-	first := c.MustGet("first").(int)
-	max := c.MustGet("max").(int)
 	params := gocloak.GetGroupsParams{
-		First: &first,
-		Max:   &max,
+		First: gocloak.IntP(c.MustGet("first").(int)),
+		Max:   gocloak.IntP(c.MustGet("max").(int)),
 	}
 
 	groups, err := clients.KeycloakClient().GetGroupMembers(c,
