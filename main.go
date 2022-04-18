@@ -57,9 +57,10 @@ func main() {
 		secret.GET("/:groupName/data/:secretName", api.GetSecret)
 		secret.POST("/:groupName/data/:secretName", api.MargeSecret)
 		secret.GET("/:groupName/metadata/:secretName", api.GetMetadataSecret)
-		secret.POST("/:groupName/delete/:secretName", api.Secret)
-		secret.POST("/:groupName/destroy/:secretName", api.Secret)
-		secret.DELETE("/:groupName/metadata/:secretName", api.Secret)
+		secret.POST("/:groupName/delete/:secretName", api.DeleteSecret)
+		secret.POST("/:groupName/undelete/:secretName", api.UndeleteSecret)
+		secret.POST("/:groupName/destroy/:secretName", api.DestroySecret)
+		secret.DELETE("/:groupName/metadata/:secretName", api.DeleteSecretMetadata)
 	}
 
 	route.Run(":8085")

@@ -187,6 +187,88 @@ func GetMetadataSecret(c *gin.Context) {
 	c.JSON(http.StatusOK, data.Data)
 }
 
-func Secret(c *gin.Context) {
-	c.String(http.StatusOK, "secret")
+func DeleteSecret(c *gin.Context) {
+	value, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	if value == nil {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	groupName := c.Param("groupName")
+	secretName := c.Param("secretName")
+	path := fmt.Sprintf("%s/delete/%s", groupName, secretName)
+
+	_, err = clients.VaultClient().Logical().WriteBytes(path, value)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+func UndeleteSecret(c *gin.Context) {
+	value, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	if value == nil {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	groupName := c.Param("groupName")
+	secretName := c.Param("secretName")
+	path := fmt.Sprintf("%s/undelete/%s", groupName, secretName)
+
+	_, err = clients.VaultClient().Logical().WriteBytes(path, value)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+func DestroySecret(c *gin.Context) {
+	value, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	if value == nil {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	groupName := c.Param("groupName")
+	secretName := c.Param("secretName")
+	path := fmt.Sprintf("%s/destroy/%s", groupName, secretName)
+
+	_, err = clients.VaultClient().Logical().WriteBytes(path, value)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+func DeleteSecretMetadata(c *gin.Context) {
+	groupName := c.Param("groupName")
+	secretName := c.Param("secretName")
+	path := fmt.Sprintf("%s/metadata/%s", groupName, secretName)
+
+	_, err := clients.VaultClient().Logical().Delete(path)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }
