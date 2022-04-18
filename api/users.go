@@ -71,3 +71,34 @@ func CreateUser(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gocloak.User{ID: gocloak.StringP(newUserId)})
 }
+
+func UpdateUser(c *gin.Context) {
+	token, _ := clients.KeycloakToken(c)
+	userid := c.Param("userid")
+
+	user, err := clients.KeycloakClient().GetUserByID(c,
+		token.AccessToken, clients.KeycloakConfig().Realm, userid)
+
+	var json models.UpdateUserInfo
+	if err := c.ShouldBindJSON(&json); err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	user.Username = gocloak.StringP(json.Username)
+	user.FirstName = gocloak.StringP(json.FirstName)
+	user.LastName = gocloak.StringP(json.LastName)
+	user.Email = gocloak.StringP(json.Email)
+	user.RequiredActions = &json.RequiredActions
+
+	err = clients.KeycloakClient().UpdateUser(c,
+		token.AccessToken,
+		clients.KeycloakConfig().Realm,
+		*user)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
