@@ -43,8 +43,7 @@ func GetSecretGroup(c *gin.Context) {
 }
 
 func CreateSecretGroup(c *gin.Context) {
-	body := c.Request.Body
-	value, err := ioutil.ReadAll(body)
+	value, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -94,15 +93,98 @@ func DeleteSecretGroup(c *gin.Context) {
 
 func GetSecretList(c *gin.Context) {
 	groupName := c.Param("groupName")
-	path := fmt.Sprintf("sys/mounts/%s", groupName)
+	path := fmt.Sprintf("%s/metadata", groupName)
 
-	_, err := clients.VaultClient().Logical().Delete(path)
+	data, err := clients.VaultClient().Logical().List(path)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		return
 	}
 
-	c.Status(http.StatusNoContent)
+	list := data.Data["keys"]
+	if list == nil {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	c.JSON(http.StatusOK, list)
+}
+
+func GetSecret(c *gin.Context) {
+	groupName := c.Param("groupName")
+	secretName := c.Param("secretName")
+	path := fmt.Sprintf("%s/data/%s", groupName, secretName)
+
+	data, err := clients.VaultClient().Logical().Read(path)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	if data.Data == nil {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	c.JSON(http.StatusOK, data.Data)
+}
+
+func MargeSecret(c *gin.Context) {
+	value, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	groupName := c.Param("groupName")
+	secretName := c.Param("secretName")
+	path := fmt.Sprintf("%s/data/%s", groupName, secretName)
+
+	data, err := clients.VaultClient().Logical().WriteBytes(path, value)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	if data.Data == nil {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	c.Status(http.StatusCreated)
+}
+
+func GetMetadataSecret(c *gin.Context) {
+	groupName := c.Param("groupName")
+	secretName := c.Param("secretName")
+	path := fmt.Sprintf("%s/metadata/%s", groupName, secretName)
+
+	data, err := clients.VaultClient().Logical().Read(path)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	if data.Data == nil {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	_, cas_required := data.Data["cas_required"]
+	if cas_required {
+		delete(data.Data, "cas_required")
+	}
+
+	_, custom_metadata := data.Data["custom_metadata"]
+	if custom_metadata {
+		delete(data.Data, "custom_metadata")
+	}
+
+	_, delete_version_after := data.Data["delete_version_after"]
+	if delete_version_after {
+		delete(data.Data, "delete_version_after")
+	}
+
+	c.JSON(http.StatusOK, data.Data)
 }
 
 func Secret(c *gin.Context) {
