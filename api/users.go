@@ -13,9 +13,9 @@ func Users(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 
 	params := gocloak.GetUsersParams{
-		First: gocloak.IntP(c.MustGet("first").(int)),
-		Max:   gocloak.IntP(c.MustGet("max").(int)),
-		// BriefRepresentation: gocloak.BoolP(true),
+		First:               gocloak.IntP(c.MustGet("first").(int)),
+		Max:                 gocloak.IntP(c.MustGet("max").(int)),
+		BriefRepresentation: gocloak.BoolP(true),
 	}
 
 	users, err := clients.KeycloakClient().GetUsers(c,
