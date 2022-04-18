@@ -45,7 +45,7 @@ func main() {
 
 	users := route.Group("/users")
 	{
-		users.GET("/", api.Users)
+		users.GET("/", middlewares.ListQueryRangeMiddleware(), api.Users)
 	}
 
 	secret := route.Group("/secret")
