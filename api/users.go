@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"iam/clients"
 	"iam/models"
 	"net/http"
@@ -26,7 +27,16 @@ func Users(c *gin.Context) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, users)
+
+	response := []gin.H{}
+	for _, user := range users {
+		var userMap gin.H
+		inrec, _ := json.Marshal(user)
+		json.Unmarshal(inrec, &userMap)
+		delete(userMap, "access")
+		response = append(response, userMap)
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 func CreateUser(c *gin.Context) {
