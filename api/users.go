@@ -234,3 +234,17 @@ func DeleteUserFromGroup(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+func GetUserSessions(c *gin.Context) {
+	token, _ := clients.KeycloakToken(c)
+	userid := c.Param("userid")
+
+	sessions, err := clients.KeycloakClient().GetUserSessions(c,
+		token.AccessToken, clients.KeycloakConfig().Realm, userid)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, sessions)
+}
