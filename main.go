@@ -46,12 +46,13 @@ func main() {
 	users := route.Group("/users")
 	{
 		users.GET("/", middlewares.ListQueryRangeMiddleware(), api.Users)
-		users.GET("/:userid", api.GetUser)
-		users.GET("/:userid/credentials", api.GetUserCredentials)
 		users.POST("/", api.CreateUser)
 		users.PUT("/:userid", api.UpdateUser)
 		users.DELETE("/:userid", api.DeleteUser)
+		users.GET("/:userid", api.GetUser)
+		users.GET("/:userid/credentials", api.GetUserCredentials)
 		users.PUT("/:userid/reset-password", api.ResetUserPassword)
+		users.GET("/:userid/groups", middlewares.ListQueryRangeMiddleware(), api.GetUserGroups)
 	}
 
 	secret := route.Group("/secret")
