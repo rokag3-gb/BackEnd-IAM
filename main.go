@@ -55,6 +55,9 @@ func main() {
 		users.GET("/:userid/groups", middlewares.ListQueryRangeMiddleware(), api.GetUserGroups)
 		users.PUT("/:userid/groups/:groupid", api.AddUserToGroup)
 		users.DELETE("/:userid/groups/:groupid", api.DeleteUserFromGroup)
+		users.GET("/:userid/sessions", api.GetUserSessions)
+		users.DELETE("/:userid/sessions/:sessionid", api.LogoutUserSession)
+		users.POST("/:userid/logout", api.LogoutAllSessions)
 	}
 
 	secret := route.Group("/secret")

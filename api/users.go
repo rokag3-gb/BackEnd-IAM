@@ -234,3 +234,70 @@ func DeleteUserFromGroup(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+func GetUserSessions(c *gin.Context) {
+	token, _ := clients.KeycloakToken(c)
+	userid := c.Param("userid")
+
+	sessions, err := clients.KeycloakClient().GetUserSessions(c,
+		token.AccessToken, clients.KeycloakConfig().Realm, userid)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, sessions)
+}
+
+func LogoutUserSession(c *gin.Context) {
+	token, _ := clients.KeycloakToken(c)
+	userid := c.Param("userid")
+	sessionid := c.Param("sessionid")
+
+	sessions, err := clients.KeycloakClient().GetUserSessions(c,
+		token.AccessToken, clients.KeycloakConfig().Realm, userid)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	hasSession := false
+	for _, session := range sessions {
+		if *session.ID == sessionid {
+			hasSession = true
+			break
+		}
+	}
+
+	if !hasSession {
+		c.String(http.StatusBadRequest, "Session not found from user")
+		return
+	}
+
+	err = clients.KeycloakClient().LogoutUserSession(c,
+		token.AccessToken,
+		clients.KeycloakConfig().Realm,
+		sessionid)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+func LogoutAllSessions(c *gin.Context) {
+	token, _ := clients.KeycloakToken(c)
+	userid := c.Param("userid")
+
+	err := clients.KeycloakClient().LogoutAllSessions(c,
+		token.AccessToken,
+		clients.KeycloakConfig().Realm,
+		userid)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
