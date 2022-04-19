@@ -31,3 +31,9 @@ type GetUserInfo struct {
 	Email            *string   `json:"email,omitempty"`
 	RequiredActions  *[]string `json:"requiredActions,omitempty"`
 }
+
+type ResetUserPasswordInfo struct {
+	Password        string `json:"password" binding:"required,eqfield=PasswordConfirm"`
+	PasswordConfirm string `json:"passwordConfirm" binding:"required"`
+	Temporary       bool   `json:"temporary"`
+}

@@ -156,3 +156,27 @@ func GetUserCredentials(c *gin.Context) {
 
 	c.JSON(http.StatusOK, credentials)
 }
+
+func ResetUserPassword(c *gin.Context) {
+	token, _ := clients.KeycloakToken(c)
+	userid := c.Param("userid")
+
+	var json models.ResetUserPasswordInfo
+	if err := c.ShouldBindJSON(&json); err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err := clients.KeycloakClient().SetPassword(c,
+		token.AccessToken,
+		userid,
+		clients.KeycloakConfig().Realm,
+		json.Password,
+		json.Temporary)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
