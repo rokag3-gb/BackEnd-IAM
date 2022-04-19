@@ -180,3 +180,57 @@ func ResetUserPassword(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+func GetUserGroups(c *gin.Context) {
+	token, _ := clients.KeycloakToken(c)
+	userid := c.Param("userid")
+
+	groups, err := clients.KeycloakClient().GetUserGroups(c,
+		token.AccessToken, clients.KeycloakConfig().Realm, userid,
+		gocloak.GetGroupsParams{
+			First: gocloak.IntP(c.MustGet("first").(int)),
+			Max:   gocloak.IntP(c.MustGet("max").(int)),
+		})
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, groups)
+}
+
+func AddUserToGroup(c *gin.Context) {
+	token, _ := clients.KeycloakToken(c)
+	userid := c.Param("userid")
+	groupid := c.Param("groupid")
+
+	err := clients.KeycloakClient().AddUserToGroup(c,
+		token.AccessToken,
+		clients.KeycloakConfig().Realm,
+		userid,
+		groupid)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+func DeleteUserFromGroup(c *gin.Context) {
+	token, _ := clients.KeycloakToken(c)
+	userid := c.Param("userid")
+	groupid := c.Param("groupid")
+
+	err := clients.KeycloakClient().DeleteUserFromGroup(c,
+		token.AccessToken,
+		clients.KeycloakConfig().Realm,
+		userid,
+		groupid)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
