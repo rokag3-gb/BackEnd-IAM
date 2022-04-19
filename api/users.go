@@ -102,3 +102,19 @@ func UpdateUser(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+func DeleteUser(c *gin.Context) {
+	token, _ := clients.KeycloakToken(c)
+	userid := c.Param("userid")
+
+	err := clients.KeycloakClient().DeleteUser(c,
+		token.AccessToken,
+		clients.KeycloakConfig().Realm,
+		userid)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
