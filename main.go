@@ -48,6 +48,7 @@ func main() {
 		users.GET("/", middlewares.ListQueryRangeMiddleware(), api.Users)
 		users.POST("/", api.CreateUser)
 		users.PUT("/:userid", api.UpdateUser)
+		users.DELETE("/:userid", api.DeleteUser)
 	}
 
 	secret := route.Group("/secret")
