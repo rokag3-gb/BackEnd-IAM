@@ -198,3 +198,21 @@ func GetUserGroups(c *gin.Context) {
 
 	c.JSON(http.StatusOK, groups)
 }
+
+func AddUserToGroup(c *gin.Context) {
+	token, _ := clients.KeycloakToken(c)
+	userid := c.Param("userid")
+	groupid := c.Param("groupid")
+
+	err := clients.KeycloakClient().AddUserToGroup(c,
+		token.AccessToken,
+		clients.KeycloakConfig().Realm,
+		userid,
+		groupid)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
