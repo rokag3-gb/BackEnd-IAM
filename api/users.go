@@ -216,3 +216,21 @@ func AddUserToGroup(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+func DeleteUserFromGroup(c *gin.Context) {
+	token, _ := clients.KeycloakToken(c)
+	userid := c.Param("userid")
+	groupid := c.Param("groupid")
+
+	err := clients.KeycloakClient().DeleteUserFromGroup(c,
+		token.AccessToken,
+		clients.KeycloakConfig().Realm,
+		userid,
+		groupid)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
