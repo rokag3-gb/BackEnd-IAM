@@ -142,3 +142,17 @@ func GetUser(c *gin.Context) {
 		RequiredActions:  user.RequiredActions,
 	})
 }
+
+func GetUserCredentials(c *gin.Context) {
+	token, _ := clients.KeycloakToken(c)
+	userid := c.Param("userid")
+
+	credentials, err := clients.KeycloakClient().GetCredentials(c,
+		token.AccessToken, clients.KeycloakConfig().Realm, userid)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, credentials)
+}
