@@ -51,6 +51,7 @@ func main() {
 		users.POST("/", api.CreateUser)
 		users.PUT("/:userid", api.UpdateUser)
 		users.DELETE("/:userid", api.DeleteUser)
+		users.PUT("/:userid/reset-password", api.ResetUserPassword)
 	}
 
 	secret := route.Group("/secret")
