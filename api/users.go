@@ -118,3 +118,27 @@ func DeleteUser(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+func GetUser(c *gin.Context) {
+	token, _ := clients.KeycloakToken(c)
+	userid := c.Param("userid")
+
+	user, err := clients.KeycloakClient().GetUserByID(c,
+		token.AccessToken, clients.KeycloakConfig().Realm, userid)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, models.GetUserInfo{
+		ID:               user.ID,
+		CreatedTimestamp: user.CreatedTimestamp,
+		Username:         user.Username,
+		Enabled:          user.Enabled,
+		EmailVerified:    user.EmailVerified,
+		FirstName:        user.FirstName,
+		LastName:         user.LastName,
+		Email:            user.Email,
+		RequiredActions:  user.RequiredActions,
+	})
+}

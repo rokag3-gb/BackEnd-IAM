@@ -46,6 +46,7 @@ func main() {
 	users := route.Group("/users")
 	{
 		users.GET("/", middlewares.ListQueryRangeMiddleware(), api.Users)
+		users.GET("/:userid", api.GetUser)
 		users.POST("/", api.CreateUser)
 		users.PUT("/:userid", api.UpdateUser)
 		users.DELETE("/:userid", api.DeleteUser)

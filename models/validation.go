@@ -19,3 +19,15 @@ type UpdateUserInfo struct {
 	Email           string   `json:"email" binding:"required"`
 	RequiredActions []string `json:"requiredActions"`
 }
+
+type GetUserInfo struct {
+	ID               *string   `json:"id,omitempty"`
+	CreatedTimestamp *int64    `json:"createdTimestamp,omitempty"`
+	Username         *string   `json:"username,omitempty"`
+	Enabled          *bool     `json:"enabled,omitempty"`
+	EmailVerified    *bool     `json:"emailVerified,omitempty"`
+	FirstName        *string   `json:"firstName,omitempty"`
+	LastName         *string   `json:"lastName,omitempty"`
+	Email            *string   `json:"email,omitempty"`
+	RequiredActions  *[]string `json:"requiredActions,omitempty"`
+}
