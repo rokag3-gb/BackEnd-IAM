@@ -24,7 +24,8 @@ func Users(c *gin.Context) {
 		clients.KeycloakConfig().Realm,
 		params)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 
@@ -56,7 +57,8 @@ func CreateUser(c *gin.Context) {
 			Email:     gocloak.StringP(json.Email),
 		})
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 	err = clients.KeycloakClient().SetPassword(c,
@@ -66,7 +68,8 @@ func CreateUser(c *gin.Context) {
 		json.Password,
 		false)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 	c.JSON(http.StatusOK, gocloak.User{ID: gocloak.StringP(newUserId)})
@@ -96,7 +99,8 @@ func UpdateUser(c *gin.Context) {
 		clients.KeycloakConfig().Realm,
 		*user)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 
@@ -112,7 +116,8 @@ func DeleteUser(c *gin.Context) {
 		clients.KeycloakConfig().Realm,
 		userid)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 
@@ -126,7 +131,8 @@ func GetUser(c *gin.Context) {
 	user, err := clients.KeycloakClient().GetUserByID(c,
 		token.AccessToken, clients.KeycloakConfig().Realm, userid)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 
@@ -150,7 +156,8 @@ func GetUserCredentials(c *gin.Context) {
 	credentials, err := clients.KeycloakClient().GetCredentials(c,
 		token.AccessToken, clients.KeycloakConfig().Realm, userid)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 
@@ -174,7 +181,8 @@ func ResetUserPassword(c *gin.Context) {
 		json.Password,
 		json.Temporary)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 
@@ -192,7 +200,8 @@ func GetUserGroups(c *gin.Context) {
 			Max:   gocloak.IntP(c.MustGet("max").(int)),
 		})
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 
@@ -210,7 +219,8 @@ func AddUserToGroup(c *gin.Context) {
 		userid,
 		groupid)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 
@@ -228,7 +238,8 @@ func DeleteUserFromGroup(c *gin.Context) {
 		userid,
 		groupid)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 
@@ -242,7 +253,8 @@ func GetUserSessions(c *gin.Context) {
 	sessions, err := clients.KeycloakClient().GetUserSessions(c,
 		token.AccessToken, clients.KeycloakConfig().Realm, userid)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 
@@ -257,7 +269,8 @@ func LogoutUserSession(c *gin.Context) {
 	sessions, err := clients.KeycloakClient().GetUserSessions(c,
 		token.AccessToken, clients.KeycloakConfig().Realm, userid)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 
@@ -279,7 +292,8 @@ func LogoutUserSession(c *gin.Context) {
 		clients.KeycloakConfig().Realm,
 		sessionid)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 
@@ -295,7 +309,8 @@ func LogoutAllSessions(c *gin.Context) {
 		clients.KeycloakConfig().Realm,
 		userid)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 
@@ -309,7 +324,8 @@ func GetUserFederatedIdentities(c *gin.Context) {
 	identities, err := clients.KeycloakClient().GetUserFederatedIdentities(c,
 		token.AccessToken, clients.KeycloakConfig().Realm, userid)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 
