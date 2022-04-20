@@ -301,3 +301,17 @@ func LogoutAllSessions(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+func GetUserFederatedIdentities(c *gin.Context) {
+	token, _ := clients.KeycloakToken(c)
+	userid := c.Param("userid")
+
+	identities, err := clients.KeycloakClient().GetUserFederatedIdentities(c,
+		token.AccessToken, clients.KeycloakConfig().Realm, userid)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, identities)
+}

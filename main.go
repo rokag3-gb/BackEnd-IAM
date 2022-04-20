@@ -58,6 +58,7 @@ func main() {
 		users.GET("/:userid/sessions", api.GetUserSessions)
 		users.DELETE("/:userid/sessions/:sessionid", api.LogoutUserSession)
 		users.POST("/:userid/logout", api.LogoutAllSessions)
+		users.GET("/:userid/federated-identity", api.GetUserFederatedIdentities)
 	}
 
 	secret := route.Group("/secret")
