@@ -22,7 +22,8 @@ func GetGroup(c *gin.Context) {
 		clients.KeycloakConfig().Realm,
 		params)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 	c.JSON(http.StatusOK, groups)
@@ -48,7 +49,8 @@ func CreateGroup(c *gin.Context) {
 		clients.KeycloakConfig().Realm,
 		group)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 	c.JSON(http.StatusOK, gocloak.Group{ID: gocloak.StringP(newGroup)})
@@ -61,7 +63,8 @@ func DeleteGroup(c *gin.Context) {
 
 	err := clients.KeycloakClient().DeleteGroup(c, token.AccessToken, clients.KeycloakConfig().Realm, groupid)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 	c.Status(http.StatusNoContent)
@@ -79,7 +82,8 @@ func UpdateGroup(c *gin.Context) {
 
 	groupToUpdate, err := clients.KeycloakClient().GetGroup(c, token.AccessToken, clients.KeycloakConfig().Realm, groupid)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 
@@ -87,7 +91,8 @@ func UpdateGroup(c *gin.Context) {
 
 	err = clients.KeycloakClient().UpdateGroup(c, token.AccessToken, clients.KeycloakConfig().Realm, *groupToUpdate)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 
@@ -110,7 +115,8 @@ func GetGroupMember(c *gin.Context) {
 		groupid,
 		params)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		apiError := err.(*gocloak.APIError)
+		c.String(apiError.Code, apiError.Message)
 		return
 	}
 	c.JSON(http.StatusOK, groups)
