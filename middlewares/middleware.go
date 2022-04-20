@@ -1,11 +1,15 @@
 package middlewares
 
 import (
+	"fmt"
 	"iam/clients"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
+	_ "github.com/denisenkom/go-mssqldb"
+	"github.com/form3tech-oss/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,6 +33,7 @@ func IntrospectMiddleware() gin.HandlerFunc {
 		}
 
 		c.Set("accessToken", token)
+		c.Set("username", getUsernameJWT(token))
 
 		// 클라이언트가 보낸 토큰에 대한 keycloak 인증 부분입니다.
 		/*
@@ -78,4 +83,58 @@ func ListQueryRangeMiddleware() gin.HandlerFunc {
 		}
 		c.Set("max", max)
 	}
+}
+
+func AuthorityCheckMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		realm := os.Getenv("KEYCLOAK_REALM")
+		username := c.MustGet("username").(string)
+
+		query := fmt.Sprintf(`select
+			1
+			from
+			USER_ENTITY u join
+			user_roles_mapping ur
+			on
+			u.id = ur.userId
+			join
+			roles_authority_mapping ra
+			on
+			ur.rId = ra.rId
+			join
+			authority a
+			on
+			ra.aId = a.aId
+			where
+			u.USERNAME = '%s' AND
+			u.REALM_ID = '%s' AND
+			(a.endpointMethod = '%s' OR a.endpointMethod = 'ALL') AND
+			PATINDEX(REPLACE(a.endpointUrl,'*','%%'), '%s') = 1`, username, realm, c.Request.Method, c.Request.URL.Path)
+
+		rows, err := clients.DBClient().Query(query)
+
+		if err != nil {
+			c.Abort()
+		}
+		defer rows.Close()
+
+		if !rows.Next() {
+			c.Status(http.StatusForbidden)
+			c.Abort()
+
+			// 결과가 한건도 오지 않으면 권한이 없음
+		}
+
+		// 결과가 한건이라도 있으면 권한 있음
+	}
+}
+
+func getUsernameJWT(token string) string {
+	t, _ := jwt.Parse(token, nil)
+	if t == nil {
+		return ""
+	}
+
+	claims, _ := t.Claims.(jwt.MapClaims)
+	return fmt.Sprintf("%v", claims["preferred_username"])
 }

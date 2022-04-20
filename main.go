@@ -2,37 +2,34 @@ package main
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"iam/api"
 	"iam/clients"
-	"net/http"
 	"os"
 
 	"iam/middlewares"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
 )
 
 var ctx = context.Background()
 
-const VaultToken = "hvs.wiselTCiHpNilcjoAyfP7GDK"
-const VaultEndpoint = "http://20.214.161.230:8200"
-
 func main() {
-
 	clients.InitKeycloakClient(
 		os.Getenv("KEYCLOAK_CLIENT_ID"),
 		os.Getenv("KEYCLOAK_CLIENT_SECRET"),
 		os.Getenv("KEYCLOAK_REALM"),
 		os.Getenv("KEYCLOAK_ENDPOINT"))
 
-	clients.InitVaultClient(VaultToken, VaultEndpoint)
+	clients.InitVaultClient(
+		os.Getenv("VAULT_TOKEN"),
+		os.Getenv("VAULT_ENDPOINT"))
+
+	clients.InitDbClient("mssql", os.Getenv("DB_CONNECT_STRING"))
 
 	route := gin.Default()
 
-	//	route.Use(middlewares.IntrospectMiddleware())
+	route.Use(middlewares.IntrospectMiddleware())
+	route.Use(middlewares.AuthorityCheckMiddleware())
 
 	groups := route.Group("/groups")
 	{
@@ -77,30 +74,4 @@ func main() {
 	}
 
 	route.Run(":8085")
-}
-
-func badRequeset(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusBadRequest)
-}
-
-func getUsernameJWT(token string) string {
-	t, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("unexpected signing method")
-		}
-		return []byte(""), nil
-	})
-	if err != nil {
-		return ""
-	}
-
-	if !t.Valid {
-		return ""
-	}
-
-	claims := t.Claims.(jwt.MapClaims)
-	tmp := claims["preferred_username"]
-	username := fmt.Sprintf("%v", tmp)
-
-	return username
 }
