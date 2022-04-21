@@ -4,6 +4,7 @@ import (
 	"context"
 	"iam/api"
 	"iam/clients"
+	"iam/iamdb"
 	"os"
 
 	"iam/middlewares"
@@ -24,7 +25,7 @@ func main() {
 		os.Getenv("VAULT_TOKEN"),
 		os.Getenv("VAULT_ENDPOINT"))
 
-	clients.InitDbClient("mssql", os.Getenv("DB_CONNECT_STRING"))
+	iamdb.InitDbClient("mssql", os.Getenv("DB_CONNECT_STRING"))
 
 	route := gin.Default()
 
