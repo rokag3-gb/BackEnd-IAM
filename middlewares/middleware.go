@@ -3,6 +3,7 @@ package middlewares
 import (
 	"fmt"
 	"iam/clients"
+	"iam/iamdb"
 	"net/http"
 	"os"
 	"strconv"
@@ -90,28 +91,7 @@ func AuthorityCheckMiddleware() gin.HandlerFunc {
 		realm := os.Getenv("KEYCLOAK_REALM")
 		username := c.MustGet("username").(string)
 
-		query := fmt.Sprintf(`select
-			1
-			from
-			USER_ENTITY u join
-			user_roles_mapping ur
-			on
-			u.id = ur.userId
-			join
-			roles_authority_mapping ra
-			on
-			ur.rId = ra.rId
-			join
-			authority a
-			on
-			ra.aId = a.aId
-			where
-			u.USERNAME = '%s' AND
-			u.REALM_ID = '%s' AND
-			(a.endpointMethod = '%s' OR a.endpointMethod = 'ALL') AND
-			PATINDEX(REPLACE(a.endpointUrl,'*','%%'), '%s') = 1`, username, realm, c.Request.Method, c.Request.URL.Path)
-
-		rows, err := clients.DBClient().Query(query)
+		rows, err := iamdb.GetUserAuthoritiesForEndpoint(username, realm, c.Request.Method, c.Request.URL.Path)
 
 		if err != nil {
 			c.Abort()

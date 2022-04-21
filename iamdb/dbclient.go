@@ -1,4 +1,4 @@
-package clients
+package iamdb
 
 import (
 	"database/sql"
