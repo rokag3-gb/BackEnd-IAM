@@ -35,8 +35,8 @@ func main() {
 	authority := route.Group("/authority")
 	{
 		authority.GET("/roles", api.GetRoles)
-		authority.POST("/roles/:roleid", api.GetRoles)
-		authority.DELETE("/roles/:roleid", api.GetRoles)
+		authority.POST("/roles", api.CreateRoles)
+		authority.DELETE("/roles/:roleid", api.DeleteRoles)
 		authority.PUT("/roles/:roleid", api.GetRoles)
 		authority.GET("/roles/:roleid/auth", api.GetRoles)
 		authority.POST("/roles/:roleid/auth", api.GetRoles)

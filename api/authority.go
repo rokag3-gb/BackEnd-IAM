@@ -1,7 +1,10 @@
 package api
 
 import (
+	"encoding/json"
 	"iam/iamdb"
+	"iam/models"
+	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -16,22 +19,64 @@ func GetRoles(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	var arr []map[string]interface{}
+	var arr []models.RolesInfo
 
 	for rows.Next() {
-		var rId int
-		var rName string
+		var r models.RolesInfo
 
-		err := rows.Scan(&rId, &rName)
+		err := rows.Scan(&r.ID, &r.Name)
 		if err != nil {
 			log.Fatal(err)
 		}
-		m := make(map[string]interface{})
-		m["rId"] = rId
-		m["rName"] = rName
 
-		arr = append(arr, m)
+		arr = append(arr, r)
 	}
 
 	c.JSON(http.StatusOK, arr)
+}
+
+func CreateRoles(c *gin.Context) {
+	value, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		c.Abort()
+		return
+	}
+
+	var r models.RolesInfo
+	json.Unmarshal([]byte(value), &r)
+
+	if r.Name == "" {
+		c.Status(http.StatusBadRequest)
+		c.Abort()
+		return
+	}
+
+	_, err = iamdb.CreateRoles(r.Name)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	c.Status(http.StatusCreated)
+}
+
+func DeleteRoles(c *gin.Context) {
+	roleid := c.Param("roleid")
+
+	if roleid == "" {
+		c.Status(http.StatusBadRequest)
+		c.Abort()
+		return
+	}
+
+	_, err := iamdb.DeleteRoles(roleid)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

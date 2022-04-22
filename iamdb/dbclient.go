@@ -11,9 +11,21 @@ func InitDbClient(driverName string, dataSourceName string) error {
 		var err error
 		db, err = sql.Open(driverName, dataSourceName)
 		if err != nil {
-			return err
+			panic(err)
 		}
 	}
+
+	rows, err := ConnectionTest()
+
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		panic("DB Connection fail")
+	}
+
 	return nil
 }
 

@@ -5,6 +5,13 @@ import (
 	"fmt"
 )
 
+func ConnectionTest() (*sql.Rows, error) {
+	query := "select 1"
+
+	rows, err := db.Query(query)
+	return rows, err
+}
+
 func GetUserAuthoritiesForEndpoint(username string, realm string, method string, endpoint string) (*sql.Rows, error) {
 	query := fmt.Sprintf(`select
 	1
@@ -33,7 +40,21 @@ func GetUserAuthoritiesForEndpoint(username string, realm string, method string,
 }
 
 func GetRoles() (*sql.Rows, error) {
-	query := fmt.Sprintf(`select rId, rName from roles`)
+	query := "select rId, rName from roles"
+
+	rows, err := db.Query(query)
+	return rows, err
+}
+
+func CreateRoles(name string) (*sql.Rows, error) {
+	query := fmt.Sprintf(`INSERT INTO roles(rName) VALUES('%s')`, name)
+
+	rows, err := db.Query(query)
+	return rows, err
+}
+
+func DeleteRoles(id string) (*sql.Rows, error) {
+	query := fmt.Sprintf(`DELETE roles where rId='%s'`, id)
 
 	rows, err := db.Query(query)
 	return rows, err

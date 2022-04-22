@@ -37,3 +37,15 @@ type ResetUserPasswordInfo struct {
 	PasswordConfirm string `json:"passwordConfirm" binding:"required"`
 	Temporary       bool   `json:"temporary"`
 }
+
+type RolesInfo struct {
+	ID   string `json:"id" binding:"required"`
+	Name string `json:"name" binding:"required"`
+}
+
+type AutuhorityInfo struct {
+	ID     string `json:"id" binding:"required"`
+	Name   string `json:"name" binding:"required"`
+	URL    string `json:"url,omitempty"`
+	Method string `json:"method,omitempty"`
+}
