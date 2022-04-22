@@ -25,7 +25,7 @@ func main() {
 		os.Getenv("VAULT_TOKEN"),
 		os.Getenv("VAULT_ENDPOINT"))
 
-	iamdb.InitDbClient("mssql", os.Getenv("DB_CONNECT_STRING"))
+	iamdb.InitDbClient("mssql", "server=20.196.217.179;database=iam;user id=user_web;password=Cm!202012;port=10099")
 
 	route := gin.Default()
 
@@ -37,20 +37,22 @@ func main() {
 		authority.GET("/roles", api.GetRoles)
 		authority.POST("/roles", api.CreateRoles)
 		authority.DELETE("/roles/:roleid", api.DeleteRoles)
-		authority.PUT("/roles/:roleid", api.GetRoles)
-		authority.GET("/roles/:roleid/auth", api.GetRoles)
-		authority.POST("/roles/:roleid/auth", api.GetRoles)
-		authority.DELETE("/roles/:roleid/auth/:authid", api.GetRoles)
-		authority.GET("/user/:userid", api.GetRoles)
-		authority.POST("/user/:userid/roles", api.GetRoles)
-		authority.DELETE("/user/:userid/roles/:roleid", api.GetRoles)
-		authority.GET("/user/:userid/auth/:roleid", api.GetRoles) //실제로 전달되는것은 username과 role name 입니다. gin 제한사항으로 인하여 이름 변경이 불가능
-		authority.GET("/user/:userid/auth", api.GetRoles)
-		authority.GET("/auth", api.GetRoles)
-		authority.POST("/auth", api.GetRoles)
-		authority.DELETE("/auth/:authid", api.GetRoles)
-		authority.PUT("/auth/:authid", api.GetRoles)
-		authority.GET("/auth/:authid", api.GetRoles)
+		authority.PUT("/roles/:roleid", api.UpdateRoles)
+		authority.GET("/roles/:roleid/auth", api.GetRolesAuth)
+		authority.POST("/roles/:roleid/auth", api.AssignRoleAuth)
+		authority.DELETE("/roles/:roleid/auth/:authid", api.DismissRoleAuth)
+		/*
+			authority.GET("/user/:userid", api.GetUserRole)
+			authority.POST("/user/:userid/roles", api.AssignUserRole)
+			authority.DELETE("/user/:userid/roles/:roleid", api.DismissUserROle)
+			authority.GET("/user/:userid/auth/:roleid", api.GetUserAuth) //실제로 전달되는것은 username과 role name 입니다. gin 제한사항으로 인하여 이름 변경이 불가능
+			authority.GET("/user/:userid/auth", api.GetUserAuthActive)
+			authority.GET("/auth", api.GetAuth)
+			authority.POST("/auth", api.CreateAuth)
+			authority.DELETE("/auth/:authid", api.DeleteAuth)
+			authority.PUT("/auth/:authid", api.UpdateAuth)
+			authority.GET("/auth/:authid", api.GetAuthInfo)
+		*/
 	}
 
 	groups := route.Group("/groups")

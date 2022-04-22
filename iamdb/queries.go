@@ -2,7 +2,6 @@ package iamdb
 
 import (
 	"database/sql"
-	"fmt"
 )
 
 func ConnectionTest() (*sql.Rows, error) {
@@ -13,7 +12,7 @@ func ConnectionTest() (*sql.Rows, error) {
 }
 
 func GetUserAuthoritiesForEndpoint(username string, realm string, method string, endpoint string) (*sql.Rows, error) {
-	query := fmt.Sprintf(`select
+	query := `select
 	1
 	from
 	USER_ENTITY u join
@@ -29,13 +28,12 @@ func GetUserAuthoritiesForEndpoint(username string, realm string, method string,
 	on
 	ra.aId = a.aId
 	where
-	u.USERNAME = '%s' AND
-	u.REALM_ID = '%s' AND
-	(a.method = '%s' OR a.method = 'ALL') AND
-	PATINDEX(REPLACE(a.url,'*','%%'), '%s') = 1`,
-		username, realm, method, endpoint)
+	u.USERNAME = ? AND
+	u.REALM_ID = ? AND
+	(a.method = ? OR a.method = 'ALL') AND
+	PATINDEX(REPLACE(a.url,'*','%%'), ?) = 1`
 
-	rows, err := db.Query(query)
+	rows, err := db.Query(query, username, realm, method, endpoint)
 	return rows, err
 }
 
@@ -47,15 +45,52 @@ func GetRoles() (*sql.Rows, error) {
 }
 
 func CreateRoles(name string) (*sql.Rows, error) {
-	query := fmt.Sprintf(`INSERT INTO roles(rName) VALUES('%s')`, name)
+	query := `INSERT INTO roles(rName) VALUES(?)`
 
-	rows, err := db.Query(query)
+	rows, err := db.Query(query, name)
 	return rows, err
 }
 
 func DeleteRoles(id string) (*sql.Rows, error) {
-	query := fmt.Sprintf(`DELETE roles where rId='%s'`, id)
+	query := `DELETE roles where rId=?`
 
-	rows, err := db.Query(query)
+	rows, err := db.Query(query, id)
+	return rows, err
+}
+
+func UpdateRoles(name string, id string) (*sql.Rows, error) {
+	query := `UPDATE roles SET rName=? where rId=?`
+
+	rows, err := db.Query(query, name, id)
+	return rows, err
+}
+
+func GetRolseAuth(id string) (*sql.Rows, error) {
+	query := `select
+	a.aId, a.aName 
+	from 
+	roles_authority_mapping ra 
+	join 
+	authority a 
+	on 
+	ra.aId = a.aId 
+	where 
+	ra.rId = ?`
+
+	rows, err := db.Query(query, id)
+	return rows, err
+}
+
+func AssignRoleAuth(roleID string, authID string) (*sql.Rows, error) {
+	query := `INSERT INTO roles_authority_mapping(rId, aId) VALUES(?, ?)`
+
+	rows, err := db.Query(query, roleID, authID)
+	return rows, err
+}
+
+func DismissRoleAuth(roleID string, authID string) (*sql.Rows, error) {
+	query := `DELETE FROM roles_authority_mapping where rId = ? AND aId = ?`
+
+	rows, err := db.Query(query, roleID, authID)
 	return rows, err
 }
