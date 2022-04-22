@@ -24,9 +24,16 @@ func GetUserAuthoritiesForEndpoint(username string, realm string, method string,
 	where
 	u.USERNAME = '%s' AND
 	u.REALM_ID = '%s' AND
-	(a.endpointMethod = '%s' OR a.endpointMethod = 'ALL') AND
-	PATINDEX(REPLACE(a.endpointUrl,'*','%%'), '%s') = 1`,
+	(a.method = '%s' OR a.method = 'ALL') AND
+	PATINDEX(REPLACE(a.url,'*','%%'), '%s') = 1`,
 		username, realm, method, endpoint)
+
+	rows, err := db.Query(query)
+	return rows, err
+}
+
+func GetRoles() (*sql.Rows, error) {
+	query := fmt.Sprintf(`select rId, rName from roles`)
 
 	rows, err := db.Query(query)
 	return rows, err
