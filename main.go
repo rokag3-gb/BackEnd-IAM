@@ -32,6 +32,27 @@ func main() {
 	route.Use(middlewares.IntrospectMiddleware())
 	route.Use(middlewares.AuthorityCheckMiddleware())
 
+	authority := route.Group("/authority")
+	{
+		authority.GET("/roles", api.GetRoles)
+		authority.POST("/roles/:roleid", api.GetRoles)
+		authority.DELETE("/roles/:roleid", api.GetRoles)
+		authority.PUT("/roles/:roleid", api.GetRoles)
+		authority.GET("/roles/:roleid/auth", api.GetRoles)
+		authority.POST("/roles/:roleid/auth", api.GetRoles)
+		authority.DELETE("/roles/:roleid/auth/:authid", api.GetRoles)
+		authority.GET("/user/:userid", api.GetRoles)
+		authority.POST("/user/:userid/roles", api.GetRoles)
+		authority.DELETE("/user/:userid/roles/:roleid", api.GetRoles)
+		authority.GET("/user/:userid/auth/:roleid", api.GetRoles) //실제로 전달되는것은 username과 role name 입니다. gin 제한사항으로 인하여 이름 변경이 불가능
+		authority.GET("/user/:userid/auth", api.GetRoles)
+		authority.GET("/auth", api.GetRoles)
+		authority.POST("/auth", api.GetRoles)
+		authority.DELETE("/auth/:authid", api.GetRoles)
+		authority.PUT("/auth/:authid", api.GetRoles)
+		authority.GET("/auth/:authid", api.GetRoles)
+	}
+
 	groups := route.Group("/groups")
 	{
 		groups.GET("/", middlewares.ListQueryRangeMiddleware(), api.GetGroup)
