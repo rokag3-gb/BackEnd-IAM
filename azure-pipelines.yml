@@ -1,0 +1,30 @@
+trigger: 
+ - main
+
+pool:
+   vmImage: 'ubuntu-latest'
+
+steps: 
+- task: GoTool@0
+  inputs:
+    version: '1.17'
+- task: Go@0
+  inputs:
+    command: 'get'
+    arguments: '-d'
+    workingDirectory: '$(System.DefaultWorkingDirectory)'
+- task: Go@0
+  inputs:
+    command: 'build'
+    workingDirectory: '$(System.DefaultWorkingDirectory)'
+- script: |
+    curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.45.2
+    (golangci-lint run --out-format junit-xml) > lint-result.xml
+  displayName: Lint with golangci-lint
+- task: PublishTestResults@2
+  displayName: Publish lint results
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: lint-result.xml
+    testRunTitle: Lint results
+    mergeTestResults: false
