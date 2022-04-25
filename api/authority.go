@@ -179,6 +179,255 @@ func DismissRoleAuth(c *gin.Context) {
 	c.Status(http.StatusCreated)
 }
 
+func GetUserRole(c *gin.Context) {
+	userID, err := getUserID(c)
+	if err != nil {
+		return
+	}
+
+	rows, err := iamdb.GetUserRole(userID)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	var arr = make([]models.RolesInfo, 0)
+
+	for rows.Next() {
+		var r models.RolesInfo
+
+		err := rows.Scan(&r.ID, &r.Name)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		arr = append(arr, r)
+	}
+
+	c.JSON(http.StatusOK, arr)
+}
+
+func AssignUserRole(c *gin.Context) {
+	userid, err := getUserID(c)
+	if err != nil {
+		return
+	}
+	roles, err := getRoles(c)
+	if err != nil {
+		return
+	}
+	if roles.ID == "" {
+		c.String(http.StatusBadRequest, "required 'id'")
+		c.Abort()
+		return
+	}
+
+	_, err = iamdb.AssignUserRole(userid, roles.ID)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	c.Status(http.StatusCreated)
+}
+
+func DismissUserRole(c *gin.Context) {
+	userid, err := getUserID(c)
+	if err != nil {
+		return
+	}
+	roleid, err := getRoleID(c)
+	if err != nil {
+		return
+	}
+
+	_, err = iamdb.DismissUserRole(userid, roleid)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	c.Status(http.StatusCreated)
+}
+
+func GetUserAuth(c *gin.Context) {
+	userid, err := getUserID(c)
+	if err != nil {
+		return
+	}
+
+	rows, err := iamdb.GetUserAuth(userid)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	var arr = make([]models.AutuhorityInfo, 0)
+
+	for rows.Next() {
+		var r models.AutuhorityInfo
+
+		err := rows.Scan(&r.ID, &r.Name)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		arr = append(arr, r)
+	}
+
+	c.JSON(http.StatusOK, arr)
+}
+
+func GetUserAuthActive(c *gin.Context) {
+	userName, err := getUserID(c)
+	if err != nil {
+		return
+	}
+
+	authName, err := getAuthID(c)
+	if err != nil {
+		return
+	}
+
+	rows, err := iamdb.GetUserAuthActive(userName, authName)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	m := make(map[string]interface{})
+	if rows.Next() {
+		m["active"] = true
+	} else {
+		m["active"] = false
+	}
+
+	c.JSON(http.StatusOK, m)
+}
+
+func GetAuth(c *gin.Context) {
+	rows, err := iamdb.GetAuth()
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	var arr = make([]models.AutuhorityInfo, 0)
+
+	for rows.Next() {
+		var r models.AutuhorityInfo
+
+		err := rows.Scan(&r.ID, &r.Name)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		arr = append(arr, r)
+	}
+
+	c.JSON(http.StatusOK, arr)
+}
+
+func CreateAuth(c *gin.Context) {
+	auth, err := getAuth(c)
+	if err != nil {
+		return
+	}
+
+	if auth.Name == "" {
+		c.Status(http.StatusBadRequest)
+		c.Abort()
+		return
+	}
+
+	_, err = iamdb.CreateAuth(auth)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	c.Status(http.StatusCreated)
+}
+
+func DeleteAuth(c *gin.Context) {
+	authid, err := getAuthID(c)
+
+	if err != nil {
+		return
+	}
+	_, err = iamdb.DeleteAuth(authid)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+func UpdateAuth(c *gin.Context) {
+	authid, err := getAuthID(c)
+	if err != nil {
+		return
+	}
+
+	auth, err := getAuth(c)
+	if err != nil {
+		return
+	}
+
+	auth.ID = authid
+
+	if err != nil {
+		return
+	}
+	_, err = iamdb.UpdateAuth(auth)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+func GetAuthInfo(c *gin.Context) {
+	authid, err := getAuthID(c)
+	if err != nil {
+		return
+	}
+
+	rows, err := iamdb.GetAuthInfo(authid)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	var r models.AutuhorityInfo
+	if rows.Next() {
+		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.Method)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, r)
+}
+
+////////////////////////////////////////////
+
 func getRoles(c *gin.Context) (*models.RolesInfo, error) {
 	value, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
@@ -208,7 +457,7 @@ func getAuth(c *gin.Context) (*models.AutuhorityInfo, error) {
 	}
 
 	var a *models.AutuhorityInfo
-	json.Unmarshal([]byte(value), &a)
+	json.Unmarshal(value, &a)
 
 	if a == nil {
 		c.Status(http.StatusBadRequest)
@@ -241,4 +490,16 @@ func getAuthID(c *gin.Context) (string, error) {
 	}
 
 	return authid, nil
+}
+
+func getUserID(c *gin.Context) (string, error) {
+	userid := c.Param("userid")
+
+	if userid == "" {
+		c.String(http.StatusBadRequest, "required 'User id'")
+		c.Abort()
+		return "", errors.New("required 'User id'")
+	}
+
+	return userid, nil
 }

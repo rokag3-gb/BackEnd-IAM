@@ -2,6 +2,7 @@ package iamdb
 
 import (
 	"database/sql"
+	"iam/models"
 )
 
 func ConnectionTest() (*sql.Rows, error) {
@@ -92,5 +93,115 @@ func DismissRoleAuth(roleID string, authID string) (*sql.Rows, error) {
 	query := `DELETE FROM roles_authority_mapping where rId = ? AND aId = ?`
 
 	rows, err := db.Query(query, roleID, authID)
+	return rows, err
+}
+
+func GetUserRole(userID string) (*sql.Rows, error) {
+	query := `select r.rId, r.rName
+	from 
+	roles r join
+	user_roles_mapping ur 
+	on r.rId = ur.rId
+	where
+	ur.userId = ?
+	AND
+	ur.useYn = 'y'`
+
+	rows, err := db.Query(query, userID)
+	return rows, err
+}
+
+func AssignUserRole(userID string, roleID string) (*sql.Rows, error) {
+	query := `INSERT INTO user_roles_mapping(userId, rId) VALUES(?, ?)`
+
+	rows, err := db.Query(query, userID, roleID)
+	return rows, err
+}
+
+func DismissUserRole(userID string, roleID string) (*sql.Rows, error) {
+	query := `DELETE FROM user_roles_mapping where userId = ? AND rId = ?`
+
+	rows, err := db.Query(query, userID, roleID)
+	return rows, err
+}
+
+func GetUserAuth(userID string) (*sql.Rows, error) {
+	query := `select a.aId, a.aName 
+	from 
+	user_roles_mapping ur 
+	join 
+	roles_authority_mapping ra 
+	on ur.rId = ra.rId
+	join 
+	authority a 
+	on ra.aId = a.aId
+	where 
+	userId = ?
+	and
+	ur.useYn = 'y'
+	and
+	ra.useYn = 'y'`
+
+	rows, err := db.Query(query, userID)
+	return rows, err
+}
+
+func GetUserAuthActive(userName string, authName string) (*sql.Rows, error) {
+	query := `select 1
+	from 
+	USER_ENTITY u
+	join
+	user_roles_mapping ur 
+	on u.ID = ur.userId
+	join 
+	roles_authority_mapping ra 
+	on ur.rId = ra.rId
+	join 
+	authority a 
+	on ra.aId = a.aId
+	where u.USERNAME = ?
+	AND
+	a.aName = ?
+	and
+	ur.useYn = 'y'
+	and
+	ra.useYn = 'y'`
+
+	rows, err := db.Query(query, userName, authName)
+	return rows, err
+}
+
+func GetAuth() (*sql.Rows, error) {
+	query := `select aId, aName from authority`
+
+	rows, err := db.Query(query)
+	return rows, err
+}
+
+func CreateAuth(auth *models.AutuhorityInfo) (*sql.Rows, error) {
+	query := `INSERT INTO authority(aName, url, method) VALUES(?, ?, ?)`
+
+	rows, err := db.Query(query, auth.Name, auth.URL, auth.Method)
+	return rows, err
+}
+
+func DeleteAuth(id string) (*sql.Rows, error) {
+	query := `DELETE authority where aId=?`
+
+	rows, err := db.Query(query, id)
+	return rows, err
+}
+
+func UpdateAuth(auth *models.AutuhorityInfo) (*sql.Rows, error) {
+	query := `UPDATE authority SET aName=?, url=?, method=? where aId=?`
+
+	rows, err := db.Query(query, auth.Name, auth.URL, auth.Method, auth.ID)
+	return rows, err
+}
+
+func GetAuthInfo(authID string) (*sql.Rows, error) {
+	query := `select aId, aName, url, method from authority where aId = ?`
+
+	rows, err := db.Query(query, authID)
 	return rows, err
 }
