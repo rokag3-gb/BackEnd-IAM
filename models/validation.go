@@ -49,3 +49,9 @@ type AutuhorityInfo struct {
 	URL    string `json:"url,omitempty"`
 	Method string `json:"method,omitempty"`
 }
+
+type GroupItem struct {
+	ID           string `json:"id" binding:"required"`
+	Name         string `json:"name" binding:"required"`
+	CountMembers int    `json:"countMembers" binding:"required"`
+}

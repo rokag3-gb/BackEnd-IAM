@@ -2,6 +2,7 @@ package api
 
 import (
 	"iam/clients"
+	"iam/iamdb"
 	"iam/models"
 	"net/http"
 
@@ -10,11 +11,21 @@ import (
 )
 
 func GetGroup(c *gin.Context) {
-	token, _ := clients.KeycloakToken(c)
+	token, err := clients.KeycloakToken(c)
+	if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
 
 	params := gocloak.GetGroupsParams{
 		First: gocloak.IntP(c.MustGet("first").(int)),
 		Max:   gocloak.IntP(c.MustGet("max").(int)),
+	}
+
+	groupMembersCounts, err := iamdb.GetGroupMembersCountMap()
+	if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
 	}
 
 	groups, err := clients.KeycloakClient().GetGroups(c,
@@ -26,7 +37,21 @@ func GetGroup(c *gin.Context) {
 		c.String(apiError.Code, apiError.Message)
 		return
 	}
-	c.JSON(http.StatusOK, groups)
+
+	groupList := []models.GroupItem{}
+	for _, group := range groups {
+		countMembers := 0
+		if val, ok := groupMembersCounts[*group.ID]; ok {
+			countMembers = val
+		}
+		groupList = append(groupList, models.GroupItem{
+			ID:           *group.ID,
+			Name:         *group.Name,
+			CountMembers: countMembers,
+		})
+	}
+
+	c.JSON(http.StatusOK, groupList)
 }
 
 func CreateGroup(c *gin.Context) {
