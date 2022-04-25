@@ -205,3 +205,25 @@ func GetAuthInfo(authID string) (*sql.Rows, error) {
 	rows, err := db.Query(query, authID)
 	return rows, err
 }
+
+func GetGroupMembersCountMap() (map[string]int, error) {
+	query := `select GROUP_ID, count(USER_ID) as countMembers from USER_GROUP_MEMBERSHIP group by GROUP_ID`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+
+	countMap := make(map[string]int)
+	for rows.Next() {
+		var groupID string
+		var countMembers int
+		err = rows.Scan(&groupID, &countMembers)
+		if err != nil {
+			return nil, err
+		}
+		countMap[groupID] = countMembers
+	}
+
+	return countMap, nil
+}
