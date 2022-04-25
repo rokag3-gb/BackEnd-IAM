@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"iam/api"
 	"iam/clients"
 	"iam/iamdb"
@@ -11,8 +10,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
-
-var ctx = context.Background()
 
 func main() {
 	clients.InitKeycloakClient(
