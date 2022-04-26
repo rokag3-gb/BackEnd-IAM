@@ -13,10 +13,10 @@ type CreateUserInfo struct {
 }
 
 type UpdateUserInfo struct {
-	Username        string   `json:"username" binding:"required"`
+	Username        string   `json:"username"`
 	FirstName       string   `json:"firstName"`
 	LastName        string   `json:"lastName"`
-	Email           string   `json:"email" binding:"required"`
+	Email           string   `json:"email"`
 	RequiredActions []string `json:"requiredActions"`
 }
 
