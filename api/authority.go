@@ -61,16 +61,42 @@ func CreateRoles(c *gin.Context) {
 func DeleteRoles(c *gin.Context) {
 	roleid, err := getRoleID(c)
 
-	if err == nil {
+	if err != nil {
 		return
 	}
-	_, err = iamdb.DeleteRoles(roleid)
+
+	tx, err := iamdb.DBClient().Begin()
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
 
+	_, err = iamdb.DeleteRolesAuthByRoleId(roleid)
+	if err != nil {
+		tx.Rollback()
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	_, err = iamdb.DeleteUserRoleByRoleId(roleid)
+	if err != nil {
+		tx.Rollback()
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	_, err = iamdb.DeleteRoles(roleid)
+	if err != nil {
+		tx.Rollback()
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	tx.Commit()
 	c.Status(http.StatusNoContent)
 }
 
@@ -148,6 +174,13 @@ func AssignRoleAuth(c *gin.Context) {
 		return
 	}
 
+	err = iamdb.CheckRoleAuthID(roleid, auth.ID)
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		c.Abort()
+		return
+	}
+
 	_, err = iamdb.AssignRoleAuth(roleid, auth.ID)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
@@ -220,6 +253,13 @@ func AssignUserRole(c *gin.Context) {
 	}
 	if roles.ID == "" {
 		c.String(http.StatusBadRequest, "required 'id'")
+		c.Abort()
+		return
+	}
+
+	err = iamdb.CheckUserRoleID(userid, roles.ID)
+	if err != nil {
+		c.Status(http.StatusBadRequest)
 		c.Abort()
 		return
 	}
@@ -365,13 +405,31 @@ func DeleteAuth(c *gin.Context) {
 	if err != nil {
 		return
 	}
-	_, err = iamdb.DeleteAuth(authid)
+
+	tx, err := iamdb.DBClient().Begin()
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
 
+	_, err = iamdb.DeleteRolesAuthByAuthId(authid)
+	if err != nil {
+		tx.Rollback()
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	_, err = iamdb.DeleteAuth(authid)
+	if err != nil {
+		tx.Rollback()
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	tx.Commit()
 	c.Status(http.StatusNoContent)
 }
 

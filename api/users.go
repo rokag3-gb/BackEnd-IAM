@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"iam/clients"
+	"iam/iamdb"
 	"iam/models"
 	"net/http"
 
@@ -81,6 +82,10 @@ func UpdateUser(c *gin.Context) {
 
 	user, err := clients.KeycloakClient().GetUserByID(c,
 		token.AccessToken, clients.KeycloakConfig().Realm, userid)
+	if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
 
 	var json models.UpdateUserInfo
 	if err := c.ShouldBindJSON(&json); err != nil {
@@ -118,6 +123,13 @@ func DeleteUser(c *gin.Context) {
 	if err != nil {
 		apiError := err.(*gocloak.APIError)
 		c.String(apiError.Code, apiError.Message)
+		return
+	}
+
+	_, err = iamdb.DeleteUserRoleByUserId(userid)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
 		return
 	}
 

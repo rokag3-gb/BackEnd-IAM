@@ -2,6 +2,7 @@ package iamdb
 
 import (
 	"database/sql"
+	"errors"
 	"iam/models"
 )
 
@@ -204,6 +205,92 @@ func GetAuthInfo(authID string) (*sql.Rows, error) {
 
 	rows, err := db.Query(query, authID)
 	return rows, err
+}
+
+func DeleteRolesAuthByRoleId(id string) (*sql.Rows, error) {
+	query := `DELETE roles_authority_mapping where rId=?`
+
+	rows, err := db.Query(query, id)
+	return rows, err
+}
+
+func DeleteRolesAuthByAuthId(id string) (*sql.Rows, error) {
+	query := `DELETE roles_authority_mapping where aId=?`
+
+	rows, err := db.Query(query, id)
+	return rows, err
+}
+
+func DeleteUserRoleByUserId(id string) (*sql.Rows, error) {
+	query := `DELETE user_roles_mapping where userId=?`
+
+	rows, err := db.Query(query, id)
+	return rows, err
+}
+
+func DeleteUserRoleByRoleId(id string) (*sql.Rows, error) {
+	query := `DELETE user_roles_mapping where rId=?`
+
+	rows, err := db.Query(query, id)
+	return rows, err
+}
+
+func CheckRoleAuthID(roleID string, authID string) error {
+	query := `select count(*) as result
+	from
+	(
+	select rid as id from roles where rId = ?
+	union 
+	select aid as id from authority where aId = ?
+	) a`
+
+	rows, err := db.Query(query, roleID, authID)
+	if err != nil {
+		return err
+	}
+
+	var r int
+	if rows.Next() {
+		err := rows.Scan(&r)
+		if err != nil {
+			return err
+		}
+	}
+
+	if r != 2 {
+		return errors.New("value is wrong")
+	}
+
+	return nil
+}
+
+func CheckUserRoleID(userID string, roleID string) error {
+	query := `select count(*) as result
+	from
+	(
+	select ID as id from USER_ENTITY where ID = ?
+	union 
+	select rId as id from roles where rId = ?
+	) a`
+
+	rows, err := db.Query(query, userID, roleID)
+	if err != nil {
+		return err
+	}
+
+	var r int
+	if rows.Next() {
+		err := rows.Scan(&r)
+		if err != nil {
+			return err
+		}
+	}
+
+	if r != 2 {
+		return errors.New("value is wrong")
+	}
+
+	return nil
 }
 
 func GetGroupMembersCountMap() (map[string]int, error) {

@@ -30,6 +30,12 @@ func InitVaultClient(token string, endpoint string) error {
 		vaultClient, _ = api.NewClient(&api.Config{Address: vaultConfig.Endpoint, HttpClient: httpClient})
 		vaultClient.SetToken(vaultConfig.Token)
 	}
+
+	_, err := vaultClient.Logical().Read("sys/mounts")
+	if err != nil {
+		panic("Vault Client Init fail")
+	}
+
 	return nil
 }
 

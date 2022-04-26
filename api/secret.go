@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"iam/clients"
+	"iam/models"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -14,10 +15,11 @@ import (
 func GetSecretGroup(c *gin.Context) {
 	data, err := clients.VaultClient().Logical().Read("sys/mounts")
 	if err != nil {
-		fmt.Println(err)
+		c.Status(http.StatusBadRequest)
+		return
 	}
 
-	var arr []map[string]interface{}
+	var arr []models.SecretGroup
 
 	for k, v := range data.Data {
 		group := v.(map[string]interface{})
@@ -26,15 +28,15 @@ func GetSecretGroup(c *gin.Context) {
 			continue
 		}
 
-		m := make(map[string]interface{})
+		var m models.SecretGroup
 
 		if strings.HasSuffix(k, "/") {
-			m["name"] = k[:len(k)-1]
+			m.Name = k[:len(k)-1]
 		} else {
-			m["name"] = k
+			m.Name = k
 		}
-		m["id"] = group["uuid"].(string)
-		m["description"] = group["description"].(string)
+		m.ID = group["uuid"].(string)
+		m.Description = group["description"].(string)
 
 		arr = append(arr, m)
 	}
@@ -45,26 +47,22 @@ func GetSecretGroup(c *gin.Context) {
 func CreateSecretGroup(c *gin.Context) {
 	value, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
-		fmt.Println(err.Error())
-	}
-
-	var data map[string]interface{}
-	json.Unmarshal([]byte(value), &data)
-
-	if data["name"] == nil {
 		c.Status(http.StatusBadRequest)
 		return
 	}
 
-	description := ""
-	if data["description"] != nil {
-		description = fmt.Sprintf("%s", data["description"])
+	var sg *models.SecretGroup
+	json.Unmarshal([]byte(value), &sg)
+
+	if sg.Name == "" {
+		c.Status(http.StatusBadRequest)
+		return
 	}
 
-	path := fmt.Sprintf("sys/mounts/%s", data["name"])
+	path := fmt.Sprintf("sys/mounts/%s", sg.Name)
 
 	_, err = clients.VaultClient().Logical().Write(path, map[string]interface{}{
-		"description": description,
+		"description": sg.Description,
 		"type":        "kv",
 		"options": map[string]interface{}{
 			"version": "2",
@@ -100,14 +98,12 @@ func GetSecretList(c *gin.Context) {
 		c.Status(http.StatusInternalServerError)
 		return
 	}
-
-	list := data.Data["keys"]
-	if list == nil {
-		c.Status(http.StatusBadRequest)
+	if data == nil || data.Data == nil || data.Data["keys"] == nil {
+		c.JSON(http.StatusOK, make([]string, 0))
 		return
 	}
 
-	c.JSON(http.StatusOK, list)
+	c.JSON(http.StatusOK, data.Data["keys"])
 }
 
 func GetSecret(c *gin.Context) {
