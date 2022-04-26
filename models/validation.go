@@ -16,6 +16,7 @@ type UpdateUserInfo struct {
 	FirstName       string   `json:"firstName"`
 	Email           string   `json:"email"`
 	RequiredActions []string `json:"requiredActions"`
+	Enabled         bool     `json:"enabled"`
 }
 
 type GetUserInfo struct {

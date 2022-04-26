@@ -95,6 +95,7 @@ func UpdateUser(c *gin.Context) {
 	user.Username = gocloak.StringP(json.Username)
 	user.FirstName = gocloak.StringP(json.FirstName)
 	user.Email = gocloak.StringP(json.Email)
+	user.Enabled = gocloak.BoolP(json.Enabled)
 	user.RequiredActions = &json.RequiredActions
 
 	err = clients.KeycloakClient().UpdateUser(c,
