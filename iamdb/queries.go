@@ -53,7 +53,7 @@ func CreateRoles(name string) (*sql.Rows, error) {
 	return rows, err
 }
 
-func DeleteRoles(id string) (*sql.Rows, error) {
+func DeleteRoles(id string, tx *sql.Tx) (*sql.Rows, error) {
 	query := `DELETE roles where rId=?`
 
 	rows, err := db.Query(query, id)
@@ -186,7 +186,7 @@ func CreateAuth(auth *models.AutuhorityInfo) (*sql.Rows, error) {
 	return rows, err
 }
 
-func DeleteAuth(id string) (*sql.Rows, error) {
+func DeleteAuth(id string, tx *sql.Tx) (*sql.Rows, error) {
 	query := `DELETE authority where aId=?`
 
 	rows, err := db.Query(query, id)
@@ -207,17 +207,17 @@ func GetAuthInfo(authID string) (*sql.Rows, error) {
 	return rows, err
 }
 
-func DeleteRolesAuthByRoleId(id string) (*sql.Rows, error) {
+func DeleteRolesAuthByRoleId(id string, tx *sql.Tx) (*sql.Rows, error) {
 	query := `DELETE roles_authority_mapping where rId=?`
 
-	rows, err := db.Query(query, id)
+	rows, err := tx.Query(query, id)
 	return rows, err
 }
 
-func DeleteRolesAuthByAuthId(id string) (*sql.Rows, error) {
+func DeleteRolesAuthByAuthId(id string, tx *sql.Tx) (*sql.Rows, error) {
 	query := `DELETE roles_authority_mapping where aId=?`
 
-	rows, err := db.Query(query, id)
+	rows, err := tx.Query(query, id)
 	return rows, err
 }
 
@@ -228,10 +228,10 @@ func DeleteUserRoleByUserId(id string) (*sql.Rows, error) {
 	return rows, err
 }
 
-func DeleteUserRoleByRoleId(id string) (*sql.Rows, error) {
+func DeleteUserRoleByRoleId(id string, tx *sql.Tx) (*sql.Rows, error) {
 	query := `DELETE user_roles_mapping where rId=?`
 
-	rows, err := db.Query(query, id)
+	rows, err := tx.Query(query, id)
 	return rows, err
 }
 

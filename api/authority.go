@@ -72,7 +72,7 @@ func DeleteRoles(c *gin.Context) {
 		return
 	}
 
-	_, err = iamdb.DeleteRolesAuthByRoleId(roleid)
+	_, err = iamdb.DeleteRolesAuthByRoleId(roleid, tx)
 	if err != nil {
 		tx.Rollback()
 		c.Status(http.StatusInternalServerError)
@@ -80,7 +80,7 @@ func DeleteRoles(c *gin.Context) {
 		return
 	}
 
-	_, err = iamdb.DeleteUserRoleByRoleId(roleid)
+	_, err = iamdb.DeleteUserRoleByRoleId(roleid, tx)
 	if err != nil {
 		tx.Rollback()
 		c.Status(http.StatusInternalServerError)
@@ -88,7 +88,7 @@ func DeleteRoles(c *gin.Context) {
 		return
 	}
 
-	_, err = iamdb.DeleteRoles(roleid)
+	_, err = iamdb.DeleteRoles(roleid, tx)
 	if err != nil {
 		tx.Rollback()
 		c.Status(http.StatusInternalServerError)
@@ -413,7 +413,7 @@ func DeleteAuth(c *gin.Context) {
 		return
 	}
 
-	_, err = iamdb.DeleteRolesAuthByAuthId(authid)
+	_, err = iamdb.DeleteRolesAuthByAuthId(authid, tx)
 	if err != nil {
 		tx.Rollback()
 		c.Status(http.StatusInternalServerError)
@@ -421,7 +421,7 @@ func DeleteAuth(c *gin.Context) {
 		return
 	}
 
-	_, err = iamdb.DeleteAuth(authid)
+	_, err = iamdb.DeleteAuth(authid, tx)
 	if err != nil {
 		tx.Rollback()
 		c.Status(http.StatusInternalServerError)
