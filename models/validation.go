@@ -7,17 +7,16 @@ type GroupInfo struct {
 type CreateUserInfo struct {
 	Username  string `json:"username" binding:"required"`
 	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
 	Email     string `json:"email" binding:"required"`
 	Password  string `json:"password" binding:"required"`
 }
 
 type UpdateUserInfo struct {
-	Username        string   `json:"username" binding:"required"`
+	Username        string   `json:"username"`
 	FirstName       string   `json:"firstName"`
-	LastName        string   `json:"lastName"`
-	Email           string   `json:"email" binding:"required"`
+	Email           string   `json:"email"`
 	RequiredActions []string `json:"requiredActions"`
+	Enabled         bool     `json:"enabled"`
 }
 
 type GetUserInfo struct {
@@ -27,7 +26,6 @@ type GetUserInfo struct {
 	Enabled          *bool     `json:"enabled,omitempty"`
 	EmailVerified    *bool     `json:"emailVerified,omitempty"`
 	FirstName        *string   `json:"firstName,omitempty"`
-	LastName         *string   `json:"lastName,omitempty"`
 	Email            *string   `json:"email,omitempty"`
 	RequiredActions  *[]string `json:"requiredActions,omitempty"`
 }
