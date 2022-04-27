@@ -15,7 +15,8 @@ import (
 func GetSecretGroup(c *gin.Context) {
 	data, err := clients.VaultClient().Logical().Read("sys/mounts")
 	if err != nil {
-		c.Status(http.StatusBadRequest)
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
 		return
 	}
 
@@ -47,7 +48,8 @@ func GetSecretGroup(c *gin.Context) {
 func CreateSecretGroup(c *gin.Context) {
 	value, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
-		c.Status(http.StatusBadRequest)
+		c.String(http.StatusBadRequest, err.Error())
+		c.Abort()
 		return
 	}
 
@@ -55,7 +57,8 @@ func CreateSecretGroup(c *gin.Context) {
 	json.Unmarshal([]byte(value), &sg)
 
 	if sg.Name == "" {
-		c.Status(http.StatusBadRequest)
+		c.String(http.StatusBadRequest, "required 'body'")
+		c.Abort()
 		return
 	}
 
@@ -69,7 +72,8 @@ func CreateSecretGroup(c *gin.Context) {
 		},
 	})
 	if err != nil {
-		c.Status(http.StatusBadRequest)
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
 		return
 	}
 
@@ -82,7 +86,8 @@ func DeleteSecretGroup(c *gin.Context) {
 
 	_, err := clients.VaultClient().Logical().Delete(path)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
 		return
 	}
 
@@ -95,7 +100,8 @@ func GetSecretList(c *gin.Context) {
 
 	data, err := clients.VaultClient().Logical().List(path)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
 		return
 	}
 	if data == nil || data.Data == nil || data.Data["keys"] == nil {
@@ -113,12 +119,14 @@ func GetSecret(c *gin.Context) {
 
 	data, err := clients.VaultClient().Logical().Read(path)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
 		return
 	}
 
-	if data.Data == nil {
-		c.Status(http.StatusBadRequest)
+	if data == nil || data.Data == nil {
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
 		return
 	}
 
@@ -128,7 +136,9 @@ func GetSecret(c *gin.Context) {
 func MargeSecret(c *gin.Context) {
 	value, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
-		fmt.Println(err.Error())
+		c.String(http.StatusBadRequest, err.Error())
+		c.Abort()
+		return
 	}
 
 	groupName := c.Param("groupName")
@@ -137,12 +147,14 @@ func MargeSecret(c *gin.Context) {
 
 	data, err := clients.VaultClient().Logical().WriteBytes(path, value)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
 		return
 	}
 
-	if data.Data == nil {
-		c.Status(http.StatusBadRequest)
+	if data == nil || data.Data == nil {
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
 		return
 	}
 
@@ -156,12 +168,14 @@ func GetMetadataSecret(c *gin.Context) {
 
 	data, err := clients.VaultClient().Logical().Read(path)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
 		return
 	}
 
-	if data.Data == nil {
-		c.Status(http.StatusBadRequest)
+	if data == nil || data.Data == nil {
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
 		return
 	}
 
@@ -186,11 +200,14 @@ func GetMetadataSecret(c *gin.Context) {
 func DeleteSecret(c *gin.Context) {
 	value, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
-		fmt.Println(err.Error())
+		c.String(http.StatusBadRequest, err.Error())
+		c.Abort()
+		return
 	}
 
 	if value == nil {
-		c.Status(http.StatusBadRequest)
+		c.String(http.StatusBadRequest, "required 'body'")
+		c.Abort()
 		return
 	}
 
@@ -200,7 +217,8 @@ func DeleteSecret(c *gin.Context) {
 
 	_, err = clients.VaultClient().Logical().WriteBytes(path, value)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
 		return
 	}
 
@@ -210,11 +228,14 @@ func DeleteSecret(c *gin.Context) {
 func UndeleteSecret(c *gin.Context) {
 	value, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
-		fmt.Println(err.Error())
+		c.String(http.StatusBadRequest, err.Error())
+		c.Abort()
+		return
 	}
 
 	if value == nil {
-		c.Status(http.StatusBadRequest)
+		c.String(http.StatusBadRequest, "required 'body'")
+		c.Abort()
 		return
 	}
 
@@ -224,7 +245,8 @@ func UndeleteSecret(c *gin.Context) {
 
 	_, err = clients.VaultClient().Logical().WriteBytes(path, value)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
 		return
 	}
 
@@ -234,11 +256,14 @@ func UndeleteSecret(c *gin.Context) {
 func DestroySecret(c *gin.Context) {
 	value, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
-		fmt.Println(err.Error())
+		c.String(http.StatusBadRequest, err.Error())
+		c.Abort()
+		return
 	}
 
 	if value == nil {
-		c.Status(http.StatusBadRequest)
+		c.String(http.StatusBadRequest, "required 'body'")
+		c.Abort()
 		return
 	}
 
@@ -248,7 +273,8 @@ func DestroySecret(c *gin.Context) {
 
 	_, err = clients.VaultClient().Logical().WriteBytes(path, value)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
 		return
 	}
 
@@ -262,7 +288,8 @@ func DeleteSecretMetadata(c *gin.Context) {
 
 	_, err := clients.VaultClient().Logical().Delete(path)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
 		return
 	}
 

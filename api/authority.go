@@ -15,7 +15,9 @@ func GetRoles(c *gin.Context) {
 	rows, err := iamdb.GetRoles()
 
 	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
+		return
 	}
 	defer rows.Close()
 
@@ -26,7 +28,8 @@ func GetRoles(c *gin.Context) {
 
 		err := rows.Scan(&r.ID, &r.Name)
 		if err != nil {
-			c.Status(http.StatusInternalServerError)
+			c.String(http.StatusInternalServerError, err.Error())
+			c.Abort()
 			return
 		}
 
@@ -50,7 +53,7 @@ func CreateRoles(c *gin.Context) {
 
 	_, err = iamdb.CreateRoles(roles.Name)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
 		return
 	}
@@ -67,7 +70,7 @@ func DeleteRoles(c *gin.Context) {
 
 	tx, err := iamdb.DBClient().Begin()
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
 		return
 	}
@@ -75,7 +78,7 @@ func DeleteRoles(c *gin.Context) {
 	_, err = iamdb.DeleteRolesAuthByRoleId(roleid, tx)
 	if err != nil {
 		tx.Rollback()
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
 		return
 	}
@@ -83,7 +86,7 @@ func DeleteRoles(c *gin.Context) {
 	_, err = iamdb.DeleteUserRoleByRoleId(roleid, tx)
 	if err != nil {
 		tx.Rollback()
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
 		return
 	}
@@ -91,7 +94,7 @@ func DeleteRoles(c *gin.Context) {
 	_, err = iamdb.DeleteRoles(roleid, tx)
 	if err != nil {
 		tx.Rollback()
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
 		return
 	}
@@ -119,7 +122,7 @@ func UpdateRoles(c *gin.Context) {
 
 	_, err = iamdb.UpdateRoles(roles.Name, roleid)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
 		return
 	}
@@ -135,10 +138,11 @@ func GetRolesAuth(c *gin.Context) {
 
 	rows, err := iamdb.GetRolseAuth(roleid)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
 		return
 	}
+	defer rows.Close()
 
 	var arr = make([]models.RolesInfo, 0)
 
@@ -147,7 +151,8 @@ func GetRolesAuth(c *gin.Context) {
 
 		err := rows.Scan(&r.ID, &r.Name)
 		if err != nil {
-			c.Status(http.StatusInternalServerError)
+			c.String(http.StatusInternalServerError, err.Error())
+			c.Abort()
 			return
 		}
 
@@ -176,14 +181,14 @@ func AssignRoleAuth(c *gin.Context) {
 
 	err = iamdb.CheckRoleAuthID(roleid, auth.ID)
 	if err != nil {
-		c.Status(http.StatusBadRequest)
+		c.String(http.StatusBadRequest, err.Error())
 		c.Abort()
 		return
 	}
 
 	_, err = iamdb.AssignRoleAuth(roleid, auth.ID)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
 		return
 	}
@@ -204,7 +209,7 @@ func DismissRoleAuth(c *gin.Context) {
 
 	_, err = iamdb.DismissRoleAuth(roleid, authid)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
 		return
 	}
@@ -220,10 +225,11 @@ func GetUserRole(c *gin.Context) {
 
 	rows, err := iamdb.GetUserRole(userID)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
 		return
 	}
+	defer rows.Close()
 
 	var arr = make([]models.RolesInfo, 0)
 
@@ -232,7 +238,8 @@ func GetUserRole(c *gin.Context) {
 
 		err := rows.Scan(&r.ID, &r.Name)
 		if err != nil {
-			c.Status(http.StatusInternalServerError)
+			c.String(http.StatusInternalServerError, err.Error())
+			c.Abort()
 			return
 		}
 
@@ -259,14 +266,14 @@ func AssignUserRole(c *gin.Context) {
 
 	err = iamdb.CheckUserRoleID(userid, roles.ID)
 	if err != nil {
-		c.Status(http.StatusBadRequest)
+		c.String(http.StatusBadRequest, err.Error())
 		c.Abort()
 		return
 	}
 
 	_, err = iamdb.AssignUserRole(userid, roles.ID)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
 		return
 	}
@@ -286,7 +293,7 @@ func DismissUserRole(c *gin.Context) {
 
 	_, err = iamdb.DismissUserRole(userid, roleid)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
 		return
 	}
@@ -302,10 +309,11 @@ func GetUserAuth(c *gin.Context) {
 
 	rows, err := iamdb.GetUserAuth(userid)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
 		return
 	}
+	defer rows.Close()
 
 	var arr = make([]models.AutuhorityInfo, 0)
 
@@ -314,7 +322,8 @@ func GetUserAuth(c *gin.Context) {
 
 		err := rows.Scan(&r.ID, &r.Name)
 		if err != nil {
-			c.Status(http.StatusInternalServerError)
+			c.String(http.StatusInternalServerError, err.Error())
+			c.Abort()
 			return
 		}
 
@@ -337,10 +346,11 @@ func GetUserAuthActive(c *gin.Context) {
 
 	rows, err := iamdb.GetUserAuthActive(userName, authName)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
 		return
 	}
+	defer rows.Close()
 
 	m := make(map[string]interface{})
 	if rows.Next() {
@@ -355,10 +365,9 @@ func GetUserAuthActive(c *gin.Context) {
 func GetAuth(c *gin.Context) {
 	rows, err := iamdb.GetAuth()
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
-		c.Abort()
 		return
 	}
+	defer rows.Close()
 
 	var arr = make([]models.AutuhorityInfo, 0)
 
@@ -367,7 +376,8 @@ func GetAuth(c *gin.Context) {
 
 		err := rows.Scan(&r.ID, &r.Name)
 		if err != nil {
-			c.Status(http.StatusInternalServerError)
+			c.String(http.StatusInternalServerError, err.Error())
+			c.Abort()
 			return
 		}
 
@@ -384,14 +394,14 @@ func CreateAuth(c *gin.Context) {
 	}
 
 	if auth.Name == "" {
-		c.Status(http.StatusBadRequest)
+		c.String(http.StatusBadRequest, "required 'Name'")
 		c.Abort()
 		return
 	}
 
 	_, err = iamdb.CreateAuth(auth)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
 		return
 	}
@@ -408,7 +418,7 @@ func DeleteAuth(c *gin.Context) {
 
 	tx, err := iamdb.DBClient().Begin()
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
 		return
 	}
@@ -416,7 +426,7 @@ func DeleteAuth(c *gin.Context) {
 	_, err = iamdb.DeleteRolesAuthByAuthId(authid, tx)
 	if err != nil {
 		tx.Rollback()
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
 		return
 	}
@@ -424,7 +434,7 @@ func DeleteAuth(c *gin.Context) {
 	_, err = iamdb.DeleteAuth(authid, tx)
 	if err != nil {
 		tx.Rollback()
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
 		return
 	}
@@ -446,12 +456,9 @@ func UpdateAuth(c *gin.Context) {
 
 	auth.ID = authid
 
-	if err != nil {
-		return
-	}
 	_, err = iamdb.UpdateAuth(auth)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
 		return
 	}
@@ -467,16 +474,17 @@ func GetAuthInfo(c *gin.Context) {
 
 	rows, err := iamdb.GetAuthInfo(authid)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
 		return
 	}
+	defer rows.Close()
 
 	var r models.AutuhorityInfo
 	if rows.Next() {
 		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.Method)
 		if err != nil {
-			c.Status(http.StatusInternalServerError)
+			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
 	}
@@ -489,7 +497,7 @@ func GetAuthInfo(c *gin.Context) {
 func getRoles(c *gin.Context) (*models.RolesInfo, error) {
 	value, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
-		c.Status(http.StatusBadRequest)
+		c.String(http.StatusBadRequest, "required 'body'")
 		c.Abort()
 		return nil, errors.New("required 'body'")
 	}
@@ -509,7 +517,7 @@ func getRoles(c *gin.Context) (*models.RolesInfo, error) {
 func getAuth(c *gin.Context) (*models.AutuhorityInfo, error) {
 	value, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
-		c.Status(http.StatusBadRequest)
+		c.String(http.StatusBadRequest, "required 'body'")
 		c.Abort()
 		return nil, errors.New("required 'body'")
 	}
@@ -518,7 +526,7 @@ func getAuth(c *gin.Context) (*models.AutuhorityInfo, error) {
 	json.Unmarshal(value, &a)
 
 	if a == nil {
-		c.Status(http.StatusBadRequest)
+		c.String(http.StatusBadRequest, "required 'body'")
 		c.Abort()
 		return nil, errors.New("required 'body'")
 	}
