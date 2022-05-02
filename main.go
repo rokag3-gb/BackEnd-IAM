@@ -4,31 +4,36 @@ import (
 	"iam/api"
 	"iam/clients"
 	"iam/iamdb"
-	"os"
 
+	"iam/config"
 	"iam/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	var conf config.Conf
+	if err := conf.InitEnvConfig(); err != nil {
+		panic(err.Error())
+	}
+
 	clients.InitKeycloakClient(
-		os.Getenv("KEYCLOAK_CLIENT_ID"),
-		os.Getenv("KEYCLOAK_CLIENT_SECRET"),
-		os.Getenv("KEYCLOAK_REALM"),
-		os.Getenv("KEYCLOAK_ENDPOINT"))
+		conf.Keycloak_client_id,
+		conf.Keycloak_client_secret,
+		conf.Keycloak_realm,
+		conf.Keycloak_endpoint)
 
 	clients.InitVaultClient(
-		os.Getenv("VAULT_TOKEN"),
-		os.Getenv("VAULT_ENDPOINT"))
+		conf.Vault_token,
+		conf.Vault_endpoint)
 
-	iamdb.InitDbClient("mssql", os.Getenv("DB_CONNECT_STRING"))
+	iamdb.InitDbClient("mssql", conf.Db_connect_string)
 
 	route := gin.Default()
 
-	route.Use(middlewares.AccessControlAllowOrigin())
+	route.Use(middlewares.AccessControlAllowOrigin(conf.Access_control_allow_origin, conf.Access_control_allow_headers))
 	route.Use(middlewares.IntrospectMiddleware())
-	route.Use(middlewares.AuthorityCheckMiddleware())
+	route.Use(middlewares.AuthorityCheckMiddleware(conf.Keycloak_realm))
 
 	authority := route.Group("/authority")
 	{
@@ -93,5 +98,5 @@ func main() {
 		secret.DELETE("/:groupName/metadata/:secretName", api.DeleteSecretMetadata)
 	}
 
-	route.Run(":8085")
+	route.Run(":" + conf.Http_port)
 }

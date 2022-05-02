@@ -5,7 +5,6 @@ import (
 	"iam/clients"
 	"iam/iamdb"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
@@ -57,9 +56,8 @@ func ListQueryRangeMiddleware() gin.HandlerFunc {
 	}
 }
 
-func AuthorityCheckMiddleware() gin.HandlerFunc {
+func AuthorityCheckMiddleware(realm string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		realm := os.Getenv("KEYCLOAK_REALM")
 		username := c.MustGet("username").(string)
 
 		rows, err := iamdb.GetUserAuthoritiesForEndpoint(username, realm, c.Request.Method, c.Request.URL.Path)
@@ -80,10 +78,10 @@ func AuthorityCheckMiddleware() gin.HandlerFunc {
 	}
 }
 
-func AccessControlAllowOrigin() gin.HandlerFunc {
+func AccessControlAllowOrigin(origin string, headers string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Headers", "*")
+		c.Header("Access-Control-Allow-Origin", origin)
+		c.Header("Access-Control-Allow-Headers", headers)
 
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
