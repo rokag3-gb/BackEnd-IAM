@@ -4,12 +4,20 @@ import (
 	"iam/api"
 	"iam/clients"
 	"iam/iamdb"
+	"log"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"time"
 
 	"iam/config"
 	"iam/middlewares"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/sync/errgroup"
 )
+
+var g errgroup.Group
 
 func main() {
 	var conf config.Conf
@@ -29,6 +37,47 @@ func main() {
 
 	iamdb.InitDbClient("mssql", conf.Db_connect_string)
 
+	route := makeRouter(conf)
+
+	if conf.Http_port != "" {
+		http_server := &http.Server{
+			Addr:         ":" + conf.Http_port,
+			Handler:      route,
+			ReadTimeout:  time.Duration(conf.ReadTimeout) * time.Second,
+			WriteTimeout: time.Duration(conf.WriteTimeout) * time.Second,
+		}
+		g.Go(func() error {
+			err := http_server.ListenAndServe()
+			if err != nil && err != http.ErrServerClosed {
+				log.Fatal(err)
+			}
+			return err
+		})
+	}
+
+	if conf.Https_port != "" && conf.Https_certfile != "" && conf.Https_keyfile != "" {
+		https_server := &http.Server{
+			Addr:         ":" + conf.Https_port,
+			Handler:      route,
+			ReadTimeout:  time.Duration(conf.ReadTimeout) * time.Second,
+			WriteTimeout: time.Duration(conf.WriteTimeout) * time.Second,
+		}
+
+		g.Go(func() error {
+			err := https_server.ListenAndServeTLS(conf.Https_certfile, conf.Https_keyfile)
+			if err != nil && err != http.ErrServerClosed {
+				log.Fatal(err)
+			}
+			return err
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func makeRouter(conf config.Conf) *gin.Engine {
 	route := gin.Default()
 
 	route.Use(middlewares.AccessControlAllowOrigin(conf.Access_control_allow_origin, conf.Access_control_allow_headers))
@@ -98,5 +147,17 @@ func main() {
 		secret.DELETE("/:groupName/metadata/:secretName", api.DeleteSecretMetadata)
 	}
 
-	route.Run(":" + conf.Http_port)
+	for _, name := range conf.Api_host_name {
+		target, err := url.Parse(conf.Api_host_list[name])
+		if err != nil {
+			panic(err.Error())
+		}
+
+		proxy := httputil.NewSingleHostReverseProxy(target)
+		route.Any("/"+name, func(c *gin.Context) {
+			proxy.ServeHTTP(c.Writer, c.Request)
+		})
+	}
+
+	return route
 }
