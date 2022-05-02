@@ -32,7 +32,7 @@ func InitKeycloakClient(clientID string, clientSecret string, realm string, endp
 	var ctx = context.Background()
 	_, err := KeycloakToken(ctx)
 	if err != nil {
-		panic("Keycloak Client Init fail")
+		panic("Keycloak Client Init fail " + err.Error())
 	}
 
 	return nil

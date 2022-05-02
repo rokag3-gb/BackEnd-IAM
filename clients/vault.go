@@ -33,7 +33,7 @@ func InitVaultClient(token string, endpoint string) error {
 
 	_, err := vaultClient.Logical().Read("sys/mounts")
 	if err != nil {
-		panic("Vault Client Init fail")
+		panic("Vault Client Init fail " + err.Error())
 	}
 
 	return nil

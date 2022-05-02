@@ -26,6 +26,7 @@ func main() {
 
 	route := gin.Default()
 
+	route.Use(middlewares.AccessControlAllowOrigin())
 	route.Use(middlewares.IntrospectMiddleware())
 	route.Use(middlewares.AuthorityCheckMiddleware())
 
@@ -52,8 +53,8 @@ func main() {
 
 	groups := route.Group("/groups")
 	{
-		groups.GET("/", middlewares.ListQueryRangeMiddleware(), api.GetGroup)
-		groups.POST("/", api.CreateGroup)
+		groups.GET("", middlewares.ListQueryRangeMiddleware(), api.GetGroup)
+		groups.POST("", api.CreateGroup)
 		groups.DELETE("/:groupid", api.DeleteGroup)
 		groups.PUT("/:groupid", api.UpdateGroup)
 		groups.GET("/:groupid/members", middlewares.ListQueryRangeMiddleware(), api.GetGroupMember)
@@ -61,8 +62,8 @@ func main() {
 
 	users := route.Group("/users")
 	{
-		users.GET("/", middlewares.ListQueryRangeMiddleware(), api.Users)
-		users.POST("/", api.CreateUser)
+		users.GET("", middlewares.ListQueryRangeMiddleware(), api.Users)
+		users.POST("", api.CreateUser)
 		users.PUT("/:userid", api.UpdateUser)
 		users.DELETE("/:userid", api.DeleteUser)
 		users.GET("/:userid", api.GetUser)
@@ -79,8 +80,8 @@ func main() {
 
 	secret := route.Group("/secret")
 	{
-		secret.GET("/", api.GetSecretGroup)
-		secret.POST("/", api.CreateSecretGroup)
+		secret.GET("", api.GetSecretGroup)
+		secret.POST("", api.CreateSecretGroup)
 		secret.DELETE("/:groupName", api.DeleteSecretGroup)
 		secret.GET("/:groupName", api.GetSecretList)
 		secret.GET("/:groupName/data/:secretName", api.GetSecret)

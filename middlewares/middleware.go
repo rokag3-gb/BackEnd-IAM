@@ -35,35 +35,6 @@ func IntrospectMiddleware() gin.HandlerFunc {
 
 		c.Set("accessToken", token)
 		c.Set("username", getUsernameJWT(token))
-
-		// 클라이언트가 보낸 토큰에 대한 keycloak 인증 부분입니다.
-		/*
-			token := c.Request.Header.Get("token")
-			if token == "" {
-				c.String(http.StatusUnauthorized, "Unauthorized")
-				panic("Unauthorized")
-			}
-
-			username := getUsernameJWT(token)
-			if username == "" {
-				c.String(http.StatusUnauthorized, "Unauthorized")
-				panic("Unauthorized")
-			}
-			// 여기서 구한 username 으로 권한 체크를 해야합니다.
-			// 다만 keycloak 설정에 따라 토큰의 내용이 변경될 수도 있으므로 이후 테스트 필요...
-
-			var client = gocloak.NewClient(key_uri)
-			rptResult, err := client.RetrospectToken(token, clientID, clientSecret, realm)
-			if err != nil {
-				c.String(http.StatusUnauthorized, "Unauthorized")
-				panic("Unauthorized")
-			}
-
-			if !rptResult.Active {
-				c.String(http.StatusUnauthorized, "Unauthorized")
-				panic("Unauthorized")
-			}
-		*/
 	}
 }
 
@@ -106,6 +77,18 @@ func AuthorityCheckMiddleware() gin.HandlerFunc {
 		}
 
 		// 결과가 한건이라도 있으면 권한 있음
+	}
+}
+
+func AccessControlAllowOrigin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Headers", "*")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
 	}
 }
 
