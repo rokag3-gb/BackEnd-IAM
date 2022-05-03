@@ -20,8 +20,8 @@ import (
 var g errgroup.Group
 
 func main() {
-	var conf config.Conf
-	if err := conf.InitEnvConfig(); err != nil {
+	var conf config.IamConfig
+	if err := conf.InitConfig(); err != nil {
 		panic(err.Error())
 	}
 
@@ -77,12 +77,12 @@ func main() {
 	}
 }
 
-func makeRouter(conf config.Conf) *gin.Engine {
+func makeRouter(conf config.IamConfig) *gin.Engine {
 	route := gin.Default()
 
-	route.Use(middlewares.AccessControlAllowOrigin(conf.Access_control_allow_origin, conf.Access_control_allow_headers))
-	route.Use(middlewares.IntrospectMiddleware())
-	route.Use(middlewares.AuthorityCheckMiddleware(conf.Keycloak_realm))
+	route.Use(middlewares.AccessControlAllowOrigin(conf))
+	route.Use(middlewares.IntrospectMiddleware(conf))
+	route.Use(middlewares.AuthorityCheckMiddleware(conf))
 
 	authority := route.Group("/authority")
 	{

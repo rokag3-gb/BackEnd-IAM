@@ -3,6 +3,7 @@ package middlewares
 import (
 	"fmt"
 	"iam/clients"
+	"iam/config"
 	"iam/iamdb"
 	"net/http"
 	"strconv"
@@ -13,23 +14,28 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func IntrospectMiddleware() gin.HandlerFunc {
+func IntrospectMiddleware(conf config.IamConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		auth := c.Request.Header.Get("Authorization")
-		if auth == "" {
+		if auth == "" && !conf.Developer_mode {
 			c.String(http.StatusForbidden, "No Authorization header provided")
 			c.Abort()
 			return
 		}
 		token := strings.TrimPrefix(auth, "Bearer ")
-		_, err := clients.KeycloakClient().RetrospectToken(c, token,
+		result, err := clients.KeycloakClient().RetrospectToken(c, token,
 			clients.KeycloakConfig().ClientID,
 			clients.KeycloakConfig().ClientSecret,
 			clients.KeycloakConfig().Realm)
-		if err != nil {
-			c.String(http.StatusForbidden, "Authorization is not valid")
+
+		if err != nil && !conf.Developer_mode {
+			c.String(http.StatusInternalServerError, "Inspection failed:"+err.Error())
 			c.Abort()
-			panic("Inspection failed:" + err.Error())
+		}
+
+		if *result.Active == false && !conf.Developer_mode {
+			c.String(http.StatusForbidden, "Invalid authorization")
+			c.Abort()
 		}
 
 		c.Set("accessToken", token)
@@ -56,18 +62,18 @@ func ListQueryRangeMiddleware() gin.HandlerFunc {
 	}
 }
 
-func AuthorityCheckMiddleware(realm string) gin.HandlerFunc {
+func AuthorityCheckMiddleware(conf config.IamConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		username := c.MustGet("username").(string)
 
-		rows, err := iamdb.GetUserAuthoritiesForEndpoint(username, realm, c.Request.Method, c.Request.URL.Path)
+		rows, err := iamdb.GetUserAuthoritiesForEndpoint(username, conf.Keycloak_realm, c.Request.Method, c.Request.URL.Path)
 
 		if err != nil {
 			c.Abort()
 		}
 		defer rows.Close()
 
-		if !rows.Next() {
+		if !rows.Next() && !conf.Developer_mode {
 			c.Status(http.StatusForbidden)
 			c.Abort()
 
@@ -78,10 +84,10 @@ func AuthorityCheckMiddleware(realm string) gin.HandlerFunc {
 	}
 }
 
-func AccessControlAllowOrigin(origin string, headers string) gin.HandlerFunc {
+func AccessControlAllowOrigin(conf config.IamConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", origin)
-		c.Header("Access-Control-Allow-Headers", headers)
+		c.Header("Access-Control-Allow-Origin", conf.Access_control_allow_origin)
+		c.Header("Access-Control-Allow-Headers", conf.Access_control_allow_headers)
 		c.Header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
 
 		if c.Request.Method == "OPTIONS" {

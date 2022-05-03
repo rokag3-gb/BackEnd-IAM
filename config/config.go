@@ -6,9 +6,11 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"gopkg.in/ini.v1"
 )
 
-type Conf struct {
+type IamConfig struct {
 	Keycloak_client_id           string
 	Keycloak_client_secret       string
 	Keycloak_realm               string
@@ -26,9 +28,97 @@ type Conf struct {
 	Access_control_allow_headers string
 	Api_host_list                map[string]string
 	Api_host_name                []string
+	Developer_mode               bool
 }
 
-func (conf *Conf) InitEnvConfig() error {
+func (conf *IamConfig) InitConfig() error {
+	ctype := os.Getenv("IAM_CONFIG_TYPE")
+	var err error
+	if ctype == "env" {
+		err = conf.initEnvConfig()
+	} else {
+		err = conf.initConf()
+	}
+
+	fmt.Println("Initialized config : \n", conf)
+
+	return err
+}
+
+func (conf *IamConfig) initConf() error {
+	cfg, err := ini.Load("iam.conf")
+	if err != nil {
+		return err
+	}
+
+	conf.Keycloak_client_id = cfg.Section("keycloak").Key("client_id").String()
+	conf.Keycloak_client_secret = cfg.Section("keycloak").Key("client_secret").String()
+	conf.Keycloak_realm = cfg.Section("keycloak").Key("realm").String()
+	conf.Keycloak_endpoint = cfg.Section("keycloak").Key("endpoint").String()
+
+	if conf.Keycloak_client_id == "" || conf.Keycloak_client_secret == "" || conf.Keycloak_realm == "" || conf.Keycloak_endpoint == "" {
+		return errors.New("check config")
+	}
+
+	conf.Vault_token = cfg.Section("vault").Key("token").String()
+	conf.Vault_endpoint = cfg.Section("vault").Key("endpoint").String()
+
+	if conf.Vault_token == "" || conf.Vault_endpoint == "" {
+		return errors.New("check config")
+	}
+
+	db_server := cfg.Section("database").Key("server_addr").String()
+	db_name := cfg.Section("database").Key("name").String()
+	db_user_id := cfg.Section("database").Key("user_id").String()
+	db_password := cfg.Section("database").Key("user_password").String()
+	db_port := cfg.Section("database").Key("server_port").String()
+
+	if db_server == "" || db_name == "" || db_port == "" || db_user_id == "" || db_password == "" {
+		return errors.New("check [DATABASE] config")
+	}
+
+	conf.Db_connect_string = fmt.Sprintf("server=%s;database=%s;user id=%s;password=%s;port=%s", db_server, db_name, db_user_id, db_password, db_port)
+
+	conf.Http_port = cfg.Section("network").Key("http_port").String()
+	conf.Https_port = cfg.Section("network").Key("https_port").String()
+	conf.Https_certfile = cfg.Section("network").Key("ssl_certfile").String()
+	conf.Https_keyfile = cfg.Section("network").Key("ssl_keyfile").String()
+
+	conf.ReadTimeout, err = cfg.Section("network").Key("read_timeout").Int()
+	if err != nil {
+		conf.ReadTimeout = 5
+	}
+	conf.WriteTimeout, err = cfg.Section("network").Key("write_timeout").Int()
+	if err != nil {
+		conf.WriteTimeout = 10
+	}
+	conf.Access_control_allow_origin = cfg.Section("network").Key("access_control_allow_origin").String()
+	if conf.Access_control_allow_origin == "" {
+		conf.Access_control_allow_origin = "*"
+	}
+	conf.Access_control_allow_headers = cfg.Section("network").Key("access_control_allow_headers").String()
+	if conf.Access_control_allow_headers == "" {
+		conf.Access_control_allow_headers = "*"
+	}
+
+	conf.Api_host_name = cfg.Section("api").Key("host_name").Strings(",")
+	api_host_url := cfg.Section("api").Key("host_url").Strings(",")
+
+	if len(conf.Api_host_name) != len(api_host_url) {
+		return errors.New("check config [api]")
+	}
+
+	conf.Api_host_list = map[string]string{}
+	for i := 0; i < len(conf.Api_host_name); i++ {
+		conf.Api_host_list[conf.Api_host_name[i]] = api_host_url[i]
+	}
+
+	conf.Developer_mode = cfg.Section("debug").Key("developer_mode").MustBool()
+
+	return nil
+}
+
+func (conf *IamConfig) initEnvConfig() error {
 	conf.Keycloak_client_id = os.Getenv("KEYCLOAK_CLIENT_ID")
 	conf.Keycloak_client_secret = os.Getenv("KEYCLOAK_CLIENT_SECRET")
 	conf.Keycloak_realm = os.Getenv("KEYCLOAK_REALM")
@@ -46,7 +136,7 @@ func (conf *Conf) InitEnvConfig() error {
 	}
 
 	db_server := os.Getenv("DB_SERVER_ADDR")
-	db_name := os.Getenv("DB_SERVER_NAME")
+	db_name := os.Getenv("DB_NAME")
 	db_port := os.Getenv("DB_SERVER_PORT")
 	db_user_id := os.Getenv("DB_USER_ID")
 	db_password := os.Getenv("DB_USER_PASSWORD")
@@ -94,6 +184,12 @@ func (conf *Conf) InitEnvConfig() error {
 	conf.Api_host_list = map[string]string{}
 	for i := 0; i < len(conf.Api_host_name); i++ {
 		conf.Api_host_list[conf.Api_host_name[i]] = api_host_url[i]
+	}
+
+	conf.Developer_mode = false
+	dev := os.Getenv("DEBUG_DEVELOPER_MODE")
+	if dev == "true" {
+		conf.Developer_mode = true
 	}
 
 	return nil
