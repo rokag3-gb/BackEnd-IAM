@@ -149,7 +149,7 @@ func GetRolesAuth(c *gin.Context) {
 	for rows.Next() {
 		var r models.RolesInfo
 
-		err := rows.Scan(&r.ID, &r.Name)
+		err := rows.Scan(&r.ID, &r.Name, &r.Use)
 		if err != nil {
 			c.String(http.StatusInternalServerError, err.Error())
 			c.Abort()
@@ -214,7 +214,33 @@ func DismissRoleAuth(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusCreated)
+	c.Status(http.StatusNoContent)
+}
+
+func UpdateRoleAuth(c *gin.Context) {
+	use, err := getUse(c)
+	if err != nil {
+		return
+	}
+
+	roleid, err := getRoleID(c)
+	if err != nil {
+		return
+	}
+
+	authid, err := getAuthID(c)
+	if err != nil {
+		return
+	}
+
+	_, err = iamdb.UpdateRoleAuth(roleid, authid, use.Use)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }
 
 func GetUserRole(c *gin.Context) {
@@ -236,7 +262,7 @@ func GetUserRole(c *gin.Context) {
 	for rows.Next() {
 		var r models.RolesInfo
 
-		err := rows.Scan(&r.ID, &r.Name)
+		err := rows.Scan(&r.ID, &r.Name, &r.Use)
 		if err != nil {
 			c.String(http.StatusInternalServerError, err.Error())
 			c.Abort()
@@ -298,7 +324,31 @@ func DismissUserRole(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusCreated)
+	c.Status(http.StatusNoContent)
+}
+
+func UpdateUserRole(c *gin.Context) {
+	use, err := getUse(c)
+	if err != nil {
+		return
+	}
+	userid, err := getUserID(c)
+	if err != nil {
+		return
+	}
+	roleid, err := getRoleID(c)
+	if err != nil {
+		return
+	}
+
+	_, err = iamdb.UpdateUserRole(userid, roleid, use.Use)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }
 
 func GetUserAuth(c *gin.Context) {
@@ -568,4 +618,24 @@ func getUserID(c *gin.Context) (string, error) {
 	}
 
 	return userid, nil
+}
+
+func getUse(c *gin.Context) (*models.AutuhorityUse, error) {
+	value, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.String(http.StatusBadRequest, "required 'body'")
+		c.Abort()
+		return nil, errors.New("required 'body'")
+	}
+
+	var a *models.AutuhorityUse
+	json.Unmarshal(value, &a)
+
+	if a == nil {
+		c.String(http.StatusBadRequest, "required 'body'")
+		c.Abort()
+		return nil, errors.New("required 'body'")
+	}
+
+	return a, nil
 }

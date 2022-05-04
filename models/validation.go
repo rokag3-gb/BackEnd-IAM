@@ -39,6 +39,7 @@ type ResetUserPasswordInfo struct {
 type RolesInfo struct {
 	ID   string `json:"id" binding:"required"`
 	Name string `json:"name" binding:"required"`
+	Use  string `json:"useYn,omitempty"`
 }
 
 type AutuhorityInfo struct {
@@ -46,6 +47,7 @@ type AutuhorityInfo struct {
 	Name   string `json:"name" binding:"required"`
 	URL    string `json:"url,omitempty"`
 	Method string `json:"method,omitempty"`
+	Use    string `json:"useYn,omitempty"`
 }
 
 type GroupItem struct {
@@ -58,4 +60,8 @@ type SecretGroup struct {
 	ID          string `json:"id" binding:"required"`
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description" binding:"required"`
+}
+
+type AutuhorityUse struct {
+	Use string `json:"useYn" binding:"required"`
 }

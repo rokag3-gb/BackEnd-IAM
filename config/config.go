@@ -40,7 +40,7 @@ func (conf *IamConfig) InitConfig() error {
 		err = conf.initConf()
 	}
 
-	fmt.Println("Initialized config : \n", conf)
+	fmt.Printf("Initialized config : \n%#v\n", conf)
 
 	return err
 }

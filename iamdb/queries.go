@@ -69,7 +69,7 @@ func UpdateRoles(name string, id string) (*sql.Rows, error) {
 
 func GetRolseAuth(id string) (*sql.Rows, error) {
 	query := `select
-	a.aId, a.aName 
+	a.aId, a.aName, ra.useYn 
 	from 
 	roles_authority_mapping ra 
 	join 
@@ -97,16 +97,21 @@ func DismissRoleAuth(roleID string, authID string) (*sql.Rows, error) {
 	return rows, err
 }
 
+func UpdateRoleAuth(roleID string, authID string, use string) (*sql.Rows, error) {
+	query := `UPDATE roles_authority_mapping SET useYn=? where rId = ? AND aId = ?`
+
+	rows, err := db.Query(query, use, roleID, authID)
+	return rows, err
+}
+
 func GetUserRole(userID string) (*sql.Rows, error) {
-	query := `select r.rId, r.rName
+	query := `select r.rId, r.rName, ur.useYn
 	from 
 	roles r join
 	user_roles_mapping ur 
 	on r.rId = ur.rId
 	where
-	ur.userId = ?
-	AND
-	ur.useYn = 'y'`
+	ur.userId = ?`
 
 	rows, err := db.Query(query, userID)
 	return rows, err
@@ -123,6 +128,13 @@ func DismissUserRole(userID string, roleID string) (*sql.Rows, error) {
 	query := `DELETE FROM user_roles_mapping where userId = ? AND rId = ?`
 
 	rows, err := db.Query(query, userID, roleID)
+	return rows, err
+}
+
+func UpdateUserRole(userID string, roleID string, use string) (*sql.Rows, error) {
+	query := `UPDATE user_roles_mapping SET useYn=? where userId = ? AND rId = ?`
+
+	rows, err := db.Query(query, use, userID, roleID)
 	return rows, err
 }
 
