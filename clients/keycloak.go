@@ -26,7 +26,7 @@ func InitKeycloakClient(clientID string, clientSecret string, realm string, endp
 		}
 	}
 	if keycloakClient == nil {
-		keycloakClient = gocloak.NewClient(keycloakConfig.Endpoint)
+		keycloakClient = gocloak.NewClient(keycloakConfig.Endpoint, gocloak.SetAuthAdminRealms("admin/realms"), gocloak.SetAuthRealms("realms"))
 	}
 
 	var ctx = context.Background()
