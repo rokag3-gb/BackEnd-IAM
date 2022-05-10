@@ -2,6 +2,7 @@ package clients
 
 import (
 	"context"
+	"crypto/tls"
 
 	"github.com/Nerzal/gocloak/v11"
 )
@@ -27,6 +28,9 @@ func InitKeycloakClient(clientID string, clientSecret string, realm string, endp
 	}
 	if keycloakClient == nil {
 		keycloakClient = gocloak.NewClient(keycloakConfig.Endpoint, gocloak.SetAuthAdminRealms("admin/realms"), gocloak.SetAuthRealms("realms"))
+//		restyClient := keycloakClient.RestyClient()
+//		restyClient.SetDebug(true)
+//		restyClient.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	}
 
 	var ctx = context.Background()

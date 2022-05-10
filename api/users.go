@@ -54,6 +54,7 @@ func CreateUser(c *gin.Context) {
 		gocloak.User{
 			Username:  gocloak.StringP(json.Username),
 			FirstName: gocloak.StringP(json.FirstName),
+			LastName:  gocloak.StringP(json.LastName),
 			Email:     gocloak.StringP(json.Email),
 		})
 	if err != nil {
@@ -94,6 +95,7 @@ func UpdateUser(c *gin.Context) {
 
 	user.Username = gocloak.StringP(json.Username)
 	user.FirstName = gocloak.StringP(json.FirstName)
+	user.LastName = gocloak.StringP(json.LastName)
 	user.Email = gocloak.StringP(json.Email)
 	user.Enabled = gocloak.BoolP(json.Enabled)
 	user.RequiredActions = &json.RequiredActions
@@ -154,6 +156,7 @@ func GetUser(c *gin.Context) {
 		Enabled:          user.Enabled,
 		EmailVerified:    user.EmailVerified,
 		FirstName:        user.FirstName,
+		LastName:         user.LastName,
 		Email:            user.Email,
 		RequiredActions:  user.RequiredActions,
 	})
