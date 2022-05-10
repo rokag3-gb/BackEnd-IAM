@@ -39,6 +39,15 @@ type ResetUserPasswordInfo struct {
 	Temporary       bool   `json:"temporary"`
 }
 
+type UserRolesInfo struct {
+	ID        string `json:"id" binding:"required"`
+	Username  string `json:"username" binding:"required"`
+	FirstName string `json:"firstName" binding:"required"`
+	LastName  string `json:"lastName" binding:"required"`
+	Email     string `json:"email" binding:"required"`
+	RoleList  string `json:"roleList" binding:"required"`
+}
+
 type RolesInfo struct {
 	ID   string `json:"id" binding:"required"`
 	Name string `json:"name" binding:"required"`

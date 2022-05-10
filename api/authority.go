@@ -275,6 +275,33 @@ func GetUserRole(c *gin.Context) {
 	c.JSON(http.StatusOK, arr)
 }
 
+func GetAuthUserList(c *gin.Context) {
+	rows, err := iamdb.GetAuthUserList()
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
+		return
+	}
+	defer rows.Close()
+
+	var arr = make([]models.UserRolesInfo, 0)
+
+	for rows.Next() {
+		var r models.UserRolesInfo
+
+		err := rows.Scan(&r.ID, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.RoleList)
+		if err != nil {
+			c.String(http.StatusInternalServerError, err.Error())
+			c.Abort()
+			return
+		}
+
+		arr = append(arr, r)
+	}
+
+	c.JSON(http.StatusOK, arr)
+}
+
 func AssignUserRole(c *gin.Context) {
 	userid, err := getUserID(c)
 	if err != nil {

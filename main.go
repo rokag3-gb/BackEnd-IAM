@@ -94,6 +94,7 @@ func makeRouter(conf config.IamConfig) *gin.Engine {
 		authority.POST("/roles/:roleid/auth", api.AssignRoleAuth)
 		authority.DELETE("/roles/:roleid/auth/:authid", api.DismissRoleAuth)
 		authority.PUT("/roles/:roleid/auth/:authid", api.UpdateRoleAuth)
+		authority.GET("/user", api.GetAuthUserList)
 		authority.GET("/user/:userid", api.GetUserRole)
 		authority.POST("/user/:userid/roles", api.AssignUserRole)
 		authority.DELETE("/user/:userid/roles/:roleid", api.DismissUserRole)

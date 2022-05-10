@@ -104,6 +104,24 @@ func UpdateRoleAuth(roleID string, authID string, use string) (*sql.Rows, error)
 	return rows, err
 }
 
+func GetAuthUserList() (*sql.Rows, error) {
+	query := `select u.ID, 
+	u.USERNAME, 
+	ISNULL(u.FIRST_NAME, ''), 
+	ISNULL(u.LAST_NAME, ''), 
+	ISNULL(u.EMAIL, ''), 
+	ISNULL(string_agg(r.rName, ', '), '') as RoleList
+		from roles r 
+		join user_roles_mapping ur 
+		on r.rId = ur.rId
+		join USER_ENTITY u
+		on ur.userId = u.ID
+		GROUP BY u.USERNAME, u.EMAIL, u.ID, u.FIRST_NAME, u.LAST_NAME`
+
+	rows, err := db.Query(query)
+	return rows, err
+}
+
 func GetUserRole(userID string) (*sql.Rows, error) {
 	query := `select r.rId, r.rName, ur.useYn
 	from 
