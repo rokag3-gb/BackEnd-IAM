@@ -29,6 +29,7 @@ type IamConfig struct {
 	Api_host_list                map[string]string
 	Api_host_name                []string
 	Developer_mode               bool
+	LogStdout                    bool
 }
 
 func (conf *IamConfig) InitConfig() error {
@@ -39,8 +40,6 @@ func (conf *IamConfig) InitConfig() error {
 	} else {
 		err = conf.initConf()
 	}
-
-	fmt.Printf("Initialized config : \n%#v\n", conf)
 
 	return err
 }
@@ -114,6 +113,7 @@ func (conf *IamConfig) initConf() error {
 	}
 
 	conf.Developer_mode = cfg.Section("debug").Key("developer_mode").MustBool()
+	conf.LogStdout = cfg.Section("log").Key("stdout").MustBool()
 
 	return nil
 }
@@ -187,9 +187,13 @@ func (conf *IamConfig) initEnvConfig() error {
 	}
 
 	conf.Developer_mode = false
-	dev := os.Getenv("DEBUG_DEVELOPER_MODE")
-	if dev == "true" {
+	if os.Getenv("DEBUG_DEVELOPER_MODE") == "true" {
 		conf.Developer_mode = true
+	}
+
+	conf.LogStdout = false
+	if os.Getenv("LOG_STDOUT") == "true" {
+		conf.LogStdout = true
 	}
 
 	return nil

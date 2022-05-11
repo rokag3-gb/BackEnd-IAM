@@ -13,18 +13,19 @@ import (
 )
 
 type LogFile struct {
-	mu      sync.Mutex
-	path    string
-	name    string
-	file    *os.File
-	logDate string
-	logNum  int
+	mu        sync.Mutex
+	path      string
+	name      string
+	file      *os.File
+	logDate   string
+	logNum    int
+	logStdout bool
 
 	limitLogSize int
 	innerLogSize int
 }
 
-func SetupLog(path string, name string) *LogFile {
+func SetupLog(path string, name string, logStdout bool) *LogFile {
 	log.SetFlags(0)
 	if path == "" {
 		path = "."
@@ -43,7 +44,7 @@ func SetupLog(path string, name string) *LogFile {
 		}
 	}
 
-	lf, err := NewLogFile(path, name, nil, 5)
+	lf, err := NewLogFile(path, name, nil, 5, logStdout)
 	if err != nil {
 		log.Fatalf("Unable to create log file: %s", err.Error())
 	}
@@ -54,7 +55,7 @@ func SetupLog(path string, name string) *LogFile {
 }
 
 // NewLogFile creates a new LogFile. The file is optional - it will be created if needed.
-func NewLogFile(path string, name string, file *os.File, limitLogSize int) (*LogFile, error) {
+func NewLogFile(path string, name string, file *os.File, limitLogSize int, logStdout bool) (*LogFile, error) {
 	rw := &LogFile{
 		file:         file,
 		path:         path,
@@ -63,8 +64,12 @@ func NewLogFile(path string, name string, file *os.File, limitLogSize int) (*Log
 		innerLogSize: 0,
 		logNum:       0,
 		logDate:      time.Now().Format("2006-01-02"),
+		logStdout:    logStdout,
 	}
-	if file == nil {
+
+	if logStdout {
+		rw.file = os.Stdout
+	} else if file == nil {
 		if err := rw.Rotate(); err != nil {
 			return nil, err
 		}
@@ -73,6 +78,11 @@ func NewLogFile(path string, name string, file *os.File, limitLogSize int) (*Log
 }
 
 func (l *LogFile) Write(b []byte) (n int, err error) {
+	if l.logStdout {
+		n, err = l.file.Write(b)
+		return
+	}
+
 	if l.logDate != time.Now().Format("2006-01-02") {
 		l.logNum = 0
 		l.Rotate()

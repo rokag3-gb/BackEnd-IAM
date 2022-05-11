@@ -15,6 +15,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/sync/errgroup"
+
+	logger "cloudmt.co.kr/mateLogger"
 )
 
 var g errgroup.Group
@@ -24,6 +26,10 @@ func main() {
 	if err := conf.InitConfig(); err != nil {
 		panic(err.Error())
 	}
+
+	gin.DefaultWriter = logger.SetupLog("logs", "IAM_Server", conf.LogStdout)
+
+	logger.Info("Initialized config : \n%#v\n", conf)
 
 	clients.InitKeycloakClient(
 		conf.Keycloak_client_id,
@@ -78,6 +84,9 @@ func main() {
 }
 
 func makeRouter(conf config.IamConfig) *gin.Engine {
+	gin.DisableConsoleColor()
+	// Logging to a file.
+
 	route := gin.Default()
 
 	route.Use(middlewares.AccessControlAllowOrigin(conf))

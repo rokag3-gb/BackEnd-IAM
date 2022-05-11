@@ -10,6 +10,11 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/hashicorp/vault/api v1.5.0
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
+	cloudmt.co.kr/mateLogger v0.0.0
+)
+
+replace (
+	cloudmt.co.kr/mateLogger v0.0.0 => ./mateLogger
 )
 
 require (
