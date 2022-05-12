@@ -114,7 +114,7 @@ func GetAuthUserList() (*sql.Rows, error) {
 		from roles r 
 		join user_roles_mapping ur 
 		on r.rId = ur.rId
-		join USER_ENTITY u
+		right join USER_ENTITY u
 		on ur.userId = u.ID
 		GROUP BY u.USERNAME, u.EMAIL, u.ID, u.FIRST_NAME, u.LAST_NAME`
 
