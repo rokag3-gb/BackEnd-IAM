@@ -10,6 +10,15 @@ import (
 	"gopkg.in/ini.v1"
 )
 
+var cfg *IamConfig = nil
+
+func GetConfig() *IamConfig {
+	if cfg == nil {
+		InitConfig()
+	}
+	return cfg
+}
+
 type IamConfig struct {
 	Keycloak_client_id           string
 	Keycloak_client_secret       string
@@ -32,13 +41,18 @@ type IamConfig struct {
 	LogStdout                    bool
 }
 
-func (conf *IamConfig) InitConfig() error {
+func InitConfig() error {
 	ctype := os.Getenv("IAM_CONFIG_TYPE")
+
+	if cfg == nil {
+		cfg = new(IamConfig)
+	}
+
 	var err error
 	if ctype == "env" {
-		err = conf.initEnvConfig()
+		err = cfg.initEnvConfig()
 	} else {
-		err = conf.initConf()
+		err = cfg.initConf()
 	}
 
 	return err

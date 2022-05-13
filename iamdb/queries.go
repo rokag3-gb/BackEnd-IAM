@@ -3,6 +3,7 @@ package iamdb
 import (
 	"database/sql"
 	"errors"
+	"iam/config"
 	"iam/models"
 )
 
@@ -107,18 +108,21 @@ func UpdateRoleAuth(roleID string, authID string, use string) (*sql.Rows, error)
 func GetAuthUserList() (*sql.Rows, error) {
 	query := `select u.ID, 
 	u.USERNAME, 
-	ISNULL(u.FIRST_NAME, ''), 
-	ISNULL(u.LAST_NAME, ''), 
-	ISNULL(u.EMAIL, ''), 
+	ISNULL(u.FIRST_NAME, '') as FIRST_NAME, 
+	ISNULL(u.LAST_NAME, '') as LAST_NAME, 
+	ISNULL(u.EMAIL, '') as EMAIL, 
 	ISNULL(string_agg(r.rName, ', '), '') as RoleList
 		from roles r 
 		join user_roles_mapping ur 
 		on r.rId = ur.rId
-		right join USER_ENTITY u
+		right outer join USER_ENTITY u
 		on ur.userId = u.ID
+	WHERE
+		u.SERVICE_ACCOUNT_CLIENT_LINK is NULL
+		AND u.REALM_ID = ?
 		GROUP BY u.USERNAME, u.EMAIL, u.ID, u.FIRST_NAME, u.LAST_NAME`
 
-	rows, err := db.Query(query)
+	rows, err := db.Query(query, config.GetConfig().Keycloak_realm)
 	return rows, err
 }
 

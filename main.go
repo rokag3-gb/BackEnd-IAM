@@ -22,10 +22,12 @@ import (
 var g errgroup.Group
 
 func main() {
-	var conf config.IamConfig
-	if err := conf.InitConfig(); err != nil {
+
+	if err := config.InitConfig(); err != nil {
 		panic(err.Error())
 	}
+
+	conf := config.GetConfig()
 
 	gin.DefaultWriter = logger.SetupLog("logs", "IAM_Server", conf.LogStdout)
 
@@ -43,7 +45,7 @@ func main() {
 
 	iamdb.InitDbClient("mssql", conf.Db_connect_string)
 
-	route := makeRouter(conf)
+	route := makeRouter()
 
 	if conf.Http_port != "" {
 		http_server := &http.Server{
@@ -83,15 +85,15 @@ func main() {
 	}
 }
 
-func makeRouter(conf config.IamConfig) *gin.Engine {
+func makeRouter() *gin.Engine {
 	gin.DisableConsoleColor()
 	// Logging to a file.
 
 	route := gin.Default()
 
-	route.Use(middlewares.AccessControlAllowOrigin(conf))
-	route.Use(middlewares.IntrospectMiddleware(conf))
-	route.Use(middlewares.AuthorityCheckMiddleware(conf))
+	route.Use(middlewares.AccessControlAllowOrigin())
+	route.Use(middlewares.IntrospectMiddleware())
+	route.Use(middlewares.AuthorityCheckMiddleware())
 
 	authority := route.Group("/authority")
 	{
@@ -159,8 +161,8 @@ func makeRouter(conf config.IamConfig) *gin.Engine {
 		secret.DELETE("/:groupName/metadata/:secretName", api.DeleteSecretMetadata)
 	}
 
-	for _, name := range conf.Api_host_name {
-		target, err := url.Parse(conf.Api_host_list[name])
+	for _, name := range config.GetConfig().Api_host_name {
+		target, err := url.Parse(config.GetConfig().Api_host_list[name])
 		if err != nil {
 			panic(err.Error())
 		}

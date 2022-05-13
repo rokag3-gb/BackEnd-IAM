@@ -14,10 +14,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func IntrospectMiddleware(conf config.IamConfig) gin.HandlerFunc {
+func IntrospectMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		auth := c.Request.Header.Get("Authorization")
-		if auth == "" && !conf.Developer_mode {
+		if auth == "" && !config.GetConfig().Developer_mode {
 			c.String(http.StatusForbidden, "No Authorization header provided")
 			c.Abort()
 			return
@@ -28,12 +28,12 @@ func IntrospectMiddleware(conf config.IamConfig) gin.HandlerFunc {
 			clients.KeycloakConfig().ClientSecret,
 			clients.KeycloakConfig().Realm)
 
-		if err != nil && !conf.Developer_mode {
+		if err != nil && !config.GetConfig().Developer_mode {
 			c.String(http.StatusInternalServerError, "Inspection failed:"+err.Error())
 			c.Abort()
 		}
 
-		if *result.Active == false && !conf.Developer_mode {
+		if *result.Active == false && !config.GetConfig().Developer_mode {
 			c.String(http.StatusForbidden, "Invalid authorization")
 			c.Abort()
 		}
@@ -62,18 +62,18 @@ func ListQueryRangeMiddleware() gin.HandlerFunc {
 	}
 }
 
-func AuthorityCheckMiddleware(conf config.IamConfig) gin.HandlerFunc {
+func AuthorityCheckMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		username := c.MustGet("username").(string)
 
-		rows, err := iamdb.GetUserAuthoritiesForEndpoint(username, conf.Keycloak_realm, c.Request.Method, c.Request.URL.Path)
+		rows, err := iamdb.GetUserAuthoritiesForEndpoint(username, config.GetConfig().Keycloak_realm, c.Request.Method, c.Request.URL.Path)
 
 		if err != nil {
 			c.Abort()
 		}
 		defer rows.Close()
 
-		if !rows.Next() && !conf.Developer_mode {
+		if !rows.Next() && !config.GetConfig().Developer_mode {
 			c.Status(http.StatusForbidden)
 			c.Abort()
 
@@ -84,10 +84,10 @@ func AuthorityCheckMiddleware(conf config.IamConfig) gin.HandlerFunc {
 	}
 }
 
-func AccessControlAllowOrigin(conf config.IamConfig) gin.HandlerFunc {
+func AccessControlAllowOrigin() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", conf.Access_control_allow_origin)
-		c.Header("Access-Control-Allow-Headers", conf.Access_control_allow_headers)
+		c.Header("Access-Control-Allow-Origin", config.GetConfig().Access_control_allow_origin)
+		c.Header("Access-Control-Allow-Headers", config.GetConfig().Access_control_allow_headers)
 		c.Header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
 
 		if c.Request.Method == "OPTIONS" {
