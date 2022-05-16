@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"iam/clients"
 	"iam/iamdb"
 	"iam/models"
@@ -12,33 +11,14 @@ import (
 )
 
 func Users(c *gin.Context) {
-	token, _ := clients.KeycloakToken(c)
-
-	params := gocloak.GetUsersParams{
-		First:               gocloak.IntP(c.MustGet("first").(int)),
-		Max:                 gocloak.IntP(c.MustGet("max").(int)),
-		BriefRepresentation: gocloak.BoolP(true),
-	}
-
-	users, err := clients.KeycloakClient().GetUsers(c,
-		token.AccessToken,
-		clients.KeycloakConfig().Realm,
-		params)
+	arr, err := iamdb.GetUsers()
 	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
 		return
 	}
 
-	response := []gin.H{}
-	for _, user := range users {
-		var userMap gin.H
-		inrec, _ := json.Marshal(user)
-		json.Unmarshal(inrec, &userMap)
-		delete(userMap, "access")
-		response = append(response, userMap)
-	}
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, arr)
 }
 
 func CreateUser(c *gin.Context) {
@@ -73,6 +53,14 @@ func CreateUser(c *gin.Context) {
 		c.String(apiError.Code, apiError.Message)
 		return
 	}
+
+	err = iamdb.UsersCreate(newUserId, c.GetString("username"))
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
+		return
+	}
+
 	c.JSON(http.StatusOK, gocloak.User{ID: gocloak.StringP(newUserId)})
 }
 
@@ -107,6 +95,13 @@ func UpdateUser(c *gin.Context) {
 	if err != nil {
 		apiError := err.(*gocloak.APIError)
 		c.String(apiError.Code, apiError.Message)
+		return
+	}
+
+	err = iamdb.UsersUpdate(userid, c.GetString("username"))
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
 		return
 	}
 
@@ -154,7 +149,6 @@ func GetUser(c *gin.Context) {
 		CreatedTimestamp: user.CreatedTimestamp,
 		Username:         user.Username,
 		Enabled:          user.Enabled,
-		EmailVerified:    user.EmailVerified,
 		FirstName:        user.FirstName,
 		LastName:         user.LastName,
 		Email:            user.Email,

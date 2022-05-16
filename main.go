@@ -121,7 +121,7 @@ func makeRouter() *gin.Engine {
 
 	groups := route.Group("/groups")
 	{
-		groups.GET("", middlewares.ListQueryRangeMiddleware(), api.GetGroup)
+		groups.GET("", api.GetGroup)
 		groups.POST("", api.CreateGroup)
 		groups.DELETE("/:groupid", api.DeleteGroup)
 		groups.PUT("/:groupid", api.UpdateGroup)
@@ -130,14 +130,14 @@ func makeRouter() *gin.Engine {
 
 	users := route.Group("/users")
 	{
-		users.GET("", middlewares.ListQueryRangeMiddleware(), api.Users)
+		users.GET("", api.Users)
 		users.POST("", api.CreateUser)
 		users.PUT("/:userid", api.UpdateUser)
 		users.DELETE("/:userid", api.DeleteUser)
 		users.GET("/:userid", api.GetUser)
 		users.GET("/:userid/credentials", api.GetUserCredentials)
 		users.PUT("/:userid/reset-password", api.ResetUserPassword)
-		users.GET("/:userid/groups", middlewares.ListQueryRangeMiddleware(), api.GetUserGroups)
+		users.GET("/:userid/groups", api.GetUserGroups)
 		users.PUT("/:userid/groups/:groupid", api.AddUserToGroup)
 		users.DELETE("/:userid/groups/:groupid", api.DeleteUserFromGroup)
 		users.GET("/:userid/sessions", api.GetUserSessions)

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"iam/config"
 	"iam/models"
+	"strings"
 )
 
 func ConnectionTest() {
@@ -534,8 +535,6 @@ func GroupCreate(groupId string, username string) error {
 
 func GroupUpdate(groupId string, username string) error {
 	query := `UPDATE KEYCLOAK_GROUP SET 
-	createId=B.ID,
-	createDate=GETDATE(),
 	modifyId=B.ID,
 	modifyDate=GETDATE()
 	FROM KEYCLOAK_GROUP A,
@@ -543,5 +542,91 @@ func GroupUpdate(groupId string, username string) error {
 	where A.ID=?`
 
 	_, err := db.Query(query, username, config.GetConfig().Keycloak_realm, groupId)
+	return err
+}
+
+func GetUsers() ([]models.GetUserInfo, error) {
+	query := `SELECT ID, ENABLED, USERNAME, FIRST_NAME, LAST_NAME, EMAIL, createDate, createId, modifyDate, modifyId FROM USER_ENTITY`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var arr = make([]models.GetUserInfo, 0)
+
+	for rows.Next() {
+		var r models.GetUserInfo
+
+		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, r)
+	}
+	return arr, err
+}
+
+func GetUserDetail(userId string) ([]models.GetUserInfo, error) {
+	query := `SELECT ID, ENABLED, USERNAME, FIRST_NAME, LAST_NAME, EMAIL, 
+	(SELECT STRING_AGG(REQUIRED_ACTION, ',') FROM USER_REQUIRED_ACTION WHERE USER_ID=U.ID) as REQUIRED_ACTION,
+	createDate, createId, modifyDate, modifyId FROM USER_ENTITY U
+	WHERE U.ID = ?`
+
+	rows, err := db.Query(query, userId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var arr = make([]models.GetUserInfo, 0)
+	blank := make([]string, 0)
+
+	for rows.Next() {
+		var r models.GetUserInfo
+
+		RequiredActions := ""
+		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &RequiredActions, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
+		if err != nil {
+			return nil, err
+		}
+
+		if RequiredActions == "" {
+			r.RequiredActions = &blank
+		} else {
+			tmp := strings.Split(RequiredActions, ",")
+			r.RequiredActions = &tmp
+		}
+
+		arr = append(arr, r)
+	}
+	return arr, err
+}
+
+func UsersCreate(userId string, username string) error {
+	query := `UPDATE USER_ENTITY SET 
+	createId=B.ID,
+	createDate=GETDATE(),
+	modifyId=B.ID,
+	modifyDate=GETDATE()
+	FROM USER_ENTITY A,
+	(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND  REALM_ID=?) B
+	where A.ID=?`
+
+	_, err := db.Query(query, username, config.GetConfig().Keycloak_realm, userId)
+	return err
+}
+
+func UsersUpdate(userId string, username string) error {
+	query := `UPDATE USER_ENTITY SET 
+	modifyId=B.ID,
+	modifyDate=GETDATE()
+	FROM USER_ENTITY A,
+	(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND  REALM_ID=?) B
+	where A.ID=?`
+
+	_, err := db.Query(query, username, config.GetConfig().Keycloak_realm, userId)
 	return err
 }

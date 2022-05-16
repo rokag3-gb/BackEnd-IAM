@@ -25,12 +25,15 @@ type GetUserInfo struct {
 	ID               *string   `json:"id,omitempty"`
 	CreatedTimestamp *int64    `json:"createdTimestamp,omitempty"`
 	Username         *string   `json:"username,omitempty"`
-	Enabled          *bool     `json:"enabled,omitempty"`
-	EmailVerified    *bool     `json:"emailVerified,omitempty"`
-	FirstName        *string   `json:"firstName,omitempty"`
-	LastName         *string   `json:"lastName,omitempty"`
-	Email            *string   `json:"email,omitempty"`
+	Enabled          *bool     `json:"enabled"`
+	FirstName        *string   `json:"firstName"`
+	LastName         *string   `json:"lastName"`
+	Email            *string   `json:"email"`
 	RequiredActions  *[]string `json:"requiredActions,omitempty"`
+	CreateDate       *string   `json:"createDate"`
+	CreateId         *string   `json:"createId"`
+	ModifyDate       *string   `json:"modifyDate"`
+	ModifyId         *string   `json:"modifyId"`
 }
 
 type ResetUserPasswordInfo struct {
