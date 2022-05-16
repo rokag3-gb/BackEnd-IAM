@@ -7,11 +7,19 @@ import (
 	"iam/models"
 )
 
-func ConnectionTest() (*sql.Rows, error) {
+func ConnectionTest() {
 	query := "select 1"
 
 	rows, err := db.Query(query)
-	return rows, err
+
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		panic("DB Connection fail")
+	}
 }
 
 func GetUserAuthoritiesForEndpoint(username string, realm string, method string, endpoint string) (*sql.Rows, error) {
@@ -40,36 +48,55 @@ func GetUserAuthoritiesForEndpoint(username string, realm string, method string,
 	return rows, err
 }
 
-func GetRoles() (*sql.Rows, error) {
-	query := "select rId, rName from roles"
+func GetRoles() ([]models.RolesInfo, error) {
+	query := "select rId, rName, createDate, createId, modifyDate, modifyId from roles"
 
 	rows, err := db.Query(query)
-	return rows, err
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var arr = make([]models.RolesInfo, 0)
+
+	for rows.Next() {
+		var r models.RolesInfo
+
+		err := rows.Scan(&r.ID, &r.Name, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, r)
+	}
+
+	return arr, nil
 }
 
-func CreateRoles(name string, username string) (*sql.Rows, error) {
+func CreateRoles(name string, username string) error {
 	query := `INSERT INTO roles(rName, createId, modifyId) 
 	select ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
-	rows, err := db.Query(query, name, username, config.GetConfig().Keycloak_realm)
-	return rows, err
+	_, err := db.Query(query, name, username, config.GetConfig().Keycloak_realm)
+	return err
 }
 
-func DeleteRoles(id string, tx *sql.Tx) (*sql.Rows, error) {
+func DeleteRoles(id string, tx *sql.Tx) error {
 	query := `DELETE roles where rId=?`
 
-	rows, err := db.Query(query, id)
-	return rows, err
+	_, err := db.Query(query, id)
+	return err
 }
 
-func UpdateRoles(name string, id string, username string) (*sql.Rows, error) {
+func UpdateRoles(name string, id string, username string) error {
 	query := `UPDATE roles SET rName=?, modifyDate=GETDATE(), modifyId=? where rId=?`
 
-	rows, err := db.Query(query, name, username, id)
-	return rows, err
+	_, err := db.Query(query, name, username, id)
+	return err
 }
 
-func GetRolseAuth(id string) (*sql.Rows, error) {
+func GetRolseAuth(id string) ([]models.RolesInfo, error) {
 	query := `select
 	a.aId, a.aName, ra.useYn, ra.createDate, ra.createId, ra.modifyDate, ra.modifyId
 	from 
@@ -82,33 +109,48 @@ func GetRolseAuth(id string) (*sql.Rows, error) {
 	ra.rId = ?`
 
 	rows, err := db.Query(query, id)
-	return rows, err
+	defer rows.Close()
+
+	var arr = make([]models.RolesInfo, 0)
+
+	for rows.Next() {
+		var r models.RolesInfo
+
+		err := rows.Scan(&r.ID, &r.Name, &r.Use, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, r)
+	}
+
+	return arr, err
 }
 
-func AssignRoleAuth(roleID string, authID string, username string) (*sql.Rows, error) {
+func AssignRoleAuth(roleID string, authID string, username string) error {
 	query := `INSERT INTO roles_authority_mapping(rId, aId, createId, modifyId)
 	select ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
-	rows, err := db.Query(query, roleID, authID, username, config.GetConfig().Keycloak_realm)
-	return rows, err
+	_, err := db.Query(query, roleID, authID, username, config.GetConfig().Keycloak_realm)
+	return err
 }
 
-func DismissRoleAuth(roleID string, authID string) (*sql.Rows, error) {
+func DismissRoleAuth(roleID string, authID string) error {
 	query := `DELETE FROM roles_authority_mapping where rId = ? AND aId = ?`
 
-	rows, err := db.Query(query, roleID, authID)
-	return rows, err
+	_, err := db.Query(query, roleID, authID)
+	return err
 }
 
-func UpdateRoleAuth(roleID string, authID string, use string, username string) (*sql.Rows, error) {
+func UpdateRoleAuth(roleID string, authID string, use string, username string) error {
 	query := `UPDATE roles_authority_mapping SET useYn=?, modifyDate=GETDATE(), modifyId=? 
 	where rId = ? AND aId = ?`
 
-	rows, err := db.Query(query, use, username, roleID, authID)
-	return rows, err
+	_, err := db.Query(query, use, username, roleID, authID)
+	return err
 }
 
-func GetAuthUserList() (*sql.Rows, error) {
+func GetAuthUserList() ([]models.UserRolesInfo, error) {
 	query := `select u.ID, 
 	u.USERNAME, 
 	ISNULL(u.FIRST_NAME, '') as FIRST_NAME, 
@@ -126,10 +168,28 @@ func GetAuthUserList() (*sql.Rows, error) {
 		GROUP BY u.USERNAME, u.EMAIL, u.ID, u.FIRST_NAME, u.LAST_NAME`
 
 	rows, err := db.Query(query, config.GetConfig().Keycloak_realm)
-	return rows, err
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var arr = make([]models.UserRolesInfo, 0)
+
+	for rows.Next() {
+		var r models.UserRolesInfo
+
+		err := rows.Scan(&r.ID, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.RoleList)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, r)
+	}
+
+	return arr, nil
 }
 
-func GetUserRole(userID string) (*sql.Rows, error) {
+func GetUserRole(userID string) ([]models.RolesInfo, error) {
 	query := `select r.rId, r.rName, ur.useYn, ur.createDate, ur.createId, ur.modifyDate, ur.modifyId
 	from 
 	roles r join
@@ -139,32 +199,49 @@ func GetUserRole(userID string) (*sql.Rows, error) {
 	ur.userId = ?`
 
 	rows, err := db.Query(query, userID)
-	return rows, err
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var arr = make([]models.RolesInfo, 0)
+
+	for rows.Next() {
+		var r models.RolesInfo
+
+		err := rows.Scan(&r.ID, &r.Name, &r.Use, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, r)
+	}
+	return arr, err
 }
 
-func AssignUserRole(userID string, roleID string, username string) (*sql.Rows, error) {
+func AssignUserRole(userID string, roleID string, username string) error {
 	query := `INSERT INTO user_roles_mapping(userId, rId, createId, modifyId)
 	select ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
-	rows, err := db.Query(query, userID, roleID, username, config.GetConfig().Keycloak_realm)
-	return rows, err
+	_, err := db.Query(query, userID, roleID, username, config.GetConfig().Keycloak_realm)
+	return err
 }
 
-func DismissUserRole(userID string, roleID string) (*sql.Rows, error) {
+func DismissUserRole(userID string, roleID string) error {
 	query := `DELETE FROM user_roles_mapping where userId = ? AND rId = ?`
 
-	rows, err := db.Query(query, userID, roleID)
-	return rows, err
+	_, err := db.Query(query, userID, roleID)
+	return err
 }
 
-func UpdateUserRole(userID string, roleID string, use string, username string) (*sql.Rows, error) {
+func UpdateUserRole(userID string, roleID string, use string, username string) error {
 	query := `UPDATE user_roles_mapping SET useYn=?, modifyDate=GETDATE(), modifyId=? where userId = ? AND rId = ?`
 
-	rows, err := db.Query(query, use, username, userID, roleID)
-	return rows, err
+	_, err := db.Query(query, use, username, userID, roleID)
+	return err
 }
 
-func GetUserAuth(userID string) (*sql.Rows, error) {
+func GetUserAuth(userID string) ([]models.AutuhorityInfo, error) {
 	query := `select a.aId, a.aName 
 	from 
 	user_roles_mapping ur 
@@ -182,10 +259,29 @@ func GetUserAuth(userID string) (*sql.Rows, error) {
 	ra.useYn = 'y'`
 
 	rows, err := db.Query(query, userID)
-	return rows, err
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var arr = make([]models.AutuhorityInfo, 0)
+
+	for rows.Next() {
+		var r models.AutuhorityInfo
+
+		err := rows.Scan(&r.ID, &r.Name)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, r)
+	}
+
+	return arr, nil
 }
 
-func GetUserAuthActive(userName string, authName string) (*sql.Rows, error) {
+func GetUserAuthActive(userName string, authName string) (map[string]interface{}, error) {
 	query := `select 1
 	from 
 	USER_ENTITY u
@@ -207,71 +303,114 @@ func GetUserAuthActive(userName string, authName string) (*sql.Rows, error) {
 	ra.useYn = 'y'`
 
 	rows, err := db.Query(query, userName, authName)
-	return rows, err
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	m := make(map[string]interface{})
+	if rows.Next() {
+		m["active"] = true
+	} else {
+		m["active"] = false
+	}
+
+	return m, nil
 }
 
-func GetAuth() (*sql.Rows, error) {
+func GetAuth() ([]models.AutuhorityInfo, error) {
 	query := `select aId, aName, createDate, createId, modifyDate, modifyId from authority`
 
 	rows, err := db.Query(query)
-	return rows, err
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var arr = make([]models.AutuhorityInfo, 0)
+
+	for rows.Next() {
+		var r models.AutuhorityInfo
+
+		err := rows.Scan(&r.ID, &r.Name, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, r)
+	}
+	return arr, err
 }
 
-func CreateAuth(auth *models.AutuhorityInfo, username string) (*sql.Rows, error) {
+func CreateAuth(auth *models.AutuhorityInfo, username string) error {
 	query := `INSERT INTO authority(aName, url, method, createId, modifyId)
 	select ?, ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?)`
 
-	rows, err := db.Query(query, auth.Name, auth.URL, auth.Method, username, config.GetConfig().Keycloak_realm)
-	return rows, err
+	_, err := db.Query(query, auth.Name, auth.URL, auth.Method, username, config.GetConfig().Keycloak_realm)
+	return err
 }
 
-func DeleteAuth(id string, tx *sql.Tx) (*sql.Rows, error) {
+func DeleteAuth(id string, tx *sql.Tx) error {
 	query := `DELETE authority where aId=?`
 
-	rows, err := db.Query(query, id)
-	return rows, err
+	_, err := db.Query(query, id)
+	return err
 }
 
-func UpdateAuth(auth *models.AutuhorityInfo, username string) (*sql.Rows, error) {
+func UpdateAuth(auth *models.AutuhorityInfo, username string) error {
 	query := `UPDATE authority SET aName=?, url=?, method=?, modifyDate=GETDATE(), modifyId=? where aId=?`
 
-	rows, err := db.Query(query, auth.Name, auth.URL, auth.Method, username, auth.ID)
-	return rows, err
+	_, err := db.Query(query, auth.Name, auth.URL, auth.Method, username, auth.ID)
+	return err
 }
 
-func GetAuthInfo(authID string) (*sql.Rows, error) {
+func GetAuthInfo(authID string) (*models.AutuhorityInfo, error) {
 	query := `select aId, aName, url, method, createDate, createId, modifyDate, modifyId from authority where aId = ?`
 
 	rows, err := db.Query(query, authID)
-	return rows, err
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var r *models.AutuhorityInfo = new(models.AutuhorityInfo)
+
+	if rows.Next() {
+		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.Method, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return r, err
 }
 
-func DeleteRolesAuthByRoleId(id string, tx *sql.Tx) (*sql.Rows, error) {
+func DeleteRolesAuthByRoleId(id string, tx *sql.Tx) error {
 	query := `DELETE roles_authority_mapping where rId=?`
 
-	rows, err := tx.Query(query, id)
-	return rows, err
+	_, err := tx.Query(query, id)
+	return err
 }
 
-func DeleteRolesAuthByAuthId(id string, tx *sql.Tx) (*sql.Rows, error) {
+func DeleteRolesAuthByAuthId(id string, tx *sql.Tx) error {
 	query := `DELETE roles_authority_mapping where aId=?`
 
-	rows, err := tx.Query(query, id)
-	return rows, err
+	_, err := tx.Query(query, id)
+	return err
 }
 
-func DeleteUserRoleByUserId(id string) (*sql.Rows, error) {
+func DeleteUserRoleByUserId(id string) error {
 	query := `DELETE user_roles_mapping where userId=?`
 
-	rows, err := db.Query(query, id)
-	return rows, err
+	_, err := db.Query(query, id)
+	return err
 }
 
-func DeleteUserRoleByRoleId(id string, tx *sql.Tx) (*sql.Rows, error) {
+func DeleteUserRoleByRoleId(id string, tx *sql.Tx) error {
 	query := `DELETE user_roles_mapping where rId=?`
 
-	rows, err := tx.Query(query, id)
-	return rows, err
+	_, err := tx.Query(query, id)
+	return err
 }
 
 func CheckRoleAuthID(roleID string, authID string) error {

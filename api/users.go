@@ -127,7 +127,7 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
-	_, err = iamdb.DeleteUserRoleByUserId(userid)
+	err = iamdb.DeleteUserRoleByUserId(userid)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		c.Abort()

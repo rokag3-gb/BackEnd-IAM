@@ -15,16 +15,7 @@ func InitDbClient(driverName string, dataSourceName string) error {
 		}
 	}
 
-	rows, err := ConnectionTest()
-
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-
-	if !rows.Next() {
-		panic("DB Connection fail")
-	}
+	ConnectionTest()
 
 	return nil
 }
