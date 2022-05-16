@@ -90,9 +90,13 @@ func DeleteRoles(id string, tx *sql.Tx) error {
 }
 
 func UpdateRoles(name string, id string, username string) error {
-	query := `UPDATE roles SET rName=?, modifyDate=GETDATE(), modifyId=? where rId=?`
+	query := `UPDATE roles SET 
+	rName=?, 
+	modifyDate=GETDATE(), 
+	modifyId=(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND  REALM_ID=?) 
+	where rId=?`
 
-	_, err := db.Query(query, name, username, id)
+	_, err := db.Query(query, name, username, config.GetConfig().Keycloak_realm, id)
 	return err
 }
 
@@ -143,10 +147,14 @@ func DismissRoleAuth(roleID string, authID string) error {
 }
 
 func UpdateRoleAuth(roleID string, authID string, use string, username string) error {
-	query := `UPDATE roles_authority_mapping SET useYn=?, modifyDate=GETDATE(), modifyId=? 
-	where rId = ? AND aId = ?`
+	query := `UPDATE roles_authority_mapping SET 
+	useYn=?, 
+	modifyDate=GETDATE(), 
+	modifyId=(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND  REALM_ID=?)
+	where rId = ? 
+	AND aId = ?`
 
-	_, err := db.Query(query, use, username, roleID, authID)
+	_, err := db.Query(query, use, username, config.GetConfig().Keycloak_realm, roleID, authID)
 	return err
 }
 
@@ -235,9 +243,13 @@ func DismissUserRole(userID string, roleID string) error {
 }
 
 func UpdateUserRole(userID string, roleID string, use string, username string) error {
-	query := `UPDATE user_roles_mapping SET useYn=?, modifyDate=GETDATE(), modifyId=? where userId = ? AND rId = ?`
+	query := `UPDATE user_roles_mapping SET 
+	useYn=?, 
+	modifyDate=GETDATE(), 
+	modifyId=(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND  REALM_ID=?) 
+	where userId = ? AND rId = ?`
 
-	_, err := db.Query(query, use, username, userID, roleID)
+	_, err := db.Query(query, use, username, config.GetConfig().Keycloak_realm, userID, roleID)
 	return err
 }
 
@@ -359,9 +371,15 @@ func DeleteAuth(id string, tx *sql.Tx) error {
 }
 
 func UpdateAuth(auth *models.AutuhorityInfo, username string) error {
-	query := `UPDATE authority SET aName=?, url=?, method=?, modifyDate=GETDATE(), modifyId=? where aId=?`
+	query := `UPDATE authority SET 
+	aName=?, 
+	url=?, 
+	method=?, 
+	modifyDate=GETDATE(), 
+	modifyId=(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND  REALM_ID=?) 
+	where aId=?`
 
-	_, err := db.Query(query, auth.Name, auth.URL, auth.Method, username, auth.ID)
+	_, err := db.Query(query, auth.Name, auth.URL, auth.Method, username, config.GetConfig().Keycloak_realm, auth.ID)
 	return err
 }
 
@@ -471,24 +489,59 @@ func CheckUserRoleID(userID string, roleID string) error {
 	return nil
 }
 
-func GetGroupMembersCountMap() (map[string]int, error) {
-	query := `select GROUP_ID, count(USER_ID) as countMembers from USER_GROUP_MEMBERSHIP group by GROUP_ID`
+func GetGroup() ([]models.GroupItem, error) {
+	query := `SELECT ID, NAME, 
+	ISNULL((select count(USER_ID) from USER_GROUP_MEMBERSHIP where GROUP_ID = g.ID AND REALM_ID = ? group by GROUP_ID), 0) as countMembers
+	,createDate, createId, modifyDate, modifyId
+	from KEYCLOAK_GROUP g
+	where
+	REALM_ID = ?`
 
-	rows, err := db.Query(query)
+	rows, err := db.Query(query, config.GetConfig().Keycloak_realm, config.GetConfig().Keycloak_realm)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	countMap := make(map[string]int)
+	var arr = make([]models.GroupItem, 0)
+
 	for rows.Next() {
-		var groupID string
-		var countMembers int
-		err = rows.Scan(&groupID, &countMembers)
+		var r models.GroupItem
+
+		err := rows.Scan(&r.ID, &r.Name, &r.CountMembers, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
 		if err != nil {
 			return nil, err
 		}
-		countMap[groupID] = countMembers
-	}
 
-	return countMap, nil
+		arr = append(arr, r)
+	}
+	return arr, err
+}
+
+func GroupCreate(groupId string, username string) error {
+	query := `UPDATE KEYCLOAK_GROUP SET 
+	createId=B.ID,
+	createDate=GETDATE(),
+	modifyId=B.ID,
+	modifyDate=GETDATE()
+	FROM KEYCLOAK_GROUP A,
+	(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND  REALM_ID=?) B
+	where A.ID=?`
+
+	_, err := db.Query(query, username, config.GetConfig().Keycloak_realm, groupId)
+	return err
+}
+
+func GroupUpdate(groupId string, username string) error {
+	query := `UPDATE KEYCLOAK_GROUP SET 
+	createId=B.ID,
+	createDate=GETDATE(),
+	modifyId=B.ID,
+	modifyDate=GETDATE()
+	FROM KEYCLOAK_GROUP A,
+	(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND  REALM_ID=?) B
+	where A.ID=?`
+
+	_, err := db.Query(query, username, config.GetConfig().Keycloak_realm, groupId)
+	return err
 }

@@ -11,53 +11,17 @@ import (
 )
 
 func GetGroup(c *gin.Context) {
-	token, err := clients.KeycloakToken(c)
+	arr, err := iamdb.GetGroup()
 	if err != nil {
-		c.String(http.StatusBadRequest, err.Error())
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
 		return
 	}
 
-	params := gocloak.GetGroupsParams{
-		First: gocloak.IntP(c.MustGet("first").(int)),
-		Max:   gocloak.IntP(c.MustGet("max").(int)),
-	}
-
-	groupMembersCounts, err := iamdb.GetGroupMembersCountMap()
-	if err != nil {
-		c.String(http.StatusBadRequest, err.Error())
-		return
-	}
-
-	groups, err := clients.KeycloakClient().GetGroups(c,
-		token.AccessToken,
-		clients.KeycloakConfig().Realm,
-		params)
-	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
-		return
-	}
-
-	groupList := []models.GroupItem{}
-	for _, group := range groups {
-		countMembers := 0
-		if val, ok := groupMembersCounts[*group.ID]; ok {
-			countMembers = val
-		}
-		groupList = append(groupList, models.GroupItem{
-			ID:           *group.ID,
-			Name:         *group.Name,
-			CountMembers: countMembers,
-		})
-	}
-
-	c.JSON(http.StatusOK, groupList)
+	c.JSON(http.StatusOK, arr)
 }
 
 func CreateGroup(c *gin.Context) {
-	// TODO: 그룹 생성 시 권한 체크 없음. 추후 Authority 기능 구현시 권한 체크 기능 넣을 것.
-	// TODO: 그룹 생성 시 이름 외에 다른 인자도 받아야 하는지 추후 논의.
-
 	token, _ := clients.KeycloakToken(c)
 	var json models.GroupInfo
 	if err := c.ShouldBindJSON(&json); err != nil {
@@ -78,6 +42,14 @@ func CreateGroup(c *gin.Context) {
 		c.String(apiError.Code, apiError.Message)
 		return
 	}
+
+	err = iamdb.GroupCreate(newGroup, c.GetString("username"))
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
+		return
+	}
+
 	c.JSON(http.StatusOK, gocloak.Group{ID: gocloak.StringP(newGroup)})
 }
 
@@ -96,7 +68,6 @@ func DeleteGroup(c *gin.Context) {
 }
 
 func UpdateGroup(c *gin.Context) {
-	// TODO: 그룹 수정 시 권한 체크 없음. 추후 Authority 기능 구현시 권한 체크 기능 넣을 것.
 	token, _ := clients.KeycloakToken(c)
 	groupid := c.Param("groupid")
 	var json models.GroupInfo
@@ -118,6 +89,13 @@ func UpdateGroup(c *gin.Context) {
 	if err != nil {
 		apiError := err.(*gocloak.APIError)
 		c.String(apiError.Code, apiError.Message)
+		return
+	}
+
+	err = iamdb.GroupUpdate(groupid, c.GetString("username"))
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
 		return
 	}
 
