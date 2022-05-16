@@ -49,23 +49,35 @@ type UserRolesInfo struct {
 }
 
 type RolesInfo struct {
-	ID   string `json:"id" binding:"required"`
-	Name string `json:"name" binding:"required"`
-	Use  string `json:"useYn,omitempty"`
+	ID         string  `json:"id" binding:"required"`
+	Name       string  `json:"name" binding:"required"`
+	Use        string  `json:"useYn,omitempty"`
+	CreateDate *string `json:"createDate"`
+	CreateId   *string `json:"createId"`
+	ModifyDate *string `json:"modifyDate"`
+	ModifyId   *string `json:"modifyId"`
 }
 
 type AutuhorityInfo struct {
-	ID     string `json:"id" binding:"required"`
-	Name   string `json:"name" binding:"required"`
-	URL    string `json:"url,omitempty"`
-	Method string `json:"method,omitempty"`
-	Use    string `json:"useYn,omitempty"`
+	ID         string  `json:"id" binding:"required"`
+	Name       string  `json:"name" binding:"required"`
+	URL        string  `json:"url,omitempty"`
+	Method     string  `json:"method,omitempty"`
+	Use        string  `json:"useYn,omitempty"`
+	CreateDate *string `json:"createDate"`
+	CreateId   *string `json:"createId"`
+	ModifyDate *string `json:"modifyDate"`
+	ModifyId   *string `json:"modifyId"`
 }
 
 type GroupItem struct {
-	ID           string `json:"id" binding:"required"`
-	Name         string `json:"name" binding:"required"`
-	CountMembers int    `json:"countMembers" binding:"required"`
+	ID           string  `json:"id" binding:"required"`
+	Name         string  `json:"name" binding:"required"`
+	CountMembers int     `json:"countMembers" binding:"required"`
+	CreateDate   *string `json:"createDate"`
+	CreateId     *string `json:"createId"`
+	ModifyDate   *string `json:"modifyDate"`
+	ModifyId     *string `json:"modifyId"`
 }
 
 type SecretGroup struct {
