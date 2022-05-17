@@ -358,7 +358,7 @@ func GetAuth() ([]models.AutuhorityInfo, error) {
 
 func CreateAuth(auth *models.AutuhorityInfo, username string) error {
 	query := `INSERT INTO authority(aName, url, method, createId, modifyId)
-	select ?, ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?)`
+	select ?, ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
 	_, err := db.Query(query, auth.Name, auth.URL, auth.Method, username, config.GetConfig().Keycloak_realm)
 	return err
@@ -629,4 +629,120 @@ func UsersUpdate(userId string, username string) error {
 
 	_, err := db.Query(query, username, config.GetConfig().Keycloak_realm, userId)
 	return err
+}
+
+func CreateSecretGroup(secretGroupPath string, username string) error {
+	query := `INSERT INTO vSecretGroup(vSecretGroupPath, REALM_ID, createId, modifyId)
+	select ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
+
+	_, err := db.Query(query, secretGroupPath, config.GetConfig().Keycloak_realm, username, config.GetConfig().Keycloak_realm)
+	return err
+}
+
+func DeleteSecretGroup(secretGroupPath string) error {
+	query := `DELETE FROM vSecretGroup WHERE vSecretGroupPath = ? AND REALM_ID = ?`
+
+	_, err := db.Query(query, secretGroupPath, config.GetConfig().Keycloak_realm)
+	return err
+}
+
+func MergeSecret(secretPath string, secretGroupPath string, username string) error {
+	query := `MERGE INTO vSecret A
+	USING (SELECT 
+	? as spath, 
+	(select vSecretGroupId from vSecretGroup where vSecretGroupPath=? AND REALM_ID=?) as sgid,
+	(select ID from USER_ENTITY WHERE USERNAME =? AND REALM_ID =?) as userid
+	) B
+	ON A.vSecretPath = B.spath
+	AND A.vSecretGroupId = B.sgid
+	WHEN MATCHED THEN
+		UPDATE SET 
+		modifyDate = GETDATE(),
+		modifyId = B.userid
+	WHEN NOT MATCHED THEN
+		INSERT (vSecretPath, vSecretGroupId, createId, modifyId)
+		VALUES(B.spath, B.sgid, B.userid, B.userid);`
+
+	_, err := db.Query(query, secretPath, secretGroupPath, config.GetConfig().Keycloak_realm, username, config.GetConfig().Keycloak_realm)
+
+	return err
+}
+
+func DeleteSecret(secretPath string, secretGroupPath string) error {
+	query := `DELETE FROM vSecret WHERE vSecretPath = ?
+	AND vSecretGroupId = (select vSecretGroupId from vSecretGroup where vSecretGroupPath = ?)`
+
+	_, err := db.Query(query, secretPath, secretGroupPath)
+	return err
+}
+
+func GetSecretGroup() (map[string]models.SecretGroupItem, error) {
+	query := `SELECT vSecretGroupPath, createDate, createId, modifyDate, modifyId FROM vSecretGroup
+	WHERE REALM_ID = ?`
+
+	rows, err := db.Query(query, config.GetConfig().Keycloak_realm)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var m = make(map[string]models.SecretGroupItem)
+
+	for rows.Next() {
+		var r models.SecretGroupItem
+
+		err := rows.Scan(&r.Name, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
+		if err != nil {
+			return nil, err
+		}
+
+		m[r.Name] = r
+	}
+	return m, err
+}
+
+func GetSecret(groupName string) (map[string]models.SecretItem, error) {
+	query := `SELECT vSecretPath, createDate, createId, modifyDate, modifyId FROM vSecret
+	WHERE vSecretGroupId = (SELECT vSecretGroupId FROM vSecretGroup WHERE vSecretGroupPath = ? AND REALM_ID = ?)`
+
+	rows, err := db.Query(query, groupName, config.GetConfig().Keycloak_realm)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var m = make(map[string]models.SecretItem)
+
+	for rows.Next() {
+		var r models.SecretItem
+
+		err := rows.Scan(&r.Name, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
+		if err != nil {
+			return nil, err
+		}
+
+		m[r.Name] = r
+	}
+	return m, err
+}
+
+func GetSecretByName(groupName string, secretName string) (*models.SecretItem, error) {
+	query := `SELECT vSecretPath, createDate, createId, modifyDate, modifyId FROM vSecret
+	WHERE vSecretGroupId = (SELECT vSecretGroupId FROM vSecretGroup WHERE vSecretGroupPath = ? AND REALM_ID = ?) AND vSecretPath = ?`
+
+	rows, err := db.Query(query, groupName, config.GetConfig().Keycloak_realm, secretName)
+	if err != nil {
+		return nil, err
+	}
+
+	m := new(models.SecretItem)
+
+	rows.Next()
+	err = rows.Scan(&m.Name, &m.CreateDate, &m.CreateId, &m.ModifyDate, &m.ModifyId)
+	if err != nil {
+		return m, nil
+	}
+	defer rows.Close()
+
+	return m, err
 }

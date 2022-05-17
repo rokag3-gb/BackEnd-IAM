@@ -83,10 +83,21 @@ type GroupItem struct {
 	ModifyId     *string `json:"modifyId"`
 }
 
-type SecretGroup struct {
-	ID          string `json:"id" binding:"required"`
-	Name        string `json:"name" binding:"required"`
-	Description string `json:"description" binding:"required"`
+type SecretGroupItem struct {
+	Name        string  `json:"name" binding:"required"`
+	Description string  `json:"description" binding:"required"`
+	CreateDate  *string `json:"createDate"`
+	CreateId    *string `json:"createId"`
+	ModifyDate  *string `json:"modifyDate"`
+	ModifyId    *string `json:"modifyId"`
+}
+
+type SecretItem struct {
+	Name       string  `json:"name" binding:"required"`
+	CreateDate *string `json:"createDate"`
+	CreateId   *string `json:"createId"`
+	ModifyDate *string `json:"modifyDate"`
+	ModifyId   *string `json:"modifyId"`
 }
 
 type AutuhorityUse struct {

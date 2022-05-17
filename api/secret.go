@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"iam/clients"
+	"iam/iamdb"
 	"iam/models"
 	"io/ioutil"
 	"net/http"
@@ -20,7 +21,14 @@ func GetSecretGroup(c *gin.Context) {
 		return
 	}
 
-	var arr []models.SecretGroup
+	arr := make([]models.SecretGroupItem, 0)
+
+	secretGroup, err := iamdb.GetSecretGroup()
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
+		return
+	}
 
 	for k, v := range data.Data {
 		group := v.(map[string]interface{})
@@ -29,14 +37,16 @@ func GetSecretGroup(c *gin.Context) {
 			continue
 		}
 
-		var m models.SecretGroup
-
+		name := ""
 		if strings.HasSuffix(k, "/") {
-			m.Name = k[:len(k)-1]
+			name = k[:len(k)-1]
 		} else {
-			m.Name = k
+			name = k
 		}
-		m.ID = group["uuid"].(string)
+
+		m := secretGroup[name]
+
+		m.Name = name
 		m.Description = group["description"].(string)
 
 		arr = append(arr, m)
@@ -53,7 +63,7 @@ func CreateSecretGroup(c *gin.Context) {
 		return
 	}
 
-	var sg *models.SecretGroup
+	var sg *models.SecretGroupItem
 	json.Unmarshal([]byte(value), &sg)
 
 	if sg.Name == "" {
@@ -77,6 +87,13 @@ func CreateSecretGroup(c *gin.Context) {
 		return
 	}
 
+	err = iamdb.CreateSecretGroup(sg.Name, c.GetString("username"))
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
+		return
+	}
+
 	c.Status(http.StatusCreated)
 }
 
@@ -85,6 +102,13 @@ func DeleteSecretGroup(c *gin.Context) {
 	path := fmt.Sprintf("sys/mounts/%s", groupName)
 
 	_, err := clients.VaultClient().Logical().Delete(path)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
+		return
+	}
+
+	err = iamdb.DeleteSecretGroup(groupName)
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
@@ -105,11 +129,32 @@ func GetSecretList(c *gin.Context) {
 		return
 	}
 	if data == nil || data.Data == nil || data.Data["keys"] == nil {
-		c.JSON(http.StatusOK, make([]string, 0))
+		c.JSON(http.StatusNotFound, "Data Not Found")
 		return
 	}
 
-	c.JSON(http.StatusOK, data.Data["keys"])
+	arr := make([]models.SecretItem, 0)
+
+	secrets, err := iamdb.GetSecret(groupName)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
+		return
+	}
+
+	tmp := data.Data["keys"].([]interface{})
+	vItem := make([]string, len(tmp))
+	for i, v := range tmp {
+		vItem[i] = v.(string)
+	}
+
+	for _, item := range vItem {
+		v := secrets[item]
+		v.Name = item
+		arr = append(arr, v)
+	}
+
+	c.JSON(http.StatusOK, arr)
 }
 
 func GetSecret(c *gin.Context) {
@@ -125,10 +170,22 @@ func GetSecret(c *gin.Context) {
 	}
 
 	if data == nil || data.Data == nil {
-		c.Status(http.StatusInternalServerError)
+		c.String(http.StatusNotFound, "Data Not Found")
 		c.Abort()
 		return
 	}
+
+	secret, err := iamdb.GetSecretByName(groupName, secretName)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
+		return
+	}
+
+	data.Data["createDate"] = secret.CreateDate
+	data.Data["createId"] = secret.CreateId
+	data.Data["modifyDate"] = secret.ModifyDate
+	data.Data["modifyId"] = secret.ModifyId
 
 	c.JSON(http.StatusOK, data.Data)
 }
@@ -154,6 +211,13 @@ func MargeSecret(c *gin.Context) {
 
 	if data == nil || data.Data == nil {
 		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	err = iamdb.MergeSecret(secretName, groupName, c.GetString("username"))
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
 		return
 	}
@@ -287,6 +351,13 @@ func DeleteSecretMetadata(c *gin.Context) {
 	path := fmt.Sprintf("%s/metadata/%s", groupName, secretName)
 
 	_, err := clients.VaultClient().Logical().Delete(path)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		c.Abort()
+		return
+	}
+
+	err = iamdb.DeleteSecret(secretName, groupName)
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		c.Abort()
