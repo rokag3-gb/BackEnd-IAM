@@ -455,7 +455,7 @@ func CheckRoleAuthID(roleID string, authID string) error {
 	}
 
 	if r != 2 {
-		return errors.New("value is wrong")
+		return errors.New("Bad Request")
 	}
 
 	return nil
@@ -484,7 +484,7 @@ func CheckUserRoleID(userID string, roleID string) error {
 	}
 
 	if r != 2 {
-		return errors.New("value is wrong")
+		return errors.New("Bad Request")
 	}
 
 	return nil

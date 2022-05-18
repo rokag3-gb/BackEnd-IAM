@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	logger "cloudmt.co.kr/mateLogger"
 	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -29,7 +30,8 @@ func IntrospectMiddleware() gin.HandlerFunc {
 			clients.KeycloakConfig().Realm)
 
 		if err != nil && !config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, "Inspection failed:"+err.Error())
+			logger.Error(err.Error())
+			c.Status(http.StatusInternalServerError)
 			c.Abort()
 		}
 

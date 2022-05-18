@@ -6,6 +6,7 @@ import (
 	"iam/models"
 	"net/http"
 
+	logger "cloudmt.co.kr/mateLogger"
 	"github.com/Nerzal/gocloak/v11"
 	"github.com/gin-gonic/gin"
 )
@@ -13,7 +14,8 @@ import (
 func GetGroup(c *gin.Context) {
 	arr, err := iamdb.GetGroup()
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
@@ -45,7 +47,8 @@ func CreateGroup(c *gin.Context) {
 
 	err = iamdb.GroupCreate(newGroup, c.GetString("username"))
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
@@ -94,7 +97,8 @@ func UpdateGroup(c *gin.Context) {
 
 	err = iamdb.GroupUpdate(groupid, c.GetString("username"))
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}

@@ -6,6 +6,7 @@ import (
 	"iam/models"
 	"net/http"
 
+	logger "cloudmt.co.kr/mateLogger"
 	"github.com/Nerzal/gocloak/v11"
 	"github.com/gin-gonic/gin"
 )
@@ -13,7 +14,8 @@ import (
 func Users(c *gin.Context) {
 	arr, err := iamdb.GetUsers()
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
@@ -56,7 +58,8 @@ func CreateUser(c *gin.Context) {
 
 	err = iamdb.UsersCreate(newUserId, c.GetString("username"))
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
@@ -100,7 +103,8 @@ func UpdateUser(c *gin.Context) {
 
 	err = iamdb.UsersUpdate(userid, c.GetString("username"))
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}

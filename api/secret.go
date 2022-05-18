@@ -10,13 +10,15 @@ import (
 	"net/http"
 	"strings"
 
+	logger "cloudmt.co.kr/mateLogger"
 	"github.com/gin-gonic/gin"
 )
 
 func GetSecretGroup(c *gin.Context) {
 	data, err := clients.VaultClient().Logical().Read("sys/mounts")
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
@@ -25,7 +27,8 @@ func GetSecretGroup(c *gin.Context) {
 
 	secretGroup, err := iamdb.GetSecretGroup()
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
@@ -82,14 +85,16 @@ func CreateSecretGroup(c *gin.Context) {
 		},
 	})
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
 
 	err = iamdb.CreateSecretGroup(sg.Name, c.GetString("username"))
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
@@ -103,14 +108,16 @@ func DeleteSecretGroup(c *gin.Context) {
 
 	_, err := clients.VaultClient().Logical().Delete(path)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
 
 	err = iamdb.DeleteSecretGroup(groupName)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
@@ -124,7 +131,8 @@ func GetSecretList(c *gin.Context) {
 
 	data, err := clients.VaultClient().Logical().List(path)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
@@ -137,7 +145,8 @@ func GetSecretList(c *gin.Context) {
 
 	secrets, err := iamdb.GetSecret(groupName)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
@@ -164,7 +173,8 @@ func GetSecret(c *gin.Context) {
 
 	data, err := clients.VaultClient().Logical().Read(path)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
@@ -177,7 +187,8 @@ func GetSecret(c *gin.Context) {
 
 	secret, err := iamdb.GetSecretByName(groupName, secretName)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
@@ -204,7 +215,8 @@ func MargeSecret(c *gin.Context) {
 
 	data, err := clients.VaultClient().Logical().WriteBytes(path, value)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
@@ -217,7 +229,8 @@ func MargeSecret(c *gin.Context) {
 
 	err = iamdb.MergeSecret(secretName, groupName, c.GetString("username"))
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
@@ -232,7 +245,8 @@ func GetMetadataSecret(c *gin.Context) {
 
 	data, err := clients.VaultClient().Logical().Read(path)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
@@ -281,7 +295,8 @@ func DeleteSecret(c *gin.Context) {
 
 	_, err = clients.VaultClient().Logical().WriteBytes(path, value)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
@@ -309,7 +324,8 @@ func UndeleteSecret(c *gin.Context) {
 
 	_, err = clients.VaultClient().Logical().WriteBytes(path, value)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
@@ -337,7 +353,8 @@ func DestroySecret(c *gin.Context) {
 
 	_, err = clients.VaultClient().Logical().WriteBytes(path, value)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
@@ -352,14 +369,16 @@ func DeleteSecretMetadata(c *gin.Context) {
 
 	_, err := clients.VaultClient().Logical().Delete(path)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
 
 	err = iamdb.DeleteSecret(secretName, groupName)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
