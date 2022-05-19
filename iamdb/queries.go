@@ -676,17 +676,41 @@ func DeleteSecret(secretPath string, secretGroupPath string) error {
 	return err
 }
 
-func GetSecretGroup() (map[string]models.SecretGroupItem, error) {
-	query := `SELECT vSecretGroupPath, createDate, createId, modifyDate, modifyId FROM vSecretGroup
-	WHERE REALM_ID = ?`
+func GetSecretGroup(data []models.SecretGroupItem, username string) ([]models.SecretGroupItem, error) {
+	query := `declare @values table
+	(
+		sg varchar(310)
+	)`
+	for _, d := range data {
+		query += "insert into @values values ('/secret/" + d.Name + "/')"
+	}
+	query += `select C.secretGroup, D.createDate, D.createId, D.modifyDate, D.modifyId 
+	from (select REPLACE(REPLACE(B.sg,'/secret/',''),'/','') as secretGroup 
+	from (select
+	REPLACE(url,'*','%%') as auth_url
+	from USER_ENTITY u
+	join user_roles_mapping ur on u.ID = ur.userId
+	join roles_authority_mapping ra on ur.rId = ra.rId
+	join authority a on ra.aId = a.aId
+	where ur.useYn = 'y'
+	and ra.useYn = 'y'
+	and u.USERNAME = ?
+	and u.REALM_ID = ?
+	) A
+	join @values B
+	ON PATINDEX(A.auth_url, B.sg) = 1
+	group by B.sg) C
+	left outer join
+	vSecretGroup D
+	ON C.secretGroup = D.vSecretGroupPath`
 
-	rows, err := db.Query(query, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, username, config.GetConfig().Keycloak_realm)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var m = make(map[string]models.SecretGroupItem)
+	arr := make([]models.SecretGroupItem, 0)
 
 	for rows.Next() {
 		var r models.SecretGroupItem
@@ -696,9 +720,9 @@ func GetSecretGroup() (map[string]models.SecretGroupItem, error) {
 			return nil, err
 		}
 
-		m[r.Name] = r
+		arr = append(arr, r)
 	}
-	return m, err
+	return arr, err
 }
 
 func GetSecret(groupName string) (map[string]models.SecretItem, error) {

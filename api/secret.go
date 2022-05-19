@@ -25,14 +25,6 @@ func GetSecretGroup(c *gin.Context) {
 
 	arr := make([]models.SecretGroupItem, 0)
 
-	secretGroup, err := iamdb.GetSecretGroup()
-	if err != nil {
-		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
-		c.Abort()
-		return
-	}
-
 	for k, v := range data.Data {
 		group := v.(map[string]interface{})
 
@@ -47,7 +39,7 @@ func GetSecretGroup(c *gin.Context) {
 			name = k
 		}
 
-		m := secretGroup[name]
+		var m models.SecretGroupItem
 
 		m.Name = name
 		m.Description = group["description"].(string)
@@ -55,7 +47,15 @@ func GetSecretGroup(c *gin.Context) {
 		arr = append(arr, m)
 	}
 
-	c.JSON(http.StatusOK, arr)
+	secretGroup, err := iamdb.GetSecretGroup(arr, c.GetString("username"))
+	if err != nil {
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	c.JSON(http.StatusOK, secretGroup)
 }
 
 func CreateSecretGroup(c *gin.Context) {

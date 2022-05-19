@@ -137,7 +137,7 @@ func makeRouter() *gin.Engine {
 		users.GET("/:userid", api.GetUser)
 		users.GET("/:userid/credentials", api.GetUserCredentials)
 		users.PUT("/:userid/reset-password", api.ResetUserPassword)
-		users.GET("/:userid/groups", api.GetUserGroups)
+		users.GET("/:userid/groups", middlewares.ListQueryRangeMiddleware(), api.GetUserGroups)
 		users.PUT("/:userid/groups/:groupid", api.AddUserToGroup)
 		users.DELETE("/:userid/groups/:groupid", api.DeleteUserFromGroup)
 		users.GET("/:userid/sessions", api.GetUserSessions)
