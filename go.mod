@@ -3,6 +3,7 @@ module iam
 go 1.17
 
 require (
+	cloudmt.co.kr/mateLogger v0.0.0
 	github.com/Nerzal/gocloak/v11 v11.0.2
 	github.com/denisenkom/go-mssqldb v0.12.0
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
@@ -10,11 +11,6 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/hashicorp/vault/api v1.5.0
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
-	cloudmt.co.kr/mateLogger v0.0.0
-)
-
-replace (
-	cloudmt.co.kr/mateLogger v0.0.0 => ./mateLogger
 )
 
 require (
@@ -32,6 +28,7 @@ require (
 	github.com/golang-sql/sqlexp v0.0.0-20170517235910-f1bb20e5a188 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-hclog v1.2.0 // indirect

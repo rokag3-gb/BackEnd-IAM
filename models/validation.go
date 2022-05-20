@@ -84,12 +84,14 @@ type GroupItem struct {
 }
 
 type SecretGroupItem struct {
-	Name        string  `json:"name" binding:"required"`
-	Description string  `json:"description" binding:"required"`
-	CreateDate  *string `json:"createDate"`
-	CreateId    *string `json:"createId"`
-	ModifyDate  *string `json:"modifyDate"`
-	ModifyId    *string `json:"modifyId"`
+	Name        string   `json:"name" binding:"required"`
+	Description string   `json:"description" binding:"required"`
+	RoleId      []string `json:"roleId,omitempty"`
+	UserId      []string `json:"userId,omitempty"`
+	CreateDate  *string  `json:"createDate"`
+	CreateId    *string  `json:"createId"`
+	ModifyDate  *string  `json:"modifyDate"`
+	ModifyId    *string  `json:"modifyId"`
 }
 
 type SecretItem struct {

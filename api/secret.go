@@ -12,6 +12,7 @@ import (
 
 	logger "cloudmt.co.kr/mateLogger"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func GetSecretGroup(c *gin.Context) {
@@ -75,6 +76,77 @@ func CreateSecretGroup(c *gin.Context) {
 		return
 	}
 
+	tx, err := iamdb.DBClient().Begin()
+	if err != nil {
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	err = iamdb.CreateSecretGroupTx(tx, sg.Name, c.GetString("username"))
+	if err != nil {
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	authname := sg.Name + "_MANAGER"
+	authId := uuid.New()
+
+	rolename := sg.Name + "_Manager"
+	roleId := uuid.New()
+
+	err = iamdb.CreateAuthIDTx(tx, authId.String(), authname, "/secret/"+sg.Name+"/*", "ALL", c.GetString("username"))
+	if err != nil {
+		tx.Rollback()
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	err = iamdb.CreateRolesIdTx(tx, roleId.String(), rolename, c.GetString("username"))
+	if err != nil {
+		tx.Rollback()
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	err = iamdb.AssignRoleAuthTx(tx, roleId.String(), authId.String(), c.GetString("username"))
+	if err != nil {
+		tx.Rollback()
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	for _, role := range sg.RoleId {
+		err = iamdb.AssignRoleAuthTx(tx, role, authId.String(), c.GetString("username"))
+		if err != nil {
+			tx.Rollback()
+			logger.Error(err.Error())
+			c.Status(http.StatusInternalServerError)
+			c.Abort()
+			return
+		}
+	}
+
+	for _, user := range sg.UserId {
+		err = iamdb.AssignUserRoleTx(tx, user, roleId.String(), c.GetString("username"))
+		if err != nil {
+			tx.Rollback()
+			logger.Error(err.Error())
+			c.Status(http.StatusInternalServerError)
+			c.Abort()
+			return
+		}
+	}
+
 	path := fmt.Sprintf("sys/mounts/%s", sg.Name)
 
 	_, err = clients.VaultClient().Logical().Write(path, map[string]interface{}{
@@ -85,14 +157,15 @@ func CreateSecretGroup(c *gin.Context) {
 		},
 	})
 	if err != nil {
+		tx.Rollback()
 		logger.Error(err.Error())
 		c.Status(http.StatusInternalServerError)
 		c.Abort()
 		return
 	}
 
-	err = iamdb.CreateSecretGroup(sg.Name, c.GetString("username"))
-	if err != nil {
+	if err = tx.Commit(); err != nil {
+		tx.Rollback()
 		logger.Error(err.Error())
 		c.Status(http.StatusInternalServerError)
 		c.Abort()
