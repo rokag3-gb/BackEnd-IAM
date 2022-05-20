@@ -63,7 +63,7 @@ func DeleteRoles(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.DeleteRolesAuthByRoleId(roleid, tx)
+	err = iamdb.DeleteRolesAuthByRoleId(tx, roleid)
 	if err != nil {
 		tx.Rollback()
 		logger.Error(err.Error())
@@ -72,7 +72,7 @@ func DeleteRoles(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.DeleteUserRoleByRoleId(roleid, tx)
+	err = iamdb.DeleteUserRoleByRoleId(tx, roleid)
 	if err != nil {
 		tx.Rollback()
 		logger.Error(err.Error())
@@ -81,7 +81,7 @@ func DeleteRoles(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.DeleteRoles(roleid, tx)
+	err = iamdb.DeleteRolesTx(tx, roleid)
 	if err != nil {
 		tx.Rollback()
 		logger.Error(err.Error())
@@ -422,7 +422,7 @@ func DeleteAuth(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.DeleteRolesAuthByAuthId(authid, tx)
+	err = iamdb.DeleteRolesAuthByAuthId(tx, authid)
 	if err != nil {
 		tx.Rollback()
 		logger.Error(err.Error())

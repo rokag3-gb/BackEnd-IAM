@@ -177,9 +177,8 @@ func CreateSecretGroup(c *gin.Context) {
 
 func DeleteSecretGroup(c *gin.Context) {
 	groupName := c.Param("groupName")
-	path := fmt.Sprintf("sys/mounts/%s", groupName)
 
-	_, err := clients.VaultClient().Logical().Delete(path)
+	tx, err := iamdb.DBClient().Begin()
 	if err != nil {
 		logger.Error(err.Error())
 		c.Status(http.StatusInternalServerError)
@@ -187,8 +186,65 @@ func DeleteSecretGroup(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.DeleteSecretGroup(groupName)
+	authname := groupName + "_MANAGER"
+	rolename := groupName + "_Manager"
+
+	err = iamdb.DismissUserRoleByRoleNameTx(tx, rolename)
 	if err != nil {
+		tx.Rollback()
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	err = iamdb.DeleteRolesAuthByAuthNameTx(tx, authname)
+	if err != nil {
+		tx.Rollback()
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	err = iamdb.DeleteAuthNameTx(tx, authname)
+	if err != nil {
+		tx.Rollback()
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	err = iamdb.DeleteRolesNameTx(tx, rolename)
+	if err != nil {
+		tx.Rollback()
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	err = iamdb.DeleteSecretGroupTx(tx, groupName)
+	if err != nil {
+		tx.Rollback()
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	path := fmt.Sprintf("sys/mounts/%s", groupName)
+	_, err = clients.VaultClient().Logical().Delete(path)
+	if err != nil {
+		logger.Error(err.Error())
+		c.Status(http.StatusInternalServerError)
+		c.Abort()
+		return
+	}
+
+	if err = tx.Commit(); err != nil {
+		tx.Rollback()
 		logger.Error(err.Error())
 		c.Status(http.StatusInternalServerError)
 		c.Abort()

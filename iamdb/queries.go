@@ -91,10 +91,17 @@ func CreateRolesIdTx(tx *sql.Tx, id string, name string, username string) error 
 	return err
 }
 
-func DeleteRoles(id string, tx *sql.Tx) error {
+func DeleteRolesTx(tx *sql.Tx, id string) error {
 	query := `DELETE roles where rId=?`
 
 	_, err := tx.Query(query, id)
+	return err
+}
+
+func DeleteRolesNameTx(tx *sql.Tx, name string) error {
+	query := `DELETE roles where rName=? AND REALM_ID = ?`
+
+	_, err := tx.Query(query, name, config.GetConfig().Keycloak_realm)
 	return err
 }
 
@@ -255,7 +262,7 @@ func AssignUserRole(userID string, roleID string, username string) error {
 func AssignUserRoleTx(tx *sql.Tx, userID string, roleID string, username string) error {
 	query := `INSERT INTO user_roles_mapping(userId, rId, createId, modifyId)
 	select 
-	?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
+	?, ?, ID, ID from USER_ENTITY WHERE REALM_ID = ?`
 
 	_, err := tx.Query(query, userID, roleID, username, config.GetConfig().Keycloak_realm)
 	return err
@@ -265,6 +272,14 @@ func DismissUserRole(userID string, roleID string) error {
 	query := `DELETE FROM user_roles_mapping where userId = ? AND rId = ?`
 
 	_, err := db.Query(query, userID, roleID)
+	return err
+}
+
+func DismissUserRoleByRoleNameTx(tx *sql.Tx, roleName string) error {
+	query := `DELETE FROM user_roles_mapping where  
+	rId = (select rId from roles where rName = ? AND REALM_ID = ?)`
+
+	_, err := tx.Query(query, roleName, config.GetConfig().Keycloak_realm)
 	return err
 }
 
@@ -404,6 +419,13 @@ func DeleteAuth(id string, tx *sql.Tx) error {
 	return err
 }
 
+func DeleteAuthNameTx(tx *sql.Tx, name string) error {
+	query := `DELETE authority where aName=? AND REALM_ID = ?`
+
+	_, err := tx.Query(query, name, config.GetConfig().Keycloak_realm)
+	return err
+}
+
 func UpdateAuth(auth *models.AutuhorityInfo, username string) error {
 	query := `UPDATE authority SET 
 	aName=?, 
@@ -437,17 +459,25 @@ func GetAuthInfo(authID string) (*models.AutuhorityInfo, error) {
 	return r, err
 }
 
-func DeleteRolesAuthByRoleId(id string, tx *sql.Tx) error {
+func DeleteRolesAuthByRoleId(tx *sql.Tx, id string) error {
 	query := `DELETE roles_authority_mapping where rId=?`
 
 	_, err := tx.Query(query, id)
 	return err
 }
 
-func DeleteRolesAuthByAuthId(id string, tx *sql.Tx) error {
+func DeleteRolesAuthByAuthId(tx *sql.Tx, id string) error {
 	query := `DELETE roles_authority_mapping where aId=?`
 
 	_, err := tx.Query(query, id)
+	return err
+}
+
+func DeleteRolesAuthByAuthNameTx(tx *sql.Tx, roleName string) error {
+	query := `DELETE roles_authority_mapping where aId =
+	(select aId from authority where aName = ? AND REALM_ID = ?)`
+
+	_, err := tx.Query(query, roleName, config.GetConfig().Keycloak_realm)
 	return err
 }
 
@@ -458,7 +488,7 @@ func DeleteUserRoleByUserId(id string) error {
 	return err
 }
 
-func DeleteUserRoleByRoleId(id string, tx *sql.Tx) error {
+func DeleteUserRoleByRoleId(tx *sql.Tx, id string) error {
 	query := `DELETE user_roles_mapping where rId=?`
 
 	_, err := tx.Query(query, id)
@@ -672,10 +702,10 @@ func CreateSecretGroupTx(tx *sql.Tx, secretGroupPath string, username string) er
 	return err
 }
 
-func DeleteSecretGroup(secretGroupPath string) error {
+func DeleteSecretGroupTx(tx *sql.Tx, secretGroupPath string) error {
 	query := `DELETE FROM vSecretGroup WHERE vSecretGroupPath = ? AND REALM_ID = ?`
 
-	_, err := db.Query(query, secretGroupPath, config.GetConfig().Keycloak_realm)
+	_, err := tx.Query(query, secretGroupPath, config.GetConfig().Keycloak_realm)
 	return err
 }
 
