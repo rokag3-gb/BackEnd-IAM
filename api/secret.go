@@ -98,7 +98,7 @@ func CreateSecretGroup(c *gin.Context) {
 	rolename := sg.Name + "_Manager"
 	roleId := uuid.New()
 
-	err = iamdb.CreateAuthIDTx(tx, authId.String(), authname, "/secret/"+sg.Name+"/*", "ALL", c.GetString("username"))
+	err = iamdb.CreateAuthIdTx(tx, authId.String(), authname, "/secret/"+sg.Name+"/*", "ALL", c.GetString("username"))
 	if err != nil {
 		tx.Rollback()
 		logger.Error(err.Error())
@@ -256,6 +256,14 @@ func DeleteSecretGroup(c *gin.Context) {
 
 func GetSecretList(c *gin.Context) {
 	groupName := c.Param("groupName")
+
+	if err := CheckGroupName(groupName); err != nil {
+		logger.Error(err.Error())
+		c.Status(http.StatusBadRequest)
+		c.Abort()
+		return
+	}
+
 	path := fmt.Sprintf("%s/metadata", groupName)
 
 	data, err := clients.VaultClient().Logical().List(path)
@@ -265,12 +273,13 @@ func GetSecretList(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	if data == nil || data.Data == nil || data.Data["keys"] == nil {
-		c.JSON(http.StatusNotFound, "Data Not Found")
-		return
-	}
 
 	arr := make([]models.SecretItem, 0)
+
+	if data == nil || data.Data == nil || data.Data["keys"] == nil {
+		c.JSON(http.StatusOK, arr)
+		return
+	}
 
 	secrets, err := iamdb.GetSecret(groupName)
 	if err != nil {
@@ -513,4 +522,14 @@ func DeleteSecretMetadata(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+func CheckGroupName(groupName string) error {
+	path := fmt.Sprintf("sys/mounts/%s", groupName)
+	_, err := clients.VaultClient().Logical().Read(path)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

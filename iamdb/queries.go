@@ -76,30 +76,30 @@ func GetRoles() ([]models.RolesInfo, error) {
 }
 
 func CreateRoles(name string, username string) error {
-	query := `INSERT INTO roles(rName, createId, modifyId) 
-	select ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
+	query := `INSERT INTO roles(rName, REALM_ID, createId, modifyId) 
+	select ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
-	_, err := db.Query(query, name, username, config.GetConfig().Keycloak_realm)
+	_, err := db.Query(query, name, config.GetConfig().Keycloak_realm, username, config.GetConfig().Keycloak_realm)
 	return err
 }
 
 func CreateRolesIdTx(tx *sql.Tx, id string, name string, username string) error {
-	query := `INSERT INTO roles(rId, rName, createId, modifyId) 
-	select ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
+	query := `INSERT INTO roles(rId, rName, REALM_ID, createId, modifyId) 
+	select ?, ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
-	_, err := tx.Query(query, id, name, username, config.GetConfig().Keycloak_realm)
+	_, err := tx.Query(query, id, name, config.GetConfig().Keycloak_realm, username, config.GetConfig().Keycloak_realm)
 	return err
 }
 
 func DeleteRolesTx(tx *sql.Tx, id string) error {
-	query := `DELETE roles where rId=?`
+	query := `DELETE roles where rId = ? AND REALM_ID = ?`
 
-	_, err := tx.Query(query, id)
+	_, err := tx.Query(query, id, config.GetConfig().Keycloak_realm)
 	return err
 }
 
 func DeleteRolesNameTx(tx *sql.Tx, name string) error {
-	query := `DELETE roles where rName=? AND REALM_ID = ?`
+	query := `DELETE roles where rName = ? AND REALM_ID = ?`
 
 	_, err := tx.Query(query, name, config.GetConfig().Keycloak_realm)
 	return err
@@ -107,12 +107,12 @@ func DeleteRolesNameTx(tx *sql.Tx, name string) error {
 
 func UpdateRoles(name string, id string, username string) error {
 	query := `UPDATE roles SET 
-	rName=?, 
+	rName = ?, 
 	modifyDate=GETDATE(), 
-	modifyId=(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID=?) 
-	where rId=?`
+	modifyId=(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) 
+	where rId = ? AND REALM_ID = ?`
 
-	_, err := db.Query(query, name, username, config.GetConfig().Keycloak_realm, id)
+	_, err := db.Query(query, name, username, config.GetConfig().Keycloak_realm, id, config.GetConfig().Keycloak_realm)
 	return err
 }
 
@@ -172,9 +172,9 @@ func DismissRoleAuth(roleID string, authID string) error {
 
 func UpdateRoleAuth(roleID string, authID string, use string, username string) error {
 	query := `UPDATE roles_authority_mapping SET 
-	useYn=?, 
+	useYn = ?, 
 	modifyDate=GETDATE(), 
-	modifyId=(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND  REALM_ID=?)
+	modifyId=(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?)
 	where rId = ? 
 	AND aId = ?`
 
@@ -261,8 +261,7 @@ func AssignUserRole(userID string, roleID string, username string) error {
 
 func AssignUserRoleTx(tx *sql.Tx, userID string, roleID string, username string) error {
 	query := `INSERT INTO user_roles_mapping(userId, rId, createId, modifyId)
-	select 
-	?, ?, ID, ID from USER_ENTITY WHERE REALM_ID = ?`
+	select ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
 	_, err := tx.Query(query, userID, roleID, username, config.GetConfig().Keycloak_realm)
 	return err
@@ -276,7 +275,7 @@ func DismissUserRole(userID string, roleID string) error {
 }
 
 func DismissUserRoleByRoleNameTx(tx *sql.Tx, roleName string) error {
-	query := `DELETE FROM user_roles_mapping where  
+	query := `DELETE FROM user_roles_mapping where 
 	rId = (select rId from roles where rName = ? AND REALM_ID = ?)`
 
 	_, err := tx.Query(query, roleName, config.GetConfig().Keycloak_realm)
@@ -285,9 +284,9 @@ func DismissUserRoleByRoleNameTx(tx *sql.Tx, roleName string) error {
 
 func UpdateUserRole(userID string, roleID string, use string, username string) error {
 	query := `UPDATE user_roles_mapping SET 
-	useYn=?, 
+	useYn = ?, 
 	modifyDate=GETDATE(), 
-	modifyId=(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND  REALM_ID=?) 
+	modifyId=(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) 
 	where userId = ? AND rId = ?`
 
 	_, err := db.Query(query, use, username, config.GetConfig().Keycloak_realm, userID, roleID)
@@ -295,23 +294,18 @@ func UpdateUserRole(userID string, roleID string, use string, username string) e
 }
 
 func GetUserAuth(userID string) ([]models.AutuhorityInfo, error) {
-	query := `select a.aId, a.aName 
-	from 
-	user_roles_mapping ur 
-	join 
-	roles_authority_mapping ra 
+	query := `select a.aId, a.aName, a.createDate, a.createId, a.modifyDate, a.modifyId
+	from user_roles_mapping ur 
+	join roles_authority_mapping ra 
 	on ur.rId = ra.rId
-	join 
-	authority a 
+	join authority a 
 	on ra.aId = a.aId
-	where 
-	userId = ?
-	and
-	ur.useYn = 'y'
-	and
-	ra.useYn = 'y'`
+	where userId = ?
+	and	ur.useYn = 'y'
+	and	ra.useYn = 'y'
+	AND a.REALM_ID = ?`
 
-	rows, err := db.Query(query, userID)
+	rows, err := db.Query(query, userID, config.GetConfig().Keycloak_realm)
 
 	if err != nil {
 		return nil, err
@@ -323,7 +317,7 @@ func GetUserAuth(userID string) ([]models.AutuhorityInfo, error) {
 	for rows.Next() {
 		var r models.AutuhorityInfo
 
-		err := rows.Scan(&r.ID, &r.Name)
+		err := rows.Scan(&r.ID, &r.Name, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
 		if err != nil {
 			return nil, err
 		}
@@ -336,26 +330,20 @@ func GetUserAuth(userID string) ([]models.AutuhorityInfo, error) {
 
 func GetUserAuthActive(userName string, authName string) (map[string]interface{}, error) {
 	query := `select 1
-	from 
-	USER_ENTITY u
-	join
-	user_roles_mapping ur 
+	from USER_ENTITY u
+	join user_roles_mapping ur 
 	on u.ID = ur.userId
-	join 
-	roles_authority_mapping ra 
+	join roles_authority_mapping ra 
 	on ur.rId = ra.rId
-	join 
-	authority a 
+	join authority a 
 	on ra.aId = a.aId
 	where u.USERNAME = ?
-	AND
-	a.aName = ?
-	and
-	ur.useYn = 'y'
-	and
-	ra.useYn = 'y'`
+	AND a.aName = ?
+	and	ur.useYn = 'y'
+	and	ra.useYn = 'y'
+	AND u.REALM_ID = ?`
 
-	rows, err := db.Query(query, userName, authName)
+	rows, err := db.Query(query, userName, authName, config.GetConfig().Keycloak_realm)
 
 	if err != nil {
 		return nil, err
@@ -397,30 +385,30 @@ func GetAuth() ([]models.AutuhorityInfo, error) {
 }
 
 func CreateAuth(auth *models.AutuhorityInfo, username string) error {
-	query := `INSERT INTO authority(aName, url, method, createId, modifyId)
-	select ?, ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
+	query := `INSERT INTO authority(aName, url, method, REALM_ID, createId, modifyId)
+	select ?, ?, ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
-	_, err := db.Query(query, auth.Name, auth.URL, auth.Method, username, config.GetConfig().Keycloak_realm)
+	_, err := db.Query(query, auth.Name, auth.URL, auth.Method, config.GetConfig().Keycloak_realm, username, config.GetConfig().Keycloak_realm)
 	return err
 }
 
-func CreateAuthIDTx(tx *sql.Tx, id string, name string, url string, method string, username string) error {
-	query := `INSERT INTO authority(aId, aName, url, method, createId, modifyId)
-	select ?, ?, ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
+func CreateAuthIdTx(tx *sql.Tx, id string, name string, url string, method string, username string) error {
+	query := `INSERT INTO authority(aId, aName, url, method, REALM_ID, createId, modifyId)
+	select ?, ?, ?, ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
-	_, err := tx.Query(query, id, name, url, method, username, config.GetConfig().Keycloak_realm)
+	_, err := tx.Query(query, id, name, url, method, config.GetConfig().Keycloak_realm, username, config.GetConfig().Keycloak_realm)
 	return err
 }
 
 func DeleteAuth(id string, tx *sql.Tx) error {
-	query := `DELETE authority where aId=? AND REALM_ID = ?`
+	query := `DELETE authority where aId = ? AND REALM_ID = ?`
 
 	_, err := tx.Query(query, id, config.GetConfig().Keycloak_realm)
 	return err
 }
 
 func DeleteAuthNameTx(tx *sql.Tx, name string) error {
-	query := `DELETE authority where aName=? AND REALM_ID = ?`
+	query := `DELETE authority where aName = ? AND REALM_ID = ?`
 
 	_, err := tx.Query(query, name, config.GetConfig().Keycloak_realm)
 	return err
@@ -428,21 +416,21 @@ func DeleteAuthNameTx(tx *sql.Tx, name string) error {
 
 func UpdateAuth(auth *models.AutuhorityInfo, username string) error {
 	query := `UPDATE authority SET 
-	aName=?, 
-	url=?, 
-	method=?, 
+	aName = ?, 
+	url = ?, 
+	method = ?, 
 	modifyDate=GETDATE(), 
-	modifyId=(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND  REALM_ID=?) 
-	where aId=?`
+	modifyId=(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) 
+	where aId = ?`
 
 	_, err := db.Query(query, auth.Name, auth.URL, auth.Method, username, config.GetConfig().Keycloak_realm, auth.ID)
 	return err
 }
 
 func GetAuthInfo(authID string) (*models.AutuhorityInfo, error) {
-	query := `select aId, aName, url, method, createDate, createId, modifyDate, modifyId from authority where aId = ?`
+	query := `select aId, aName, url, method, createDate, createId, modifyDate, modifyId from authority where aId = ? AND REALM_ID = ?`
 
-	rows, err := db.Query(query, authID)
+	rows, err := db.Query(query, authID, config.GetConfig().Keycloak_realm)
 	if err != nil {
 		return nil, err
 	}
@@ -460,14 +448,14 @@ func GetAuthInfo(authID string) (*models.AutuhorityInfo, error) {
 }
 
 func DeleteRolesAuthByRoleId(tx *sql.Tx, id string) error {
-	query := `DELETE roles_authority_mapping where rId=?`
+	query := `DELETE roles_authority_mapping where rId = ?`
 
 	_, err := tx.Query(query, id)
 	return err
 }
 
 func DeleteRolesAuthByAuthId(tx *sql.Tx, id string) error {
-	query := `DELETE roles_authority_mapping where aId=?`
+	query := `DELETE roles_authority_mapping where aId = ?`
 
 	_, err := tx.Query(query, id)
 	return err
@@ -482,14 +470,14 @@ func DeleteRolesAuthByAuthNameTx(tx *sql.Tx, roleName string) error {
 }
 
 func DeleteUserRoleByUserId(id string) error {
-	query := `DELETE user_roles_mapping where userId=?`
+	query := `DELETE user_roles_mapping where userId = ?`
 
 	_, err := db.Query(query, id)
 	return err
 }
 
 func DeleteUserRoleByRoleId(tx *sql.Tx, id string) error {
-	query := `DELETE user_roles_mapping where rId=?`
+	query := `DELETE user_roles_mapping where rId = ?`
 
 	_, err := tx.Query(query, id)
 	return err
@@ -499,12 +487,12 @@ func CheckRoleAuthID(roleID string, authID string) error {
 	query := `select count(*) as result
 	from
 	(
-	select rid as id from roles where rId = ?
+	select rid as id from roles where rId = ? AND REALM_ID = ?
 	union 
-	select aid as id from authority where aId = ?
+	select aid as id from authority where aId = ? AND REALM_ID = ?
 	) a`
 
-	rows, err := db.Query(query, roleID, authID)
+	rows, err := db.Query(query, roleID, config.GetConfig().Keycloak_realm, authID, config.GetConfig().Keycloak_realm)
 	if err != nil {
 		return err
 	}
@@ -528,12 +516,12 @@ func CheckUserRoleID(userID string, roleID string) error {
 	query := `select count(*) as result
 	from
 	(
-	select ID as id from USER_ENTITY where ID = ?
+	select ID as id from USER_ENTITY where ID = ? AND REALM_ID = ?
 	union 
-	select rId as id from roles where rId = ?
+	select rId as id from roles where rId = ? AND REALM_ID = ?
 	) a`
 
-	rows, err := db.Query(query, userID, roleID)
+	rows, err := db.Query(query, userID, config.GetConfig().Keycloak_realm, roleID, config.GetConfig().Keycloak_realm)
 	if err != nil {
 		return err
 	}
@@ -589,8 +577,8 @@ func GroupCreate(groupId string, username string) error {
 	modifyId=B.ID,
 	modifyDate=GETDATE()
 	FROM KEYCLOAK_GROUP A,
-	(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND  REALM_ID=?) B
-	where A.ID=?`
+	(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) B
+	where A.ID = ?`
 
 	_, err := db.Query(query, username, config.GetConfig().Keycloak_realm, groupId)
 	return err
@@ -601,8 +589,8 @@ func GroupUpdate(groupId string, username string) error {
 	modifyId=B.ID,
 	modifyDate=GETDATE()
 	FROM KEYCLOAK_GROUP A,
-	(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND  REALM_ID=?) B
-	where A.ID=?`
+	(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) B
+	where A.ID = ?`
 
 	_, err := db.Query(query, username, config.GetConfig().Keycloak_realm, groupId)
 	return err
@@ -636,9 +624,9 @@ func GetUserDetail(userId string) ([]models.GetUserInfo, error) {
 	query := `SELECT ID, ENABLED, USERNAME, FIRST_NAME, LAST_NAME, EMAIL, 
 	(SELECT STRING_AGG(REQUIRED_ACTION, ',') FROM USER_REQUIRED_ACTION WHERE USER_ID=U.ID) as REQUIRED_ACTION,
 	createDate, createId, modifyDate, modifyId FROM USER_ENTITY U
-	WHERE U.ID = ?`
+	WHERE U.ID = ? AND REALM_ID = ?`
 
-	rows, err := db.Query(query, userId)
+	rows, err := db.Query(query, userId, config.GetConfig().Keycloak_realm)
 	if err != nil {
 		return nil, err
 	}
@@ -675,8 +663,8 @@ func UsersCreate(userId string, username string) error {
 	modifyId=B.ID,
 	modifyDate=GETDATE()
 	FROM USER_ENTITY A,
-	(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND  REALM_ID=?) B
-	where A.ID=?`
+	(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) B
+	where A.ID = ?`
 
 	_, err := db.Query(query, username, config.GetConfig().Keycloak_realm, userId)
 	return err
@@ -687,8 +675,8 @@ func UsersUpdate(userId string, username string) error {
 	modifyId=B.ID,
 	modifyDate=GETDATE()
 	FROM USER_ENTITY A,
-	(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND  REALM_ID=?) B
-	where A.ID=?`
+	(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) B
+	where A.ID = ?`
 
 	_, err := db.Query(query, username, config.GetConfig().Keycloak_realm, userId)
 	return err
@@ -713,8 +701,8 @@ func MergeSecret(secretPath string, secretGroupPath string, username string) err
 	query := `MERGE INTO vSecret A
 	USING (SELECT 
 	? as spath, 
-	(select vSecretGroupId from vSecretGroup where vSecretGroupPath=? AND REALM_ID=?) as sgid,
-	(select ID from USER_ENTITY WHERE USERNAME =? AND REALM_ID =?) as userid
+	(select vSecretGroupId from vSecretGroup where vSecretGroupPath = ? AND REALM_ID = ?) as sgid,
+	(select ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) as userid
 	) B
 	ON A.vSecretPath = B.spath
 	AND A.vSecretGroupId = B.sgid
