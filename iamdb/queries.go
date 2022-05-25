@@ -43,9 +43,14 @@ func GetUserAuthoritiesForEndpoint(username string, realm string, method string,
 	u.USERNAME = ? AND
 	u.REALM_ID = ? AND
 	(a.method = ? OR a.method = 'ALL') AND
-	PATINDEX(REPLACE(a.url,'*','%%'), ?) = 1`
+	(
+		PATINDEX(REPLACE(a.url,'*','%%'), ?) = 1
+		OR
+		PATINDEX(REPLACE(a.url,'*','%%'), ?) = 1
+	)
+	`
 
-	rows, err := db.Query(query, username, realm, method, endpoint)
+	rows, err := db.Query(query, username, realm, method, endpoint, endpoint+"/")
 	return rows, err
 }
 

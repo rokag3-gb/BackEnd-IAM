@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"errors"
 	"fmt"
 	"iam/clients"
 	"iam/config"
@@ -44,8 +45,19 @@ func IntrospectMiddleware() gin.HandlerFunc {
 			c.Abort()
 		}
 
+		username, err := getUsernameJWT(token)
+		if err != nil {
+			logger.Error(err.Error())
+			if config.GetConfig().Developer_mode {
+				c.String(http.StatusInternalServerError, err.Error())
+			} else {
+				c.Status(http.StatusInternalServerError)
+			}
+			c.Abort()
+		}
+
+		c.Set("username", username)
 		c.Set("accessToken", token)
-		c.Set("username", getUsernameJWT(token))
 	}
 }
 
@@ -80,7 +92,7 @@ func AuthorityCheckMiddleware() gin.HandlerFunc {
 		defer rows.Close()
 
 		if !rows.Next() && !config.GetConfig().Developer_mode {
-			c.Status(http.StatusForbidden)
+			c.String(http.StatusForbidden, "Access Denied")
 			c.Abort()
 
 			// 결과가 한건도 오지 않으면 권한이 없음
@@ -103,12 +115,21 @@ func AccessControlAllowOrigin() gin.HandlerFunc {
 	}
 }
 
-func getUsernameJWT(token string) string {
+func getUsernameJWT(token string) (string, error) {
 	t, _ := jwt.Parse(token, nil)
 	if t == nil {
-		return ""
+		return "", errors.New("Invalid authorization")
 	}
 
 	claims, _ := t.Claims.(jwt.MapClaims)
-	return fmt.Sprintf("%v", claims["preferred_username"])
+	if claims == nil {
+		return "", errors.New("Invalid token")
+	}
+
+	username := fmt.Sprintf("%v", claims["preferred_username"])
+	if username == "" {
+		return "", errors.New("Invalid token")
+	}
+
+	return username, nil
 }
