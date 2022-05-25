@@ -2,6 +2,7 @@ package api
 
 import (
 	"iam/clients"
+	"iam/config"
 	"iam/iamdb"
 	"iam/models"
 	"net/http"
@@ -15,7 +16,12 @@ func Users(c *gin.Context) {
 	arr, err := iamdb.GetUsers()
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -59,7 +65,12 @@ func CreateUser(c *gin.Context) {
 	err = iamdb.UsersCreate(newUserId, c.GetString("username"))
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -104,7 +115,12 @@ func UpdateUser(c *gin.Context) {
 	err = iamdb.UsersUpdate(userid, c.GetString("username"))
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -128,7 +144,12 @@ func DeleteUser(c *gin.Context) {
 
 	err = iamdb.DeleteUserRoleByUserId(userid)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}

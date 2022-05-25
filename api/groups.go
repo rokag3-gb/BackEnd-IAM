@@ -2,6 +2,7 @@ package api
 
 import (
 	"iam/clients"
+	"iam/config"
 	"iam/iamdb"
 	"iam/models"
 	"net/http"
@@ -15,7 +16,12 @@ func GetGroup(c *gin.Context) {
 	arr, err := iamdb.GetGroup()
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -48,7 +54,12 @@ func CreateGroup(c *gin.Context) {
 	err = iamdb.GroupCreate(newGroup, c.GetString("username"))
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -98,7 +109,12 @@ func UpdateGroup(c *gin.Context) {
 	err = iamdb.GroupUpdate(groupid, c.GetString("username"))
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}

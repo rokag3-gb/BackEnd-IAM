@@ -31,7 +31,11 @@ func IntrospectMiddleware() gin.HandlerFunc {
 
 		if err != nil && !config.GetConfig().Developer_mode {
 			logger.Error(err.Error())
-			c.Status(http.StatusInternalServerError)
+			if config.GetConfig().Developer_mode {
+				c.String(http.StatusInternalServerError, err.Error())
+			} else {
+				c.Status(http.StatusInternalServerError)
+			}
 			c.Abort()
 		}
 

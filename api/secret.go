@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"iam/clients"
+	"iam/config"
 	"iam/iamdb"
 	"iam/models"
 	"io/ioutil"
@@ -19,7 +20,12 @@ func GetSecretGroup(c *gin.Context) {
 	data, err := clients.VaultClient().Logical().Read("sys/mounts")
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -51,7 +57,12 @@ func GetSecretGroup(c *gin.Context) {
 	secretGroup, err := iamdb.GetSecretGroup(arr, c.GetString("username"))
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -79,7 +90,12 @@ func CreateSecretGroup(c *gin.Context) {
 	tx, err := iamdb.DBClient().Begin()
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -87,7 +103,12 @@ func CreateSecretGroup(c *gin.Context) {
 	err = iamdb.CreateSecretGroupTx(tx, sg.Name, c.GetString("username"))
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -102,7 +123,12 @@ func CreateSecretGroup(c *gin.Context) {
 	if err != nil {
 		tx.Rollback()
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -111,7 +137,12 @@ func CreateSecretGroup(c *gin.Context) {
 	if err != nil {
 		tx.Rollback()
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -120,7 +151,12 @@ func CreateSecretGroup(c *gin.Context) {
 	if err != nil {
 		tx.Rollback()
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -130,7 +166,12 @@ func CreateSecretGroup(c *gin.Context) {
 		if err != nil {
 			tx.Rollback()
 			logger.Error(err.Error())
-			c.Status(http.StatusInternalServerError)
+
+			if config.GetConfig().Developer_mode {
+				c.String(http.StatusInternalServerError, err.Error())
+			} else {
+				c.Status(http.StatusInternalServerError)
+			}
 			c.Abort()
 			return
 		}
@@ -141,7 +182,12 @@ func CreateSecretGroup(c *gin.Context) {
 		if err != nil {
 			tx.Rollback()
 			logger.Error(err.Error())
-			c.Status(http.StatusInternalServerError)
+
+			if config.GetConfig().Developer_mode {
+				c.String(http.StatusInternalServerError, err.Error())
+			} else {
+				c.Status(http.StatusInternalServerError)
+			}
 			c.Abort()
 			return
 		}
@@ -159,7 +205,12 @@ func CreateSecretGroup(c *gin.Context) {
 	if err != nil {
 		tx.Rollback()
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -167,7 +218,12 @@ func CreateSecretGroup(c *gin.Context) {
 	if err = tx.Commit(); err != nil {
 		tx.Rollback()
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -181,7 +237,12 @@ func DeleteSecretGroup(c *gin.Context) {
 	tx, err := iamdb.DBClient().Begin()
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -193,7 +254,12 @@ func DeleteSecretGroup(c *gin.Context) {
 	if err != nil {
 		tx.Rollback()
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -202,7 +268,12 @@ func DeleteSecretGroup(c *gin.Context) {
 	if err != nil {
 		tx.Rollback()
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -211,7 +282,12 @@ func DeleteSecretGroup(c *gin.Context) {
 	if err != nil {
 		tx.Rollback()
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -220,7 +296,12 @@ func DeleteSecretGroup(c *gin.Context) {
 	if err != nil {
 		tx.Rollback()
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -229,7 +310,12 @@ func DeleteSecretGroup(c *gin.Context) {
 	if err != nil {
 		tx.Rollback()
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -238,7 +324,12 @@ func DeleteSecretGroup(c *gin.Context) {
 	_, err = clients.VaultClient().Logical().Delete(path)
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -246,7 +337,12 @@ func DeleteSecretGroup(c *gin.Context) {
 	if err = tx.Commit(); err != nil {
 		tx.Rollback()
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -269,7 +365,12 @@ func GetSecretList(c *gin.Context) {
 	data, err := clients.VaultClient().Logical().List(path)
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -284,7 +385,12 @@ func GetSecretList(c *gin.Context) {
 	secrets, err := iamdb.GetSecret(groupName)
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -312,7 +418,12 @@ func GetSecret(c *gin.Context) {
 	data, err := clients.VaultClient().Logical().Read(path)
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -326,7 +437,12 @@ func GetSecret(c *gin.Context) {
 	secret, err := iamdb.GetSecretByName(groupName, secretName)
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -354,13 +470,23 @@ func MargeSecret(c *gin.Context) {
 	data, err := clients.VaultClient().Logical().WriteBytes(path, value)
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
 
 	if data == nil || data.Data == nil {
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -368,7 +494,12 @@ func MargeSecret(c *gin.Context) {
 	err = iamdb.MergeSecret(secretName, groupName, c.GetString("username"))
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -384,13 +515,23 @@ func GetMetadataSecret(c *gin.Context) {
 	data, err := clients.VaultClient().Logical().Read(path)
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
 
 	if data == nil || data.Data == nil {
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -434,7 +575,12 @@ func DeleteSecret(c *gin.Context) {
 	_, err = clients.VaultClient().Logical().WriteBytes(path, value)
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -463,7 +609,12 @@ func UndeleteSecret(c *gin.Context) {
 	_, err = clients.VaultClient().Logical().WriteBytes(path, value)
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -492,7 +643,12 @@ func DestroySecret(c *gin.Context) {
 	_, err = clients.VaultClient().Logical().WriteBytes(path, value)
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -508,7 +664,12 @@ func DeleteSecretMetadata(c *gin.Context) {
 	_, err := clients.VaultClient().Logical().Delete(path)
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
@@ -516,7 +677,12 @@ func DeleteSecretMetadata(c *gin.Context) {
 	err = iamdb.DeleteSecret(secretName, groupName)
 	if err != nil {
 		logger.Error(err.Error())
-		c.Status(http.StatusInternalServerError)
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
 		c.Abort()
 		return
 	}
