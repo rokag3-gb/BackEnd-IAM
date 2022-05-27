@@ -152,6 +152,8 @@ func makeRouter() *gin.Engine {
 		secret.POST("", api.CreateSecretGroup)
 		secret.DELETE("/:groupName", api.DeleteSecretGroup)
 		secret.GET("/:groupName", api.GetSecretList)
+		secret.PUT("/:groupName", api.UpdateSecretGroup)
+		secret.GET("/:groupName/data", api.GetSecretGroupMetadata)
 		secret.GET("/:groupName/data/:secretName", api.GetSecret)
 		secret.POST("/:groupName/data/:secretName", api.MargeSecret)
 		secret.GET("/:groupName/metadata/:secretName", api.GetMetadataSecret)

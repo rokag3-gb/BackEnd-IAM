@@ -80,6 +80,54 @@ func GetRoles() ([]models.RolesInfo, error) {
 	return arr, nil
 }
 
+func GetRoleIdByName(rolename string) (string, error) {
+	query := `select rId from roles
+	where rName = ?
+	AND REALM_ID = ?`
+
+	rows, err := db.Query(query, rolename, config.GetConfig().Keycloak_realm)
+
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+
+	var id string
+
+	for rows.Next() {
+		err := rows.Scan(&id)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return id, nil
+}
+
+func GetAuthIdByName(authname string) (string, error) {
+	query := `select aId from authority
+	where aName = ?
+	AND REALM_ID = ?`
+
+	rows, err := db.Query(query, authname, config.GetConfig().Keycloak_realm)
+
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+
+	var id string
+
+	for rows.Next() {
+		err := rows.Scan(&id)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return id, nil
+}
+
 func CreateRoles(name string, username string) error {
 	query := `INSERT INTO roles(rName, REALM_ID, createId, modifyId) 
 	select ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
@@ -279,11 +327,19 @@ func DismissUserRole(userID string, roleID string) error {
 	return err
 }
 
-func DismissUserRoleByRoleNameTx(tx *sql.Tx, roleName string) error {
+func DeleteUserRoleByRoleNameTx(tx *sql.Tx, roleName string) error {
 	query := `DELETE FROM user_roles_mapping where 
 	rId = (select rId from roles where rName = ? AND REALM_ID = ?)`
 
 	_, err := tx.Query(query, roleName, config.GetConfig().Keycloak_realm)
+	return err
+}
+
+func DeleteUserRoleByRoleIdTx(tx *sql.Tx, roleName string) error {
+	query := `DELETE FROM user_roles_mapping where 
+	rId = ?`
+
+	_, err := tx.Query(query, roleName)
 	return err
 }
 
@@ -811,6 +867,87 @@ func GetSecret(groupName string) (map[string]models.SecretItem, error) {
 		m[r.Name] = r
 	}
 	return m, err
+}
+
+func GetSecretGroupMetadata(groupName string) (models.SecretGroupResponse, error) {
+	var result models.SecretGroupResponse
+
+	result.Roles = make([]models.IdItem, 0)
+	result.Users = make([]models.IdItem, 0)
+
+	query := `SELECT 
+	r.rId, r.rName
+	FROM roles r
+	JOIN roles_authority_mapping ra
+	on r.rId = ra.rId
+	join authority a
+	on ra.aId = a.aId
+	where a.aName = ?
+	AND r.REALM_ID = ?`
+
+	rows, err := db.Query(query, groupName+"_MANAGER", config.GetConfig().Keycloak_realm)
+	if err != nil {
+		return result, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var r models.IdItem
+
+		err := rows.Scan(&r.Id, &r.Name)
+		if err != nil {
+			return result, err
+		}
+
+		result.Roles = append(result.Roles, r)
+	}
+
+	query = `SELECT 
+	u.ID, u.USERNAME
+	FROM USER_ENTITY u
+	JOIN user_roles_mapping ur
+	on u.ID = ur.userId
+	JOIN roles r
+	ON ur.rId = r.rId
+	where r.rName = ?
+	AND r.REALM_ID = ?`
+
+	rows, err = db.Query(query, groupName+"_Manager", config.GetConfig().Keycloak_realm)
+	if err != nil {
+		return result, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var r models.IdItem
+
+		err := rows.Scan(&r.Id, &r.Name)
+		if err != nil {
+			return result, err
+		}
+
+		result.Users = append(result.Users, r)
+	}
+
+	query = `SELECT createDate, createId, modifyDate, modifyId
+	FROM vSecretGroup
+	where vSecretGroupPath = ?
+	AND REALM_ID = ?`
+
+	rows, err = db.Query(query, groupName, config.GetConfig().Keycloak_realm)
+	if err != nil {
+		return result, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		err := rows.Scan(&result.CreateDate, &result.CreateId, &result.ModifyDate, &result.ModifyId)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	return result, err
 }
 
 func GetSecretByName(groupName string, secretName string) (*models.SecretItem, error) {

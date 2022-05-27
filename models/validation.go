@@ -94,6 +94,21 @@ type SecretGroupItem struct {
 	ModifyId    *string  `json:"modifyId"`
 }
 
+type SecretGroupResponse struct {
+	Description string   `json:"description" binding:"required"`
+	Roles       []IdItem `json:"roles" binding:"required"`
+	Users       []IdItem `json:"users" binding:"required"`
+	CreateDate  *string  `json:"createDate"`
+	CreateId    *string  `json:"createId"`
+	ModifyDate  *string  `json:"modifyDate"`
+	ModifyId    *string  `json:"modifyId"`
+}
+
+type IdItem struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
 type SecretItem struct {
 	Name       string  `json:"name" binding:"required"`
 	CreateDate *string `json:"createDate"`

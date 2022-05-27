@@ -250,7 +250,7 @@ func DeleteSecretGroup(c *gin.Context) {
 	authname := groupName + "_MANAGER"
 	rolename := groupName + "_Manager"
 
-	err = iamdb.DismissUserRoleByRoleNameTx(tx, rolename)
+	err = iamdb.DeleteUserRoleByRoleNameTx(tx, rolename)
 	if err != nil {
 		tx.Rollback()
 		logger.Error(err.Error())
@@ -408,6 +408,238 @@ func GetSecretList(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, arr)
+}
+
+func UpdateSecretGroup(c *gin.Context) {
+	groupName := c.Param("groupName")
+	authorityMessage := ""
+	roleMessage := ""
+
+	value, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		c.Abort()
+		return
+	}
+
+	var sg *models.SecretGroupItem
+	json.Unmarshal([]byte(value), &sg)
+
+	if sg == nil {
+		c.String(http.StatusBadRequest, "required 'body'")
+		c.Abort()
+		return
+	}
+
+	tx, err := iamdb.DBClient().Begin()
+	if err != nil {
+		logger.Error(err.Error())
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
+		c.Abort()
+		return
+	}
+
+	authName := groupName + "_MANAGER"
+	roleName := groupName + "_Manager"
+
+	authId, err := iamdb.GetAuthIdByName(authName)
+	if err != nil {
+		logger.Error(err.Error())
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
+		c.Abort()
+		return
+	}
+
+	roleId, err := iamdb.GetRoleIdByName(roleName)
+	if err != nil {
+		logger.Error(err.Error())
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
+		c.Abort()
+		return
+	}
+
+	if authId != "" {
+		if sg.RoleId != nil {
+			err = iamdb.DeleteRolesAuthByAuthId(tx, authId)
+			if err != nil {
+				tx.Rollback()
+				logger.Error(err.Error())
+
+				if config.GetConfig().Developer_mode {
+					c.String(http.StatusInternalServerError, err.Error())
+				} else {
+					c.Status(http.StatusInternalServerError)
+				}
+				c.Abort()
+				return
+			}
+
+			for _, role := range sg.RoleId {
+				err = iamdb.AssignRoleAuthTx(tx, role, authId, c.GetString("username"))
+				if err != nil {
+					tx.Rollback()
+					logger.Error(err.Error())
+
+					if config.GetConfig().Developer_mode {
+						c.String(http.StatusInternalServerError, err.Error())
+					} else {
+						c.Status(http.StatusInternalServerError)
+					}
+					c.Abort()
+					return
+				}
+			}
+		}
+	} else {
+		authorityMessage += fmt.Sprint("Authoriy[" + authName + "] does not exist.")
+	}
+
+	if roleId != "" {
+		if sg.UserId != nil {
+			err = iamdb.DeleteUserRoleByRoleIdTx(tx, roleId)
+			if err != nil {
+				tx.Rollback()
+				logger.Error(err.Error())
+
+				if config.GetConfig().Developer_mode {
+					c.String(http.StatusInternalServerError, err.Error())
+				} else {
+					c.Status(http.StatusInternalServerError)
+				}
+				c.Abort()
+				return
+			}
+
+			for _, user := range sg.UserId {
+				err = iamdb.AssignUserRoleTx(tx, user, roleId, c.GetString("username"))
+				if err != nil {
+					tx.Rollback()
+					logger.Error(err.Error())
+
+					if config.GetConfig().Developer_mode {
+						c.String(http.StatusInternalServerError, err.Error())
+					} else {
+						c.Status(http.StatusInternalServerError)
+					}
+					c.Abort()
+					return
+				}
+			}
+		}
+	} else {
+		roleMessage += fmt.Sprint("Role[" + roleName + "] does not exist.")
+	}
+
+	path := fmt.Sprintf("sys/mounts/%s/tune", groupName)
+
+	_, err = clients.VaultClient().Logical().Write(path, map[string]interface{}{
+		"description": sg.Description,
+	})
+	if err != nil {
+		tx.Rollback()
+		logger.Error(err.Error())
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
+		c.Abort()
+		return
+	}
+
+	if err = tx.Commit(); err != nil {
+		tx.Rollback()
+		logger.Error(err.Error())
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
+		c.Abort()
+		return
+	}
+
+	if roleMessage != "" || authorityMessage != "" {
+		m := make(map[string]interface{})
+		if roleMessage != "" {
+			m["role"] = roleMessage
+		}
+		if authorityMessage != "" {
+			m["authority"] = authorityMessage
+		}
+		c.JSON(http.StatusOK, m)
+	} else {
+		c.Status(http.StatusNoContent)
+	}
+}
+
+func GetSecretGroupMetadata(c *gin.Context) {
+	groupName := c.Param("groupName")
+
+	if err := CheckGroupName(groupName); err != nil {
+		logger.Error(err.Error())
+		c.Status(http.StatusBadRequest)
+		c.Abort()
+		return
+	}
+
+	path := fmt.Sprintf("/sys/mounts/%s", groupName)
+
+	data, err := clients.VaultClient().Logical().Read(path)
+	if err != nil {
+		logger.Error(err.Error())
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
+		c.Abort()
+		return
+	}
+
+	arr := make([]models.SecretItem, 0)
+
+	fmt.Println(data)
+
+	if data == nil || data.Data == nil || data.Data["description"] == nil {
+		c.JSON(http.StatusOK, arr)
+		return
+	}
+
+	secretGroup, err := iamdb.GetSecretGroupMetadata(groupName)
+	if err != nil {
+		logger.Error(err.Error())
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
+		c.Abort()
+		return
+	}
+
+	secretGroup.Description = data.Data["description"].(string)
+
+	c.JSON(http.StatusOK, secretGroup)
 }
 
 func GetSecret(c *gin.Context) {
