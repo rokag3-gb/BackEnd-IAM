@@ -657,10 +657,19 @@ func GroupUpdate(groupId string, username string) error {
 	return err
 }
 
-func GetUsers() ([]models.GetUserInfo, error) {
+func GetUsers(search string) ([]models.GetUserInfo, error) {
+	var rows *sql.Rows
+	var err error
+
 	query := `SELECT ID, ENABLED, USERNAME, FIRST_NAME, LAST_NAME, EMAIL, createDate, createId, modifyDate, modifyId FROM USER_ENTITY where REALM_ID = ?`
 
-	rows, err := db.Query(query, config.GetConfig().Keycloak_realm)
+	if search != "" {
+		query += " AND USERNAME LIKE ?"
+		rows, err = db.Query(query, config.GetConfig().Keycloak_realm, "%"+search+"%")
+	} else {
+		rows, err = db.Query(query, config.GetConfig().Keycloak_realm)
+	}
+
 	if err != nil {
 		return nil, err
 	}
