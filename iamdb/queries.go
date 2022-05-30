@@ -661,7 +661,8 @@ func GetUsers(search string) ([]models.GetUserInfo, error) {
 	var rows *sql.Rows
 	var err error
 
-	query := `SELECT ID, ENABLED, USERNAME, FIRST_NAME, LAST_NAME, EMAIL, createDate, createId, modifyDate, modifyId FROM USER_ENTITY where REALM_ID = ?`
+	query := `SELECT ID, ENABLED, USERNAME, FIRST_NAME, LAST_NAME, EMAIL, createDate, createId, modifyDate, modifyId FROM USER_ENTITY 
+	where SERVICE_ACCOUNT_CLIENT_LINK is NULL AND REALM_ID = ?`
 
 	if search != "" {
 		query += " AND USERNAME LIKE ?"
