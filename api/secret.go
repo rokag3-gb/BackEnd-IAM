@@ -102,6 +102,7 @@ func CreateSecretGroup(c *gin.Context) {
 
 	err = iamdb.CreateSecretGroupTx(tx, sg.Name, c.GetString("username"))
 	if err != nil {
+		tx.Rollback()
 		logger.Error(err.Error())
 
 		if config.GetConfig().Developer_mode {
@@ -323,6 +324,7 @@ func DeleteSecretGroup(c *gin.Context) {
 	path := fmt.Sprintf("sys/mounts/%s", groupName)
 	_, err = clients.VaultClient().Logical().Delete(path)
 	if err != nil {
+		tx.Rollback()
 		logger.Error(err.Error())
 
 		if config.GetConfig().Developer_mode {
@@ -449,6 +451,7 @@ func UpdateSecretGroup(c *gin.Context) {
 
 	authId, err := iamdb.GetAuthIdByName(authName)
 	if err != nil {
+		tx.Rollback()
 		logger.Error(err.Error())
 
 		if config.GetConfig().Developer_mode {
@@ -462,6 +465,7 @@ func UpdateSecretGroup(c *gin.Context) {
 
 	roleId, err := iamdb.GetRoleIdByName(roleName)
 	if err != nil {
+		tx.Rollback()
 		logger.Error(err.Error())
 
 		if config.GetConfig().Developer_mode {
