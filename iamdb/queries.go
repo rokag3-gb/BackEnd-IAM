@@ -940,6 +940,8 @@ func GetSecretGroup(data []models.SecretGroupItem, username string) ([]models.Se
 	join authority a on ra.aId = a.aId
 	where ur.useYn = 'y'
 	and ra.useYn = 'y'
+	and u.USERNAME = ?
+	and u.REALM_ID = ?
 	) A
 	join @values B
 	ON PATINDEX(A.auth_url, B.sg) = 1
