@@ -29,11 +29,14 @@ type GetUserInfo struct {
 	FirstName        *string   `json:"firstName"`
 	LastName         *string   `json:"lastName"`
 	Email            *string   `json:"email"`
+	Groups           *string   `json:"groups,omitempty"`
+	Roles            *string   `json:"roles,omitempty"`
+	OpenId           *string   `json:"OpenId,omitempty"`
 	RequiredActions  *[]string `json:"requiredActions,omitempty"`
 	CreateDate       *string   `json:"createDate"`
-	Creator          *string   `json:"createId"`
+	Creator          *string   `json:"creator"`
 	ModifyDate       *string   `json:"modifyDate"`
-	Modifier         *string   `json:"modifyId"`
+	Modifier         *string   `json:"modifier"`
 }
 
 type ResetUserPasswordInfo struct {

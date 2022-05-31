@@ -125,7 +125,7 @@ func makeRouter() *gin.Engine {
 		groups.POST("", api.CreateGroup)
 		groups.DELETE("/:groupid", api.DeleteGroup)
 		groups.PUT("/:groupid", api.UpdateGroup)
-		groups.GET("/:groupid/members", middlewares.ListQueryRangeMiddleware(), api.GetGroupMember)
+		groups.GET("/:groupid/members", api.GetGroupMember)
 	}
 
 	users := route.Group("/users")

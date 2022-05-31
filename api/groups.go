@@ -123,24 +123,20 @@ func UpdateGroup(c *gin.Context) {
 }
 
 func GetGroupMember(c *gin.Context) {
-	token, _ := clients.KeycloakToken(c)
-
 	groupid := c.Param("groupid")
 
-	params := gocloak.GetGroupsParams{
-		First: gocloak.IntP(c.MustGet("first").(int)),
-		Max:   gocloak.IntP(c.MustGet("max").(int)),
-	}
-
-	groups, err := clients.KeycloakClient().GetGroupMembers(c,
-		token.AccessToken,
-		clients.KeycloakConfig().Realm,
-		groupid,
-		params)
+	arr, err := iamdb.GetGroupMembers(groupid)
 	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
+		logger.Error(err.Error())
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
+		c.Abort()
 		return
 	}
-	c.JSON(http.StatusOK, groups)
+
+	c.JSON(http.StatusOK, arr)
 }

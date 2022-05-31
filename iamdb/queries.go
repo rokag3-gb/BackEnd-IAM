@@ -659,7 +659,7 @@ func CheckUserRoleID(userID string, roleID string) error {
 
 func GetGroup() ([]models.GroupItem, error) {
 	query := `SELECT g.ID, NAME, 
-	ISNULL((select count(USER_ID) from USER_GROUP_MEMBERSHIP where GROUP_ID = g.ID AND REALM_ID = ? group by GROUP_ID), 0) as countMembers,
+	ISNULL((select count(USER_ID) from USER_GROUP_MEMBERSHIP where GROUP_ID = g.ID AND g.REALM_ID = ? group by GROUP_ID), 0) as countMembers,
 	FORMAT(g.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
 	u1.USERNAME as Creator, 
 	FORMAT(g.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
@@ -670,7 +670,7 @@ func GetGroup() ([]models.GroupItem, error) {
 	LEFT OUTER JOIN USER_ENTITY u2
 	on g.modifyId = u2.ID
 	where
-	REALM_ID = ?`
+	g.REALM_ID = ?`
 
 	rows, err := db.Query(query, config.GetConfig().Keycloak_realm, config.GetConfig().Keycloak_realm)
 	if err != nil {
@@ -723,17 +723,58 @@ func GetUsers(search string) ([]models.GetUserInfo, error) {
 	var rows *sql.Rows
 	var err error
 
-	query := `SELECT U.ID, U.ENABLED, U.USERNAME, U.FIRST_NAME, U.LAST_NAME, U.EMAIL, 
-	FORMAT(U.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
-	u1.USERNAME as Creator, 
-	FORMAT(U.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
-	u2.USERNAME as Modifier
-	FROM USER_ENTITY U
+	query := `select 
+	  U.ID
+	, U.ENABLED
+	, U.USERNAME
+	, U.FIRST_NAME
+	, U.LAST_NAME
+	, U.EMAIL
+	, ISNULL(A.Roles, '') as Roles 
+	, ISNULL(B.Groups, '') as Groups 
+	, ISNULL(C.openid, '') as openid 
+	, FORMAT(U.createDate, 'yyyy-MM-dd HH:mm') as createDate
+	, u1.USERNAME as Creator
+	, FORMAT(U.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate
+	, u2.USERNAME as Modifier
+	from
+	USER_ENTITY U
+	left outer join 
+	(select u.ID, 
+	string_agg(r.rName, ', ') as Roles
+	from roles r 
+	join user_roles_mapping ur 
+	on r.rId = ur.rId
+	join USER_ENTITY u
+	on ur.userId = u.ID
+	GROUP BY u.ID) A
+	ON U.ID = A.ID
+	left outer join 
+	(select
+	u.ID, 
+	ISNULL(string_agg(g.NAME, ', '), '') as Groups
+	from USER_ENTITY u
+	left outer join USER_GROUP_MEMBERSHIP gu
+	on u.id = gu.USER_ID
+	join KEYCLOAK_GROUP g
+	on g.ID = gu.GROUP_ID
+	GROUP BY u.ID) B
+	On U.ID = B.ID
+	left outer join 
+	(select 
+	USER_ID, ISNULL(string_agg(IDENTITY_PROVIDER, ', '), '') as openid
+	from
+	FEDERATED_IDENTITY
+	group by USER_ID
+	) C
+	ON U.ID = C.USER_ID
 	LEFT OUTER JOIN USER_ENTITY u1
 	on U.createId = u1.ID
 	LEFT OUTER JOIN USER_ENTITY u2
 	on U.modifyId = u2.ID
-	where U.SERVICE_ACCOUNT_CLIENT_LINK is NULL AND U.REALM_ID = ?`
+	WHERE
+	U.REALM_ID = ?
+	AND U.SERVICE_ACCOUNT_CLIENT_LINK is NULL`
 
 	if search != "" {
 		query += " AND U.USERNAME LIKE ?"
@@ -752,7 +793,7 @@ func GetUsers(search string) ([]models.GetUserInfo, error) {
 	for rows.Next() {
 		var r models.GetUserInfo
 
-		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
+		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.Roles, &r.Groups, &r.OpenId, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}
@@ -1090,4 +1131,46 @@ func GetSecretByName(groupName string, secretName string) (*models.SecretItem, e
 	defer rows.Close()
 
 	return m, err
+}
+
+func GetGroupMembers(groupId string) ([]models.GetUserInfo, error) {
+	var rows *sql.Rows
+	var err error
+
+	query := `	SELECT U.ID, U.ENABLED, U.USERNAME, U.FIRST_NAME, U.LAST_NAME, U.EMAIL, 
+	FORMAT(U.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
+	u1.USERNAME as Creator, 
+	FORMAT(U.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
+	u2.USERNAME as Modifier
+	FROM USER_ENTITY U
+	join USER_GROUP_MEMBERSHIP UG
+	on U.ID = UG.USER_ID
+	LEFT OUTER JOIN USER_ENTITY u1
+	on U.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2
+	on U.modifyId = u2.ID
+	where U.SERVICE_ACCOUNT_CLIENT_LINK is NULL
+	AND UG.GROUP_ID = ?
+	AND U.REALM_ID = ?`
+
+	rows, err = db.Query(query, groupId, config.GetConfig().Keycloak_realm)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var arr = make([]models.GetUserInfo, 0)
+
+	for rows.Next() {
+		var r models.GetUserInfo
+
+		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, r)
+	}
+	return arr, err
 }
