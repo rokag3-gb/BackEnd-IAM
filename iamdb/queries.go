@@ -55,7 +55,17 @@ func GetUserAuthoritiesForEndpoint(username string, realm string, method string,
 }
 
 func GetRoles() ([]models.RolesInfo, error) {
-	query := "select rId, rName, createDate, createId, modifyDate, modifyId from roles where REALM_ID = ?"
+	query := `select r.rId, r.rName, 
+	FORMAT(r.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
+	u1.USERNAME as Creator, 
+	FORMAT(r.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
+	u2.USERNAME as Modifier
+	from roles r
+	LEFT OUTER JOIN USER_ENTITY u1
+	on r.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2
+	on r.modifyId = u2.ID
+	where r.REALM_ID = ?`
 
 	rows, err := db.Query(query, config.GetConfig().Keycloak_realm)
 
@@ -69,7 +79,7 @@ func GetRoles() ([]models.RolesInfo, error) {
 	for rows.Next() {
 		var r models.RolesInfo
 
-		err := rows.Scan(&r.ID, &r.Name, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
+		err := rows.Scan(&r.ID, &r.Name, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}
@@ -171,13 +181,22 @@ func UpdateRoles(name string, id string, username string) error {
 
 func GetRolseAuth(id string) ([]models.RolesInfo, error) {
 	query := `select
-	a.aId, a.aName, ra.useYn, ra.createDate, ra.createId, ra.modifyDate, ra.modifyId
+	a.aId, a.aName, ra.useYn, 
+	FORMAT(ra.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
+	u1.USERNAME as Creator, 
+	FORMAT(ra.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
+	u2.USERNAME as Modifier
+	ra.createDate, u1.USERNAME as Creator, ra.modifyDate, u2.USERNAME as Modifier
 	from 
 	roles_authority_mapping ra 
 	join 
 	authority a 
 	on 
 	ra.aId = a.aId 
+	LEFT OUTER JOIN USER_ENTITY u1
+	on ra.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2
+	on ra.modifyId = u2.ID
 	where 
 	ra.rId = ?`
 
@@ -189,7 +208,7 @@ func GetRolseAuth(id string) ([]models.RolesInfo, error) {
 	for rows.Next() {
 		var r models.RolesInfo
 
-		err := rows.Scan(&r.ID, &r.Name, &r.Use, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
+		err := rows.Scan(&r.ID, &r.Name, &r.Use, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}
@@ -275,11 +294,19 @@ func GetAuthUserList() ([]models.UserRolesInfo, error) {
 }
 
 func GetUserRole(userID string) ([]models.RolesInfo, error) {
-	query := `select r.rId, r.rName, ur.useYn, ur.createDate, ur.createId, ur.modifyDate, ur.modifyId
+	query := `select r.rId, r.rName, ur.useYn,
+	FORMAT(ur.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
+	u1.USERNAME as Creator, 
+	FORMAT(ur.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
+	u2.USERNAME as Modifier
 	from 
 	roles r join
 	user_roles_mapping ur 
 	on r.rId = ur.rId
+	LEFT OUTER JOIN USER_ENTITY u1
+	on ur.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2
+	on ur.modifyId = u2.ID
 	where
 	ur.userId = ?`
 
@@ -294,7 +321,7 @@ func GetUserRole(userID string) ([]models.RolesInfo, error) {
 	for rows.Next() {
 		var r models.RolesInfo
 
-		err := rows.Scan(&r.ID, &r.Name, &r.Use, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
+		err := rows.Scan(&r.ID, &r.Name, &r.Use, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}
@@ -355,12 +382,20 @@ func UpdateUserRole(userID string, roleID string, use string, username string) e
 }
 
 func GetUserAuth(userID string) ([]models.AutuhorityInfo, error) {
-	query := `select a.aId, a.aName, a.createDate, a.createId, a.modifyDate, a.modifyId
+	query := `select a.aId, a.aName, 
+	FORMAT(a.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
+	u1.USERNAME as Creator, 
+	FORMAT(a.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
+	u2.USERNAME as Modifier
 	from user_roles_mapping ur 
 	join roles_authority_mapping ra 
 	on ur.rId = ra.rId
 	join authority a 
 	on ra.aId = a.aId
+	LEFT OUTER JOIN USER_ENTITY u1
+	on a.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2
+	on a.modifyId = u2.ID
 	where userId = ?
 	and	ur.useYn = 'y'
 	and	ra.useYn = 'y'
@@ -378,7 +413,7 @@ func GetUserAuth(userID string) ([]models.AutuhorityInfo, error) {
 	for rows.Next() {
 		var r models.AutuhorityInfo
 
-		err := rows.Scan(&r.ID, &r.Name, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
+		err := rows.Scan(&r.ID, &r.Name, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}
@@ -422,7 +457,17 @@ func GetUserAuthActive(userName string, authName string) (map[string]interface{}
 }
 
 func GetAuth() ([]models.AutuhorityInfo, error) {
-	query := `select aId, aName, createDate, createId, modifyDate, modifyId from authority where REALM_ID = ?`
+	query := `select a.aId, a.aName, 
+	FORMAT(a.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
+	u1.USERNAME as Creator, 
+	FORMAT(a.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
+	u2.USERNAME as Modifier
+	from authority a
+	LEFT OUTER JOIN USER_ENTITY u1
+	on a.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2
+	on a.modifyId = u2.ID
+	where a.REALM_ID = ?`
 
 	rows, err := db.Query(query, config.GetConfig().Keycloak_realm)
 	if err != nil {
@@ -435,7 +480,7 @@ func GetAuth() ([]models.AutuhorityInfo, error) {
 	for rows.Next() {
 		var r models.AutuhorityInfo
 
-		err := rows.Scan(&r.ID, &r.Name, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
+		err := rows.Scan(&r.ID, &r.Name, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}
@@ -489,7 +534,17 @@ func UpdateAuth(auth *models.AutuhorityInfo, username string) error {
 }
 
 func GetAuthInfo(authID string) (*models.AutuhorityInfo, error) {
-	query := `select aId, aName, url, method, createDate, createId, modifyDate, modifyId from authority where aId = ? AND REALM_ID = ?`
+	query := `select a.aId, a.aName, a.url, a.method, 
+	FORMAT(a.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
+	u1.USERNAME as Creator, 
+	FORMAT(a.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
+	u2.USERNAME as Modifier
+	from authority a
+	LEFT OUTER JOIN USER_ENTITY u1
+	on a.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2
+	on a.modifyId = u2.ID
+	where a.aId = ? AND a.REALM_ID = ?`
 
 	rows, err := db.Query(query, authID, config.GetConfig().Keycloak_realm)
 	if err != nil {
@@ -500,7 +555,7 @@ func GetAuthInfo(authID string) (*models.AutuhorityInfo, error) {
 	var r *models.AutuhorityInfo = new(models.AutuhorityInfo)
 
 	if rows.Next() {
-		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.Method, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
+		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.Method, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}
@@ -603,10 +658,17 @@ func CheckUserRoleID(userID string, roleID string) error {
 }
 
 func GetGroup() ([]models.GroupItem, error) {
-	query := `SELECT ID, NAME, 
-	ISNULL((select count(USER_ID) from USER_GROUP_MEMBERSHIP where GROUP_ID = g.ID AND REALM_ID = ? group by GROUP_ID), 0) as countMembers
-	,createDate, createId, modifyDate, modifyId
+	query := `SELECT g.ID, NAME, 
+	ISNULL((select count(USER_ID) from USER_GROUP_MEMBERSHIP where GROUP_ID = g.ID AND REALM_ID = ? group by GROUP_ID), 0) as countMembers,
+	FORMAT(g.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
+	u1.USERNAME as Creator, 
+	FORMAT(g.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
+	u2.USERNAME as Modifier
 	from KEYCLOAK_GROUP g
+	LEFT OUTER JOIN USER_ENTITY u1
+	on g.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2
+	on g.modifyId = u2.ID
 	where
 	REALM_ID = ?`
 
@@ -621,7 +683,7 @@ func GetGroup() ([]models.GroupItem, error) {
 	for rows.Next() {
 		var r models.GroupItem
 
-		err := rows.Scan(&r.ID, &r.Name, &r.CountMembers, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
+		err := rows.Scan(&r.ID, &r.Name, &r.CountMembers, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}
@@ -661,11 +723,20 @@ func GetUsers(search string) ([]models.GetUserInfo, error) {
 	var rows *sql.Rows
 	var err error
 
-	query := `SELECT ID, ENABLED, USERNAME, FIRST_NAME, LAST_NAME, EMAIL, createDate, createId, modifyDate, modifyId FROM USER_ENTITY 
-	where SERVICE_ACCOUNT_CLIENT_LINK is NULL AND REALM_ID = ?`
+	query := `SELECT U.ID, U.ENABLED, U.USERNAME, U.FIRST_NAME, U.LAST_NAME, U.EMAIL, 
+	FORMAT(U.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
+	u1.USERNAME as Creator, 
+	FORMAT(U.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
+	u2.USERNAME as Modifier
+	FROM USER_ENTITY U
+	LEFT OUTER JOIN USER_ENTITY u1
+	on U.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2
+	on U.modifyId = u2.ID
+	where U.SERVICE_ACCOUNT_CLIENT_LINK is NULL AND U.REALM_ID = ?`
 
 	if search != "" {
-		query += " AND USERNAME LIKE ?"
+		query += " AND U.USERNAME LIKE ?"
 		rows, err = db.Query(query, config.GetConfig().Keycloak_realm, "%"+search+"%")
 	} else {
 		rows, err = db.Query(query, config.GetConfig().Keycloak_realm)
@@ -681,7 +752,7 @@ func GetUsers(search string) ([]models.GetUserInfo, error) {
 	for rows.Next() {
 		var r models.GetUserInfo
 
-		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
+		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}
@@ -692,10 +763,18 @@ func GetUsers(search string) ([]models.GetUserInfo, error) {
 }
 
 func GetUserDetail(userId string) ([]models.GetUserInfo, error) {
-	query := `SELECT ID, ENABLED, USERNAME, FIRST_NAME, LAST_NAME, EMAIL, 
+	query := `SELECT U.ID, U.ENABLED, U.USERNAME, U.FIRST_NAME, U.LAST_NAME, U.EMAIL, 
 	(SELECT STRING_AGG(REQUIRED_ACTION, ',') FROM USER_REQUIRED_ACTION WHERE USER_ID=U.ID) as REQUIRED_ACTION,
-	createDate, createId, modifyDate, modifyId FROM USER_ENTITY U
-	WHERE U.ID = ? AND REALM_ID = ?`
+	FORMAT(U.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
+	u1.USERNAME as Creator, 
+	FORMAT(U.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
+	u2.USERNAME as Modifier
+	FROM USER_ENTITY U
+	LEFT OUTER JOIN USER_ENTITY u1
+	on U.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2
+	on U.modifyId = u2.ID
+	WHERE U.ID = ? AND U.REALM_ID = ?`
 
 	rows, err := db.Query(query, userId, config.GetConfig().Keycloak_realm)
 	if err != nil {
@@ -710,7 +789,7 @@ func GetUserDetail(userId string) ([]models.GetUserInfo, error) {
 		var r models.GetUserInfo
 
 		RequiredActions := ""
-		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &RequiredActions, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
+		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &RequiredActions, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}
@@ -806,7 +885,11 @@ func GetSecretGroup(data []models.SecretGroupItem, username string) ([]models.Se
 	for _, d := range data {
 		query += "insert into @values values ('/secret/" + d.Name + "/')"
 	}
-	query += `select C.secretGroup, D.createDate, D.createId, D.modifyDate, D.modifyId 
+	query += `select C.secretGroup, 
+	FORMAT(D.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
+	u1.USERNAME as Creator, 
+	FORMAT(D.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
+	u2.USERNAME as Modifier
 	from (select REPLACE(REPLACE(B.sg,'/secret/',''),'/','') as secretGroup 
 	from (select
 	REPLACE(url,'*','%%') as auth_url
@@ -816,14 +899,16 @@ func GetSecretGroup(data []models.SecretGroupItem, username string) ([]models.Se
 	join authority a on ra.aId = a.aId
 	where ur.useYn = 'y'
 	and ra.useYn = 'y'
-	and u.USERNAME = ?
-	and u.REALM_ID = ?
 	) A
 	join @values B
 	ON PATINDEX(A.auth_url, B.sg) = 1
 	group by B.sg) C
 	left outer join
 	vSecretGroup D
+	LEFT OUTER JOIN USER_ENTITY u1
+	on D.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2
+	on D.modifyId = u2.ID
 	ON C.secretGroup = D.vSecretGroupPath`
 
 	rows, err := db.Query(query, username, config.GetConfig().Keycloak_realm)
@@ -837,7 +922,7 @@ func GetSecretGroup(data []models.SecretGroupItem, username string) ([]models.Se
 	for rows.Next() {
 		var r models.SecretGroupItem
 
-		err := rows.Scan(&r.Name, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
+		err := rows.Scan(&r.Name, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}
@@ -855,8 +940,17 @@ func GetSecretGroup(data []models.SecretGroupItem, username string) ([]models.Se
 }
 
 func GetSecret(groupName string) (map[string]models.SecretItem, error) {
-	query := `SELECT vSecretPath, createDate, createId, modifyDate, modifyId FROM vSecret
-	WHERE vSecretGroupId = (SELECT vSecretGroupId FROM vSecretGroup WHERE vSecretGroupPath = ? AND REALM_ID = ?)`
+	query := `SELECT s.vSecretPath, 
+	FORMAT(s.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
+	u1.USERNAME as Creator, 
+	FORMAT(s.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
+	u2.USERNAME as Modifier
+	FROM vSecret s
+	LEFT OUTER JOIN USER_ENTITY u1
+	on s.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2
+	on s.modifyId = u2.ID
+	WHERE s.vSecretGroupId = (SELECT vSecretGroupId FROM vSecretGroup WHERE vSecretGroupPath = ? AND REALM_ID = ?)`
 
 	rows, err := db.Query(query, groupName, config.GetConfig().Keycloak_realm)
 	if err != nil {
@@ -869,7 +963,7 @@ func GetSecret(groupName string) (map[string]models.SecretItem, error) {
 	for rows.Next() {
 		var r models.SecretItem
 
-		err := rows.Scan(&r.Name, &r.CreateDate, &r.CreateId, &r.ModifyDate, &r.ModifyId)
+		err := rows.Scan(&r.Name, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}
@@ -939,10 +1033,18 @@ func GetSecretGroupMetadata(groupName string) (models.SecretGroupResponse, error
 		result.Users = append(result.Users, r)
 	}
 
-	query = `SELECT createDate, createId, modifyDate, modifyId
-	FROM vSecretGroup
+	query = `SELECT 
+	FORMAT(g.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
+	u1.USERNAME as Creator, 
+	FORMAT(g.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
+	u2.USERNAME as Modifier
+	FROM vSecretGroup g
+	LEFT OUTER JOIN USER_ENTITY u1
+	on g.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2
+	on g.modifyId = u2.ID
 	where vSecretGroupPath = ?
-	AND REALM_ID = ?`
+	AND s.REALM_ID = ?`
 
 	rows, err = db.Query(query, groupName, config.GetConfig().Keycloak_realm)
 	if err != nil {
@@ -951,7 +1053,7 @@ func GetSecretGroupMetadata(groupName string) (models.SecretGroupResponse, error
 	defer rows.Close()
 
 	for rows.Next() {
-		err := rows.Scan(&result.CreateDate, &result.CreateId, &result.ModifyDate, &result.ModifyId)
+		err := rows.Scan(&result.CreateDate, &result.Creator, &result.ModifyDate, &result.Modifier)
 		if err != nil {
 			return result, err
 		}
@@ -961,8 +1063,17 @@ func GetSecretGroupMetadata(groupName string) (models.SecretGroupResponse, error
 }
 
 func GetSecretByName(groupName string, secretName string) (*models.SecretItem, error) {
-	query := `SELECT vSecretPath, createDate, createId, modifyDate, modifyId FROM vSecret
-	WHERE vSecretGroupId = (SELECT vSecretGroupId FROM vSecretGroup WHERE vSecretGroupPath = ? AND REALM_ID = ?) AND vSecretPath = ?`
+	query := `SELECT s.vSecretPath, 
+	FORMAT(s.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
+	u1.USERNAME as Creator, 
+	FORMAT(s.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
+	u2.USERNAME as Modifier
+	FROM vSecret s
+	LEFT OUTER JOIN USER_ENTITY u1
+	on s.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2
+	on s.modifyId = u2.ID
+	WHERE s.vSecretGroupId = (SELECT vSecretGroupId FROM vSecretGroup WHERE vSecretGroupPath = ? AND REALM_ID = ?) AND vSecretPath = ?`
 
 	rows, err := db.Query(query, groupName, config.GetConfig().Keycloak_realm, secretName)
 	if err != nil {
@@ -972,7 +1083,7 @@ func GetSecretByName(groupName string, secretName string) (*models.SecretItem, e
 	m := new(models.SecretItem)
 
 	rows.Next()
-	err = rows.Scan(&m.Name, &m.CreateDate, &m.CreateId, &m.ModifyDate, &m.ModifyId)
+	err = rows.Scan(&m.Name, &m.CreateDate, &m.Creator, &m.ModifyDate, &m.Modifier)
 	if err != nil {
 		return m, nil
 	}

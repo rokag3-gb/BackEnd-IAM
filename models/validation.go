@@ -31,9 +31,9 @@ type GetUserInfo struct {
 	Email            *string   `json:"email"`
 	RequiredActions  *[]string `json:"requiredActions,omitempty"`
 	CreateDate       *string   `json:"createDate"`
-	CreateId         *string   `json:"createId"`
+	Creator          *string   `json:"createId"`
 	ModifyDate       *string   `json:"modifyDate"`
-	ModifyId         *string   `json:"modifyId"`
+	Modifier         *string   `json:"modifyId"`
 }
 
 type ResetUserPasswordInfo struct {
@@ -56,9 +56,9 @@ type RolesInfo struct {
 	Name       string  `json:"name" binding:"required"`
 	Use        string  `json:"useYn,omitempty"`
 	CreateDate *string `json:"createDate"`
-	CreateId   *string `json:"createId"`
+	Creator    *string `json:"createId"`
 	ModifyDate *string `json:"modifyDate"`
-	ModifyId   *string `json:"modifyId"`
+	Modifier   *string `json:"modifyId"`
 }
 
 type AutuhorityInfo struct {
@@ -68,9 +68,9 @@ type AutuhorityInfo struct {
 	Method     string  `json:"method,omitempty"`
 	Use        string  `json:"useYn,omitempty"`
 	CreateDate *string `json:"createDate"`
-	CreateId   *string `json:"createId"`
+	Creator    *string `json:"createId"`
 	ModifyDate *string `json:"modifyDate"`
-	ModifyId   *string `json:"modifyId"`
+	Modifier   *string `json:"modifyId"`
 }
 
 type GroupItem struct {
@@ -78,9 +78,9 @@ type GroupItem struct {
 	Name         string  `json:"name" binding:"required"`
 	CountMembers int     `json:"countMembers" binding:"required"`
 	CreateDate   *string `json:"createDate"`
-	CreateId     *string `json:"createId"`
+	Creator      *string `json:"createId"`
 	ModifyDate   *string `json:"modifyDate"`
-	ModifyId     *string `json:"modifyId"`
+	Modifier     *string `json:"modifyId"`
 }
 
 type SecretGroupItem struct {
@@ -89,9 +89,9 @@ type SecretGroupItem struct {
 	RoleId      []string `json:"roleId,omitempty"`
 	UserId      []string `json:"userId,omitempty"`
 	CreateDate  *string  `json:"createDate"`
-	CreateId    *string  `json:"createId"`
+	Creator     *string  `json:"createId"`
 	ModifyDate  *string  `json:"modifyDate"`
-	ModifyId    *string  `json:"modifyId"`
+	Modifier    *string  `json:"modifyId"`
 }
 
 type SecretGroupResponse struct {
@@ -99,9 +99,9 @@ type SecretGroupResponse struct {
 	Roles       []IdItem `json:"roles" binding:"required"`
 	Users       []IdItem `json:"users" binding:"required"`
 	CreateDate  *string  `json:"createDate"`
-	CreateId    *string  `json:"createId"`
+	Creator     *string  `json:"createId"`
 	ModifyDate  *string  `json:"modifyDate"`
-	ModifyId    *string  `json:"modifyId"`
+	Modifier    *string  `json:"modifyId"`
 }
 
 type IdItem struct {
@@ -112,9 +112,9 @@ type IdItem struct {
 type SecretItem struct {
 	Name       string  `json:"name" binding:"required"`
 	CreateDate *string `json:"createDate"`
-	CreateId   *string `json:"createId"`
+	Creator    *string `json:"createId"`
 	ModifyDate *string `json:"modifyDate"`
-	ModifyId   *string `json:"modifyId"`
+	Modifier   *string `json:"modifyId"`
 }
 
 type AutuhorityUse struct {

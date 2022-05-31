@@ -684,9 +684,9 @@ func GetSecret(c *gin.Context) {
 	}
 
 	data.Data["createDate"] = secret.CreateDate
-	data.Data["createId"] = secret.CreateId
+	data.Data["creator"] = secret.Creator
 	data.Data["modifyDate"] = secret.ModifyDate
-	data.Data["modifyId"] = secret.ModifyId
+	data.Data["modifier"] = secret.Modifier
 
 	c.JSON(http.StatusOK, data.Data)
 }
