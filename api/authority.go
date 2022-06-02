@@ -311,23 +311,6 @@ func GetUserRole(c *gin.Context) {
 	c.JSON(http.StatusOK, arr)
 }
 
-func GetAuthUserList(c *gin.Context) {
-	arr, err := iamdb.GetAuthUserList()
-	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
-		return
-	}
-
-	c.JSON(http.StatusOK, arr)
-}
-
 func AssignUserRole(c *gin.Context) {
 	userid, err := getUserID(c)
 	if err != nil {

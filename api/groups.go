@@ -121,22 +121,3 @@ func UpdateGroup(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
-
-func GetGroupMember(c *gin.Context) {
-	groupid := c.Param("groupid")
-
-	arr, err := iamdb.GetGroupMembers(groupid)
-	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
-		return
-	}
-
-	c.JSON(http.StatusOK, arr)
-}

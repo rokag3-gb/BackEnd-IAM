@@ -256,45 +256,6 @@ func UpdateRoleAuth(roleID string, authID string, use string, username string) e
 	return err
 }
 
-func GetAuthUserList() ([]models.UserRolesInfo, error) {
-	query := `select u.ID, 
-	u.USERNAME, 
-	ISNULL(u.FIRST_NAME, '') as FIRST_NAME, 
-	ISNULL(u.LAST_NAME, '') as LAST_NAME, 
-	ISNULL(u.EMAIL, '') as EMAIL, 
-	ISNULL(string_agg(r.rName, ', '), '') as RoleList
-		from roles r 
-		join user_roles_mapping ur 
-		on r.rId = ur.rId
-		right outer join USER_ENTITY u
-		on ur.userId = u.ID
-	WHERE
-		u.SERVICE_ACCOUNT_CLIENT_LINK is NULL
-		AND u.REALM_ID = ?
-		GROUP BY u.USERNAME, u.EMAIL, u.ID, u.FIRST_NAME, u.LAST_NAME`
-
-	rows, err := db.Query(query, config.GetConfig().Keycloak_realm)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var arr = make([]models.UserRolesInfo, 0)
-
-	for rows.Next() {
-		var r models.UserRolesInfo
-
-		err := rows.Scan(&r.ID, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.RoleList)
-		if err != nil {
-			return nil, err
-		}
-
-		arr = append(arr, r)
-	}
-
-	return arr, nil
-}
-
 func GetUserRole(userID string) ([]models.RolesInfo, error) {
 	query := `select r.rId, r.rName, ur.useYn,
 	FORMAT(ur.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
@@ -721,7 +682,7 @@ func GroupUpdate(groupId string, username string) error {
 	return err
 }
 
-func GetUsers(search string) ([]models.GetUserInfo, error) {
+func GetUsers(search string, groupid string) ([]models.GetUserInfo, error) {
 	var rows *sql.Rows
 	var err error
 
@@ -773,14 +734,32 @@ func GetUsers(search string) ([]models.GetUserInfo, error) {
 	LEFT OUTER JOIN USER_ENTITY u1
 	on U.createId = u1.ID
 	LEFT OUTER JOIN USER_ENTITY u2
-	on U.modifyId = u2.ID
-	WHERE
+	on U.modifyId = u2.ID`
+
+	if groupid != "" {
+		query += ` join USER_GROUP_MEMBERSHIP UG
+		ON U.ID = UG.USER_ID`
+	}
+
+	query += ` WHERE
 	U.REALM_ID = ?
-	AND U.SERVICE_ACCOUNT_CLIENT_LINK is NULL`
+	AND U.SERVICE_ACCOUNT_CLIENT_LINK is NULL `
 
 	if search != "" {
 		query += " AND U.USERNAME LIKE ?"
+	}
+
+	if groupid != "" {
+		query += ` AND UG.GROUP_ID = ?`
+	}
+
+	//나중에 방법을 찾아서 정리하는걸로...
+	if search != "" && groupid != "" {
+		rows, err = db.Query(query, config.GetConfig().Keycloak_realm, "%"+search+"%", groupid)
+	} else if search != "" {
 		rows, err = db.Query(query, config.GetConfig().Keycloak_realm, "%"+search+"%")
+	} else if groupid != "" {
+		rows, err = db.Query(query, config.GetConfig().Keycloak_realm, groupid)
 	} else {
 		rows, err = db.Query(query, config.GetConfig().Keycloak_realm)
 	}
@@ -1135,46 +1114,4 @@ func GetSecretByName(groupName string, secretName string) (*models.SecretItem, e
 	defer rows.Close()
 
 	return m, err
-}
-
-func GetGroupMembers(groupId string) ([]models.GetUserInfo, error) {
-	var rows *sql.Rows
-	var err error
-
-	query := `	SELECT U.ID, U.ENABLED, U.USERNAME, U.FIRST_NAME, U.LAST_NAME, U.EMAIL, 
-	FORMAT(U.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
-	u1.USERNAME as Creator, 
-	FORMAT(U.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
-	u2.USERNAME as Modifier
-	FROM USER_ENTITY U
-	join USER_GROUP_MEMBERSHIP UG
-	on U.ID = UG.USER_ID
-	LEFT OUTER JOIN USER_ENTITY u1
-	on U.createId = u1.ID
-	LEFT OUTER JOIN USER_ENTITY u2
-	on U.modifyId = u2.ID
-	where U.SERVICE_ACCOUNT_CLIENT_LINK is NULL
-	AND UG.GROUP_ID = ?
-	AND U.REALM_ID = ?`
-
-	rows, err = db.Query(query, groupId, config.GetConfig().Keycloak_realm)
-
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var arr = make([]models.GetUserInfo, 0)
-
-	for rows.Next() {
-		var r models.GetUserInfo
-
-		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
-		if err != nil {
-			return nil, err
-		}
-
-		arr = append(arr, r)
-	}
-	return arr, err
 }

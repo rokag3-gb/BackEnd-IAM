@@ -14,8 +14,9 @@ import (
 
 func Users(c *gin.Context) {
 	search := c.Query("search")
+	groupid := c.Query("groupid")
 
-	arr, err := iamdb.GetUsers(search)
+	arr, err := iamdb.GetUsers(search, groupid)
 	if err != nil {
 		logger.Error(err.Error())
 
