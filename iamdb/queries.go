@@ -186,7 +186,6 @@ func GetRolseAuth(id string) ([]models.RolesInfo, error) {
 	u1.USERNAME as Creator, 
 	FORMAT(ra.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
 	u2.USERNAME as Modifier
-	ra.createDate, u1.USERNAME as Creator, ra.modifyDate, u2.USERNAME as Modifier
 	from 
 	roles_authority_mapping ra 
 	join 
@@ -201,6 +200,9 @@ func GetRolseAuth(id string) ([]models.RolesInfo, error) {
 	ra.rId = ?`
 
 	rows, err := db.Query(query, id)
+	if err != nil {
+		return nil, err
+	}
 	defer rows.Close()
 
 	var arr = make([]models.RolesInfo, 0)
@@ -1087,7 +1089,7 @@ func GetSecretGroupMetadata(groupName string) (models.SecretGroupResponse, error
 	LEFT OUTER JOIN USER_ENTITY u2
 	on g.modifyId = u2.ID
 	where vSecretGroupPath = ?
-	AND s.REALM_ID = ?`
+	AND g.REALM_ID = ?`
 
 	rows, err = db.Query(query, groupName, config.GetConfig().Keycloak_realm)
 	if err != nil {
