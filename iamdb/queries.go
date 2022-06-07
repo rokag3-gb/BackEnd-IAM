@@ -345,7 +345,7 @@ func UpdateUserRole(userID string, roleID string, use string, username string) e
 }
 
 func GetUserAuth(userID string) ([]models.AutuhorityInfo, error) {
-	query := `select a.aId, a.aName, 
+	query := `select a.aId, a.aName, a.url, a.method, 
 	FORMAT(a.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
 	u1.USERNAME as Creator, 
 	FORMAT(a.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
@@ -376,7 +376,7 @@ func GetUserAuth(userID string) ([]models.AutuhorityInfo, error) {
 	for rows.Next() {
 		var r models.AutuhorityInfo
 
-		err := rows.Scan(&r.ID, &r.Name, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
+		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.Method, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}
@@ -420,7 +420,7 @@ func GetUserAuthActive(userName string, authName string) (map[string]interface{}
 }
 
 func GetAuth() ([]models.AutuhorityInfo, error) {
-	query := `select a.aId, a.aName, 
+	query := `select a.aId, a.aName, a.url, a.method, 
 	FORMAT(a.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
 	u1.USERNAME as Creator, 
 	FORMAT(a.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
@@ -443,7 +443,7 @@ func GetAuth() ([]models.AutuhorityInfo, error) {
 	for rows.Next() {
 		var r models.AutuhorityInfo
 
-		err := rows.Scan(&r.ID, &r.Name, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
+		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.Method, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}

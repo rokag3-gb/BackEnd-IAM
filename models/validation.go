@@ -67,9 +67,9 @@ type RolesInfo struct {
 type AutuhorityInfo struct {
 	ID         string  `json:"id" binding:"required"`
 	Name       string  `json:"name" binding:"required"`
-	URL        string  `json:"url,omitempty"`
-	Method     string  `json:"method,omitempty"`
-	Use        string  `json:"useYn,omitempty"`
+	URL        *string `json:"url,omitempty"`
+	Method     *string `json:"method,omitempty"`
+	Use        *string `json:"useYn,omitempty"`
 	CreateDate *string `json:"createDate"`
 	Creator    *string `json:"createId"`
 	ModifyDate *string `json:"modifyDate"`
