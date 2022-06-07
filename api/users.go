@@ -47,6 +47,7 @@ func CreateUser(c *gin.Context) {
 			FirstName: gocloak.StringP(json.FirstName),
 			LastName:  gocloak.StringP(json.LastName),
 			Email:     gocloak.StringP(json.Email),
+			Enabled:   gocloak.BoolP(true),
 		})
 	if err != nil {
 		apiError := err.(*gocloak.APIError)
