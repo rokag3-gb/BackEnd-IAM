@@ -112,6 +112,11 @@ type IdItem struct {
 	Name string `json:"name"`
 }
 
+type MetricItem struct {
+	Key   string `json:"key"`
+	Value int    `json:"valse"`
+}
+
 type SecretItem struct {
 	Name       string  `json:"name" binding:"required"`
 	CreateDate *string `json:"createDate"`

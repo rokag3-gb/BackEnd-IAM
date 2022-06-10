@@ -161,6 +161,15 @@ func makeRouter() *gin.Engine {
 		secret.DELETE("/:groupName/metadata/:secretName", api.DeleteSecretMetadata)
 	}
 
+	metric := route.Group("/metric")
+	{
+		metric.GET("/count", api.MetricCount)
+		metric.GET("/session", api.GetMetricSession)
+		metric.GET("/login/application", middlewares.DateQueryMiddleware(), api.GetLoginApplication)
+		metric.GET("/login/date", middlewares.DateQueryMiddleware(), api.GetLoginDate)
+		metric.GET("/login/error", middlewares.DateQueryMiddleware(), api.GetLoginError)
+	}
+
 	for _, name := range config.GetConfig().Api_host_name {
 		target, err := url.Parse(config.GetConfig().Api_host_list[name])
 		if err != nil {

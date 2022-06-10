@@ -1115,3 +1115,304 @@ func GetSecretByName(groupName string, secretName string) (*models.SecretItem, e
 
 	return m, err
 }
+
+func MetricCount() (map[string]int, error) {
+	query := `select 
+	(select count(*) from USER_ENTITY where REALM_ID = ? AND SERVICE_ACCOUNT_CLIENT_LINK is NULL) AS users,
+	(select count(*) from KEYCLOAK_GROUP where REALM_ID = ?) AS groups,
+	(select count(*) from CLIENT where REALM_ID = ? AND NODE_REREG_TIMEOUT = -1) AS applicastions,
+	(select count(*) from roles where REALM_ID = ?) AS roles,
+	(select count(*) from authority where REALM_ID = ?) AS authorities`
+
+	rows, err := db.Query(query,
+		config.GetConfig().Keycloak_realm,
+		config.GetConfig().Keycloak_realm,
+		config.GetConfig().Keycloak_realm,
+		config.GetConfig().Keycloak_realm,
+		config.GetConfig().Keycloak_realm)
+	if err != nil {
+		return nil, err
+	}
+	users := 0
+	groups := 0
+	applications := 0
+	roles := 0
+	authorities := 0
+
+	rows.Next()
+	err = rows.Scan(&users, &groups, &applications, &roles, &authorities)
+	if err != nil {
+		return nil, err
+	}
+
+	m := make(map[string]int)
+	m["users"] = users
+	m["groups"] = groups
+	m["applications"] = applications
+	m["roles"] = roles
+	m["authorities"] = authorities
+
+	return m, nil
+}
+
+func GetApplications() ([]string, error) {
+	query := `select CLIENT_ID from CLIENT where REALM_ID = ? AND NODE_REREG_TIMEOUT = -1 AND CLIENT_ID != ?`
+
+	rows, err := db.Query(query, config.GetConfig().Keycloak_realm, config.GetConfig().Keycloak_client_id)
+	if err != nil {
+		return nil, err
+	}
+	arr := make([]string, 0, 10)
+
+	for rows.Next() {
+		cid := ""
+		err = rows.Scan(&cid)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, cid)
+	}
+
+	return arr, nil
+
+}
+
+func GetLoginApplication(date int) ([]models.MetricItem, error) {
+	query := `select B.CLIENT_ID
+	, count(A.CLIENT_ID) as count
+	from
+	(select * FROM
+	(SELECT
+	CLIENT_ID, DATEADD(SECOND, EVENT_TIME/1000, '01/01/1970 09:00:00') as etime
+	FROM EVENT_ENTITY
+	where CLIENT_ID != ?
+	AND TYPE = 'LOGIN'
+	AND REALM_ID = ?
+	) AA 
+	where AA.etime > getdate()-?
+	) A
+	RIGHT OUTER JOIN
+	(select CLIENT_ID from CLIENT
+	where
+	REALM_ID = ?
+	AND NODE_REREG_TIMEOUT = -1
+	AND CLIENT_ID != ?
+	) B
+	ON A.CLIENT_ID = B.CLIENT_ID
+	group by B.client_id`
+
+	rows, err := db.Query(query,
+		config.GetConfig().Keycloak_client_id,
+		config.GetConfig().Keycloak_realm,
+		date,
+		config.GetConfig().Keycloak_realm,
+		config.GetConfig().Keycloak_client_id)
+
+	if err != nil {
+		return nil, err
+	}
+	arr := make([]models.MetricItem, 0)
+
+	for rows.Next() {
+		var m models.MetricItem
+		err = rows.Scan(&m.Key, &m.Value)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, m)
+	}
+
+	return arr, nil
+}
+
+func GetLoginDate(date int) ([]models.MetricItem, error) {
+	query := `select 
+	FORMAT(C.SYSTEM_DATE, 'yyyy-MM-dd') as date,
+	count(B.ID) as count
+	from
+	(
+	select
+	CONVERT(DATE, etime) as eDate,
+	*
+	from
+	(SELECT
+	E.ID,
+	DATEADD(SECOND, EVENT_TIME/1000, '01/01/1970 09:00:00') as etime
+	FROM EVENT_ENTITY E
+	JOIN
+	(select CLIENT_ID from CLIENT
+	where
+	REALM_ID = ?
+	AND NODE_REREG_TIMEOUT = -1
+	AND CLIENT_ID != ?) D
+	ON E.CLIENT_ID = D.CLIENT_ID
+	where  TYPE = 'LOGIN'
+	) A
+	where etime > getdate()-?
+	) B
+	right outer JOIN 
+	(
+	SELECT CONVERT(DATE, DATEADD(DAY, NUMBER, getdate()-?), 112) AS SYSTEM_DATE
+	FROM MASTER..SPT_VALUES WITH(NOLOCK)
+	WHERE TYPE = 'P'
+	AND NUMBER <= DATEDIFF(DAY, getdate()-?, getdate())
+	) C
+	ON B.eDate = C.SYSTEM_DATE
+	group by C.SYSTEM_DATE`
+
+	rows, err := db.Query(query,
+		config.GetConfig().Keycloak_realm,
+		config.GetConfig().Keycloak_client_id,
+		date, date, date)
+
+	if err != nil {
+		return nil, err
+	}
+	arr := make([]models.MetricItem, 0)
+
+	for rows.Next() {
+		var m models.MetricItem
+		err = rows.Scan(&m.Key, &m.Value)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, m)
+	}
+
+	return arr, nil
+}
+
+func GetLoginError(date int) ([]models.MetricItem, error) {
+	query := `declare @values table
+	(
+		error varchar(64),
+		errorMessage varchar(64)
+	)
+	insert into @values values ('different_user_authenticated', 'Different user authenticated')
+	insert into @values values ('invalid_user_credentials', 'Invalid user credentials')
+	insert into @values values ('rejected_by_user', 'Rejected by user')
+	insert into @values values ('user_disabled', 'User disabled')
+	insert into @values values ('user_not_found', 'User not found')
+	
+	SELECT 
+	B.errorMessage,
+	count(a.ERROR)
+	FROM 
+	(SELECT * from
+	(SELECT
+	ERROR, DATEADD(SECOND, EVENT_TIME/1000, '01/01/1970 09:00:00') as etime
+	FROM EVENT_ENTITY
+	where TYPE = 'LOGIN_ERROR'
+	AND REALM_ID = ?
+	) AA
+	where AA.etime > GETDATE() - ?) A
+	RIGHT OUTER JOIN @values B
+	ON A.ERROR = B.error
+	GROUP BY B.errorMessage`
+
+	rows, err := db.Query(query, config.GetConfig().Keycloak_realm, date)
+	if err != nil {
+		return nil, err
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	arr := make([]models.MetricItem, 0)
+
+	for rows.Next() {
+		var m models.MetricItem
+		err = rows.Scan(&m.Key, &m.Value)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, m)
+	}
+
+	return arr, nil
+}
+
+/*
+날짜별 접속 수
+select
+C.SYSTEM_DATE,
+count(B.ID) as count
+from
+(
+select
+CONVERT(DATE, etime) as eDate,
+*
+from
+(SELECT
+*, DATEADD(SECOND, EVENT_TIME/1000, '01/01/1970 09:00:00') as etime
+FROM EVENT_ENTITY
+where CLIENT_ID != 'server_side_client'
+AND CLIENT_ID != 'account-console'
+AND TYPE = 'LOGIN'
+) A
+where etime > getdate()-6
+) B
+right outer JOIN
+(
+SELECT CONVERT(DATE, DATEADD(DAY, NUMBER, getdate()-6), 112) AS SYSTEM_DATE
+FROM MASTER..SPT_VALUES WITH(NOLOCK)
+WHERE TYPE = 'P'
+AND NUMBER <= DATEDIFF(DAY, getdate()-6, getdate())
+) C
+ON B.eDate = C.SYSTEM_DATE
+group by C.SYSTEM_DATE
+*/
+
+/*
+select B.CLIENT_ID
+, count(A.CLIENT_ID) as count
+from
+(select * FROM
+(SELECT
+CLIENT_ID, DATEADD(SECOND, EVENT_TIME/1000, '01/01/1970 09:00:00') as etime
+FROM EVENT_ENTITY
+where CLIENT_ID != 'server_side_client'
+AND CLIENT_ID != 'account-console'
+AND TYPE = 'LOGIN'
+) AA
+where AA.etime > getdate()-6
+) A
+RIGHT OUTER JOIN
+(select CLIENT_ID from CLIENT
+where
+REALM_ID = 'test-realm'
+AND NODE_REREG_TIMEOUT = -1) B
+ON A.CLIENT_ID = B.CLIENT_ID
+group by B.client_id
+*/
+
+/*
+declare @values table
+(
+	error varchar(64),
+	errorMessage varchar(64)
+)
+insert into @values values ('different_user_authenticated', 'Different user authenticated')
+insert into @values values ('invalid_user_credentials', 'Invalid user credentials')
+insert into @values values ('rejected_by_user', 'Rejected by user')
+insert into @values values ('user_disabled', 'User disabled')
+insert into @values values ('user_not_found', 'User not found')
+
+SELECT
+B.errorMessage,
+count(a.ERROR)
+FROM
+(SELECT * from
+(SELECT
+ERROR, DATEADD(SECOND, EVENT_TIME/1000, '01/01/1970 09:00:00') as etime
+FROM EVENT_ENTITY
+where TYPE = 'LOGIN_ERROR') AA
+where AA.etime > GETDATE() -6) A
+RIGHT OUTER JOIN @values B
+ON A.ERROR = B.error
+GROUP BY B.errorMessage
+*/

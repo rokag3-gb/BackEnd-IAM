@@ -80,6 +80,18 @@ func ListQueryRangeMiddleware() gin.HandlerFunc {
 	}
 }
 
+func DateQueryMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		date, err := strconv.Atoi(c.DefaultQuery("date", "7"))
+		if err != nil {
+			c.String(http.StatusBadRequest, "'date' must be integer")
+			c.Abort()
+			return
+		}
+		c.Set("date", date)
+	}
+}
+
 func AuthorityCheckMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		username := c.MustGet("username").(string)
