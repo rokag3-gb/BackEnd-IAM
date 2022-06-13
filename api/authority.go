@@ -11,6 +11,7 @@ import (
 
 	logger "cloudmt.co.kr/mateLogger"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func GetRoles(c *gin.Context) {
@@ -47,7 +48,7 @@ func CreateRoles(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.CreateRoles(roles, c.GetString("username"))
+	tx, err := iamdb.DBClient().Begin()
 	if err != nil {
 		logger.Error(err.Error())
 
@@ -59,8 +60,56 @@ func CreateRoles(c *gin.Context) {
 		c.Abort()
 		return
 	}
+	roleId := uuid.New()
 
-	c.Status(http.StatusCreated)
+	err = iamdb.CreateRolesIdTx(tx, roleId.String(), *roles.Name, c.GetString("username"))
+	if err != nil {
+		tx.Rollback()
+		logger.Error(err.Error())
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
+		c.Abort()
+		return
+	}
+
+	if roles.AuthId != nil {
+		for _, authid := range *roles.AuthId {
+			err = iamdb.AssignRoleAuthTx(tx, roleId.String(), authid, c.GetString("username"))
+			if err != nil {
+				tx.Rollback()
+				logger.Error(err.Error())
+
+				if config.GetConfig().Developer_mode {
+					c.String(http.StatusInternalServerError, err.Error())
+				} else {
+					c.Status(http.StatusInternalServerError)
+				}
+				c.Abort()
+				return
+			}
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		tx.Rollback()
+		logger.Error(err.Error())
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
+		c.Abort()
+		return
+	}
+
+	c.JSON(http.StatusOK, map[string]interface{}{
+		"id": roleId.String(),
+	})
 }
 
 func DeleteRoles(c *gin.Context) {
@@ -83,7 +132,7 @@ func DeleteRoles(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.DeleteRolesAuthByRoleId(tx, roleid)
+	err = iamdb.DeleteRolesAuthByRoleIdTx(tx, roleid)
 	if err != nil {
 		tx.Rollback()
 		logger.Error(err.Error())
@@ -97,7 +146,7 @@ func DeleteRoles(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.DeleteUserRoleByRoleId(tx, roleid)
+	err = iamdb.DeleteUserRoleByRoleIdTx(tx, roleid)
 	if err != nil {
 		tx.Rollback()
 		logger.Error(err.Error())
@@ -125,7 +174,18 @@ func DeleteRoles(c *gin.Context) {
 		return
 	}
 
-	tx.Commit()
+	if err = tx.Commit(); err != nil {
+		tx.Rollback()
+		logger.Error(err.Error())
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
+		c.Abort()
+		return
+	}
 	c.Status(http.StatusNoContent)
 }
 
@@ -146,9 +206,7 @@ func UpdateRoles(c *gin.Context) {
 		return
 	}
 
-	roles.ID = roleid
-
-	err = iamdb.UpdateRoles(roles, c.GetString("username"))
+	tx, err := iamdb.DBClient().Begin()
 	if err != nil {
 		logger.Error(err.Error())
 
@@ -161,6 +219,66 @@ func UpdateRoles(c *gin.Context) {
 		return
 	}
 
+	roles.ID = roleid
+
+	err = iamdb.UpdateRolesTx(tx, roles, c.GetString("username"))
+	if err != nil {
+		tx.Rollback()
+		logger.Error(err.Error())
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
+		c.Abort()
+		return
+	}
+
+	if roles.AuthId != nil {
+		err = iamdb.DeleteRolesAuthByRoleIdTx(tx, roleid)
+		if err != nil {
+			tx.Rollback()
+			logger.Error(err.Error())
+
+			if config.GetConfig().Developer_mode {
+				c.String(http.StatusInternalServerError, err.Error())
+			} else {
+				c.Status(http.StatusInternalServerError)
+			}
+			c.Abort()
+			return
+		}
+
+		for _, authid := range *roles.AuthId {
+			err = iamdb.AssignRoleAuthTx(tx, roleid, authid, c.GetString("username"))
+			if err != nil {
+				tx.Rollback()
+				logger.Error(err.Error())
+
+				if config.GetConfig().Developer_mode {
+					c.String(http.StatusInternalServerError, err.Error())
+				} else {
+					c.Status(http.StatusInternalServerError)
+				}
+				c.Abort()
+				return
+			}
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		tx.Rollback()
+		logger.Error(err.Error())
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
+		c.Abort()
+		return
+	}
 	c.Status(http.StatusNoContent)
 }
 
@@ -491,6 +609,9 @@ func CreateAuth(c *gin.Context) {
 		return
 	}
 
+	authId := uuid.New()
+	auth.ID = authId.String()
+
 	err = iamdb.CreateAuth(auth, c.GetString("username"))
 	if err != nil {
 		logger.Error(err.Error())
@@ -504,7 +625,9 @@ func CreateAuth(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusCreated)
+	c.JSON(http.StatusOK, map[string]interface{}{
+		"id": authId.String(),
+	})
 }
 
 func DeleteAuth(c *gin.Context) {
@@ -527,7 +650,7 @@ func DeleteAuth(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.DeleteRolesAuthByAuthId(tx, authid)
+	err = iamdb.DeleteRolesAuthByAuthIdTx(tx, authid)
 	if err != nil {
 		tx.Rollback()
 		logger.Error(err.Error())

@@ -55,14 +55,15 @@ type UserRolesInfo struct {
 }
 
 type RolesInfo struct {
-	ID          string  `json:"id" binding:"required"`
-	Name        *string `json:"name" binding:"required"`
-	Use         bool    `json:"useYn,omitempty"`
-	DefaultRole *bool   `json:"defaultRole,omitempty"`
-	CreateDate  *string `json:"createDate"`
-	Creator     *string `json:"creator"`
-	ModifyDate  *string `json:"modifyDate"`
-	Modifier    *string `json:"modifier"`
+	ID          string    `json:"id" binding:"required"`
+	Name        *string   `json:"name" binding:"required"`
+	Use         bool      `json:"useYn,omitempty"`
+	DefaultRole *bool     `json:"defaultRole,omitempty"`
+	AuthId      *[]string `json:"authId,omitempty"`
+	CreateDate  *string   `json:"createDate"`
+	Creator     *string   `json:"creator"`
+	ModifyDate  *string   `json:"modifyDate"`
+	Modifier    *string   `json:"modifier"`
 }
 
 type AutuhorityInfo struct {
@@ -88,14 +89,14 @@ type GroupItem struct {
 }
 
 type SecretGroupItem struct {
-	Name        string   `json:"name" binding:"required"`
-	Description string   `json:"description" binding:"required"`
-	RoleId      []string `json:"roleId,omitempty"`
-	UserId      []string `json:"userId,omitempty"`
-	CreateDate  *string  `json:"createDate"`
-	Creator     *string  `json:"creator"`
-	ModifyDate  *string  `json:"modifyDate"`
-	Modifier    *string  `json:"modifier"`
+	Name        string    `json:"name" binding:"required"`
+	Description string    `json:"description" binding:"required"`
+	RoleId      *[]string `json:"roleId,omitempty"`
+	UserId      *[]string `json:"userId,omitempty"`
+	CreateDate  *string   `json:"createDate"`
+	Creator     *string   `json:"creator"`
+	ModifyDate  *string   `json:"modifyDate"`
+	Modifier    *string   `json:"modifier"`
 }
 
 type SecretGroupResponse struct {

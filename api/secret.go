@@ -162,35 +162,39 @@ func CreateSecretGroup(c *gin.Context) {
 		return
 	}
 
-	for _, role := range sg.RoleId {
-		err = iamdb.AssignRoleAuthTx(tx, role, authId.String(), c.GetString("username"))
-		if err != nil {
-			tx.Rollback()
-			logger.Error(err.Error())
+	if sg.RoleId != nil {
+		for _, role := range *sg.RoleId {
+			err = iamdb.AssignRoleAuthTx(tx, role, authId.String(), c.GetString("username"))
+			if err != nil {
+				tx.Rollback()
+				logger.Error(err.Error())
 
-			if config.GetConfig().Developer_mode {
-				c.String(http.StatusInternalServerError, err.Error())
-			} else {
-				c.Status(http.StatusInternalServerError)
+				if config.GetConfig().Developer_mode {
+					c.String(http.StatusInternalServerError, err.Error())
+				} else {
+					c.Status(http.StatusInternalServerError)
+				}
+				c.Abort()
+				return
 			}
-			c.Abort()
-			return
 		}
 	}
 
-	for _, user := range sg.UserId {
-		err = iamdb.AssignUserRoleTx(tx, user, roleId.String(), c.GetString("username"))
-		if err != nil {
-			tx.Rollback()
-			logger.Error(err.Error())
+	if sg.UserId != nil {
+		for _, user := range *sg.UserId {
+			err = iamdb.AssignUserRoleTx(tx, user, roleId.String(), c.GetString("username"))
+			if err != nil {
+				tx.Rollback()
+				logger.Error(err.Error())
 
-			if config.GetConfig().Developer_mode {
-				c.String(http.StatusInternalServerError, err.Error())
-			} else {
-				c.Status(http.StatusInternalServerError)
+				if config.GetConfig().Developer_mode {
+					c.String(http.StatusInternalServerError, err.Error())
+				} else {
+					c.Status(http.StatusInternalServerError)
+				}
+				c.Abort()
+				return
 			}
-			c.Abort()
-			return
 		}
 	}
 
@@ -479,7 +483,7 @@ func UpdateSecretGroup(c *gin.Context) {
 
 	if authId != "" {
 		if sg.RoleId != nil {
-			err = iamdb.DeleteRolesAuthByAuthId(tx, authId)
+			err = iamdb.DeleteRolesAuthByAuthIdTx(tx, authId)
 			if err != nil {
 				tx.Rollback()
 				logger.Error(err.Error())
@@ -493,7 +497,7 @@ func UpdateSecretGroup(c *gin.Context) {
 				return
 			}
 
-			for _, role := range sg.RoleId {
+			for _, role := range *sg.RoleId {
 				err = iamdb.AssignRoleAuthTx(tx, role, authId, c.GetString("username"))
 				if err != nil {
 					tx.Rollback()
@@ -529,7 +533,7 @@ func UpdateSecretGroup(c *gin.Context) {
 				return
 			}
 
-			for _, user := range sg.UserId {
+			for _, user := range *sg.UserId {
 				err = iamdb.AssignUserRoleTx(tx, user, roleId, c.GetString("username"))
 				if err != nil {
 					tx.Rollback()

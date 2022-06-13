@@ -173,7 +173,7 @@ func DeleteRolesNameTx(tx *sql.Tx, name string) error {
 	return err
 }
 
-func UpdateRoles(role *models.RolesInfo, username string) error {
+func UpdateRolesTx(tx *sql.Tx, role *models.RolesInfo, username string) error {
 	var err error
 
 	//버그가 있는듯... db.Query에 nil 을 넣었을 때 IsNull 의 동작이 이상하다...
@@ -185,14 +185,14 @@ func UpdateRoles(role *models.RolesInfo, username string) error {
 		modifyDate=GETDATE(), 
 		modifyId=(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) 
 		where rId = ? AND REALM_ID = ?`
-		_, err = db.Query(query, role.Name, role.DefaultRole, username, config.GetConfig().Keycloak_realm, role.ID, config.GetConfig().Keycloak_realm)
+		_, err = tx.Query(query, role.Name, role.DefaultRole, username, config.GetConfig().Keycloak_realm, role.ID, config.GetConfig().Keycloak_realm)
 	} else {
 		query := `UPDATE roles SET 
 		defaultRole = ?, 
 		modifyDate=GETDATE(), 
 		modifyId=(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) 
 		where rId = ? AND REALM_ID = ?`
-		_, err = db.Query(query, role.DefaultRole, username, config.GetConfig().Keycloak_realm, role.ID, config.GetConfig().Keycloak_realm)
+		_, err = tx.Query(query, role.DefaultRole, username, config.GetConfig().Keycloak_realm, role.ID, config.GetConfig().Keycloak_realm)
 	}
 
 	return err
@@ -345,8 +345,7 @@ func DeleteUserRoleByRoleNameTx(tx *sql.Tx, roleName string) error {
 }
 
 func DeleteUserRoleByRoleIdTx(tx *sql.Tx, roleName string) error {
-	query := `DELETE FROM user_roles_mapping where 
-	rId = ?`
+	query := `DELETE FROM user_roles_mapping where rId = ?`
 
 	_, err := tx.Query(query, roleName)
 	return err
@@ -473,10 +472,10 @@ func GetAuth() ([]models.AutuhorityInfo, error) {
 }
 
 func CreateAuth(auth *models.AutuhorityInfo, username string) error {
-	query := `INSERT INTO authority(aName, url, method, REALM_ID, createId, modifyId)
-	select ?, ?, ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
+	query := `INSERT INTO authority(aId, aName, url, method, REALM_ID, createId, modifyId)
+	select ?, ?, ?, ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
-	_, err := db.Query(query, auth.Name, auth.URL, auth.Method, config.GetConfig().Keycloak_realm, username, config.GetConfig().Keycloak_realm)
+	_, err := db.Query(query, auth.ID, auth.Name, auth.URL, auth.Method, config.GetConfig().Keycloak_realm, username, config.GetConfig().Keycloak_realm)
 	return err
 }
 
@@ -545,14 +544,14 @@ func GetAuthInfo(authID string) (*models.AutuhorityInfo, error) {
 	return r, err
 }
 
-func DeleteRolesAuthByRoleId(tx *sql.Tx, id string) error {
+func DeleteRolesAuthByRoleIdTx(tx *sql.Tx, id string) error {
 	query := `DELETE roles_authority_mapping where rId = ?`
 
 	_, err := tx.Query(query, id)
 	return err
 }
 
-func DeleteRolesAuthByAuthId(tx *sql.Tx, id string) error {
+func DeleteRolesAuthByAuthIdTx(tx *sql.Tx, id string) error {
 	query := `DELETE roles_authority_mapping where aId = ?`
 
 	_, err := tx.Query(query, id)
@@ -571,13 +570,6 @@ func DeleteUserRoleByUserId(id string) error {
 	query := `DELETE user_roles_mapping where userId = ?`
 
 	_, err := db.Query(query, id)
-	return err
-}
-
-func DeleteUserRoleByRoleId(tx *sql.Tx, id string) error {
-	query := `DELETE user_roles_mapping where rId = ?`
-
-	_, err := tx.Query(query, id)
 	return err
 }
 
