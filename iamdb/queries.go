@@ -1355,83 +1355,23 @@ func GetLoginError(date int) ([]models.MetricItem, error) {
 	return arr, nil
 }
 
-/*
-날짜별 접속 수
-select
-C.SYSTEM_DATE,
-count(B.ID) as count
-from
-(
-select
-CONVERT(DATE, etime) as eDate,
-*
-from
-(SELECT
-*, DATEADD(SECOND, EVENT_TIME/1000, '01/01/1970 09:00:00') as etime
-FROM EVENT_ENTITY
-where CLIENT_ID != 'server_side_client'
-AND CLIENT_ID != 'account-console'
-AND TYPE = 'LOGIN'
-) A
-where etime > getdate()-6
-) B
-right outer JOIN
-(
-SELECT CONVERT(DATE, DATEADD(DAY, NUMBER, getdate()-6), 112) AS SYSTEM_DATE
-FROM MASTER..SPT_VALUES WITH(NOLOCK)
-WHERE TYPE = 'P'
-AND NUMBER <= DATEDIFF(DAY, getdate()-6, getdate())
-) C
-ON B.eDate = C.SYSTEM_DATE
-group by C.SYSTEM_DATE
-*/
+func CreateUserAddRole(uid string, username string) error {
+	query := `DECLARE @C_USERNAME nvarchar(255);
+	SET @C_USERNAME = (SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?)
+	
+	INSERT INTO user_roles_mapping(userId, rId, createId, createDate, modifyId, modifyDate)
+	(SELECT ? as userId, rId,
+		@C_USERNAME as createId,
+		GETDATE() as createDate,
+		@C_USERNAME as modifyId,
+		GETDATE() as modifyDate
+	from roles A
+	where defaultRole = 1)`
 
-/*
-select B.CLIENT_ID
-, count(A.CLIENT_ID) as count
-from
-(select * FROM
-(SELECT
-CLIENT_ID, DATEADD(SECOND, EVENT_TIME/1000, '01/01/1970 09:00:00') as etime
-FROM EVENT_ENTITY
-where CLIENT_ID != 'server_side_client'
-AND CLIENT_ID != 'account-console'
-AND TYPE = 'LOGIN'
-) AA
-where AA.etime > getdate()-6
-) A
-RIGHT OUTER JOIN
-(select CLIENT_ID from CLIENT
-where
-REALM_ID = 'test-realm'
-AND NODE_REREG_TIMEOUT = -1) B
-ON A.CLIENT_ID = B.CLIENT_ID
-group by B.client_id
-*/
+	_, err := db.Query(query, username, config.GetConfig().Keycloak_realm, uid)
+	if err != nil {
+		return err
+	}
 
-/*
-declare @values table
-(
-	error varchar(64),
-	errorMessage varchar(64)
-)
-insert into @values values ('different_user_authenticated', 'Different user authenticated')
-insert into @values values ('invalid_user_credentials', 'Invalid user credentials')
-insert into @values values ('rejected_by_user', 'Rejected by user')
-insert into @values values ('user_disabled', 'User disabled')
-insert into @values values ('user_not_found', 'User not found')
-
-SELECT
-B.errorMessage,
-count(a.ERROR)
-FROM
-(SELECT * from
-(SELECT
-ERROR, DATEADD(SECOND, EVENT_TIME/1000, '01/01/1970 09:00:00') as etime
-FROM EVENT_ENTITY
-where TYPE = 'LOGIN_ERROR') AA
-where AA.etime > GETDATE() -6) A
-RIGHT OUTER JOIN @values B
-ON A.ERROR = B.error
-GROUP BY B.errorMessage
-*/
+	return nil
+}

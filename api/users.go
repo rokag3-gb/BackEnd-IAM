@@ -79,6 +79,19 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
+	err = iamdb.CreateUserAddRole(newUserId, c.GetString("username"))
+	if err != nil {
+		logger.Error(err.Error())
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
+		c.Abort()
+		return
+	}
+
 	c.JSON(http.StatusOK, gocloak.User{ID: gocloak.StringP(newUserId)})
 }
 
