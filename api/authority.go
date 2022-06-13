@@ -41,13 +41,13 @@ func CreateRoles(c *gin.Context) {
 		return
 	}
 
-	if roles.Name == "" {
+	if roles.Name == nil {
 		c.Status(http.StatusBadRequest)
 		c.Abort()
 		return
 	}
 
-	err = iamdb.CreateRoles(roles.Name, c.GetString("username"))
+	err = iamdb.CreateRoles(roles, c.GetString("username"))
 	if err != nil {
 		logger.Error(err.Error())
 
@@ -140,13 +140,15 @@ func UpdateRoles(c *gin.Context) {
 		return
 	}
 
-	if roles.Name == "" {
-		c.String(http.StatusBadRequest, "required 'name'")
+	if roles.Name == nil && roles.DefaultRole == nil {
+		c.String(http.StatusBadRequest, "required 'body'")
 		c.Abort()
 		return
 	}
 
-	err = iamdb.UpdateRoles(roles.Name, roleid, c.GetString("username"))
+	roles.ID = roleid
+
+	err = iamdb.UpdateRoles(roles, c.GetString("username"))
 	if err != nil {
 		logger.Error(err.Error())
 

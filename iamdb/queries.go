@@ -55,7 +55,7 @@ func GetUserAuthoritiesForEndpoint(username string, realm string, method string,
 }
 
 func GetRoles() ([]models.RolesInfo, error) {
-	query := `select r.rId, r.rName, 
+	query := `select r.rId, r.rName, r.defaultRole,
 	FORMAT(r.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
 	u1.USERNAME as Creator, 
 	FORMAT(r.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
@@ -79,7 +79,7 @@ func GetRoles() ([]models.RolesInfo, error) {
 	for rows.Next() {
 		var r models.RolesInfo
 
-		err := rows.Scan(&r.ID, &r.Name, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
+		err := rows.Scan(&r.ID, &r.Name, &r.DefaultRole, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}
@@ -138,11 +138,16 @@ func GetAuthIdByName(authname string) (string, error) {
 	return id, nil
 }
 
-func CreateRoles(name string, username string) error {
-	query := `INSERT INTO roles(rName, REALM_ID, createId, modifyId) 
-	select ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
+func CreateRoles(role *models.RolesInfo, username string) error {
+	query := `INSERT INTO roles(rName, defaultRole, REALM_ID, createId, modifyId) 
+	select ?, ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
-	_, err := db.Query(query, name, config.GetConfig().Keycloak_realm, username, config.GetConfig().Keycloak_realm)
+	var DefaultRole bool = false
+	if role.DefaultRole != nil && *role.DefaultRole == true {
+		DefaultRole = true
+	}
+
+	_, err := db.Query(query, role.Name, DefaultRole, config.GetConfig().Keycloak_realm, username, config.GetConfig().Keycloak_realm)
 	return err
 }
 
@@ -168,14 +173,28 @@ func DeleteRolesNameTx(tx *sql.Tx, name string) error {
 	return err
 }
 
-func UpdateRoles(name string, id string, username string) error {
-	query := `UPDATE roles SET 
-	rName = ?, 
-	modifyDate=GETDATE(), 
-	modifyId=(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) 
-	where rId = ? AND REALM_ID = ?`
+func UpdateRoles(role *models.RolesInfo, username string) error {
+	var err error
 
-	_, err := db.Query(query, name, username, config.GetConfig().Keycloak_realm, id, config.GetConfig().Keycloak_realm)
+	//버그가 있는듯... db.Query에 nil 을 넣었을 때 IsNull 의 동작이 이상하다...
+	//어쩔 수 없이 쿼리 2개로 나눠놓음
+	if role.Name != nil {
+		query := `UPDATE roles SET 
+		rName = ?, 
+		defaultRole = IsNull(?, defaultRole), 
+		modifyDate=GETDATE(), 
+		modifyId=(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) 
+		where rId = ? AND REALM_ID = ?`
+		_, err = db.Query(query, role.Name, role.DefaultRole, username, config.GetConfig().Keycloak_realm, role.ID, config.GetConfig().Keycloak_realm)
+	} else {
+		query := `UPDATE roles SET 
+		defaultRole = ?, 
+		modifyDate=GETDATE(), 
+		modifyId=(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) 
+		where rId = ? AND REALM_ID = ?`
+		_, err = db.Query(query, role.DefaultRole, username, config.GetConfig().Keycloak_realm, role.ID, config.GetConfig().Keycloak_realm)
+	}
+
 	return err
 }
 
@@ -244,7 +263,7 @@ func DismissRoleAuth(roleID string, authID string) error {
 	return err
 }
 
-func UpdateRoleAuth(roleID string, authID string, use string, username string) error {
+func UpdateRoleAuth(roleID string, authID string, use bool, username string) error {
 	query := `UPDATE roles_authority_mapping SET 
 	useYn = ?, 
 	modifyDate=GETDATE(), 
@@ -257,7 +276,7 @@ func UpdateRoleAuth(roleID string, authID string, use string, username string) e
 }
 
 func GetUserRole(userID string) ([]models.RolesInfo, error) {
-	query := `select r.rId, r.rName, ur.useYn,
+	query := `select r.rId, r.rName, r.defaultRole, ur.useYn,
 	FORMAT(ur.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
 	u1.USERNAME as Creator, 
 	FORMAT(ur.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
@@ -284,7 +303,7 @@ func GetUserRole(userID string) ([]models.RolesInfo, error) {
 	for rows.Next() {
 		var r models.RolesInfo
 
-		err := rows.Scan(&r.ID, &r.Name, &r.Use, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
+		err := rows.Scan(&r.ID, &r.Name, &r.DefaultRole, &r.Use, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}
@@ -333,7 +352,7 @@ func DeleteUserRoleByRoleIdTx(tx *sql.Tx, roleName string) error {
 	return err
 }
 
-func UpdateUserRole(userID string, roleID string, use string, username string) error {
+func UpdateUserRole(userID string, roleID string, use bool, username string) error {
 	query := `UPDATE user_roles_mapping SET 
 	useYn = ?, 
 	modifyDate=GETDATE(), 
@@ -360,8 +379,8 @@ func GetUserAuth(userID string) ([]models.AutuhorityInfo, error) {
 	LEFT OUTER JOIN USER_ENTITY u2
 	on a.modifyId = u2.ID
 	where userId = ?
-	and	ur.useYn = 'y'
-	and	ra.useYn = 'y'
+	and	ur.useYn = 'true'
+	and	ra.useYn = 'true'
 	AND a.REALM_ID = ?`
 
 	rows, err := db.Query(query, userID, config.GetConfig().Keycloak_realm)
@@ -398,8 +417,8 @@ func GetUserAuthActive(userName string, authName string) (map[string]interface{}
 	on ra.aId = a.aId
 	where u.USERNAME = ?
 	AND a.aName = ?
-	and	ur.useYn = 'y'
-	and	ra.useYn = 'y'
+	and	ur.useYn = 'true'
+	and	ra.useYn = 'true'
 	AND u.REALM_ID = ?`
 
 	rows, err := db.Query(query, userName, authName, config.GetConfig().Keycloak_realm)
@@ -919,8 +938,8 @@ func GetSecretGroup(data []models.SecretGroupItem, username string) ([]models.Se
 	join user_roles_mapping ur on u.ID = ur.userId
 	join roles_authority_mapping ra on ur.rId = ra.rId
 	join authority a on ra.aId = a.aId
-	where ur.useYn = 'y'
-	and ra.useYn = 'y'
+	where ur.useYn = 'true'
+	and ra.useYn = 'true'
 	and u.USERNAME = ?
 	and u.REALM_ID = ?
 	) A

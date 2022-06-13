@@ -55,13 +55,14 @@ type UserRolesInfo struct {
 }
 
 type RolesInfo struct {
-	ID         string  `json:"id" binding:"required"`
-	Name       string  `json:"name" binding:"required"`
-	Use        string  `json:"useYn,omitempty"`
-	CreateDate *string `json:"createDate"`
-	Creator    *string `json:"createId"`
-	ModifyDate *string `json:"modifyDate"`
-	Modifier   *string `json:"modifyId"`
+	ID          string  `json:"id" binding:"required"`
+	Name        *string `json:"name" binding:"required"`
+	Use         bool    `json:"useYn,omitempty"`
+	DefaultRole *bool   `json:"defaultRole,omitempty"`
+	CreateDate  *string `json:"createDate"`
+	Creator     *string `json:"createId"`
+	ModifyDate  *string `json:"modifyDate"`
+	Modifier    *string `json:"modifyId"`
 }
 
 type AutuhorityInfo struct {
@@ -69,7 +70,7 @@ type AutuhorityInfo struct {
 	Name       string  `json:"name" binding:"required"`
 	URL        *string `json:"url,omitempty"`
 	Method     *string `json:"method,omitempty"`
-	Use        *string `json:"useYn,omitempty"`
+	Use        *bool   `json:"useYn,omitempty"`
 	CreateDate *string `json:"createDate"`
 	Creator    *string `json:"createId"`
 	ModifyDate *string `json:"modifyDate"`
@@ -126,5 +127,5 @@ type SecretItem struct {
 }
 
 type AutuhorityUse struct {
-	Use string `json:"useYn" binding:"required"`
+	Use bool `json:"useYn" binding:"required"`
 }
