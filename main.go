@@ -6,8 +6,6 @@ import (
 	"iam/iamdb"
 	"log"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"time"
 
 	"iam/config"
@@ -44,6 +42,8 @@ func main() {
 		conf.Vault_endpoint)
 
 	iamdb.InitDbClient("mssql", conf.Db_connect_string)
+
+	iamdb.GetApplicationList()
 
 	route := makeRouter()
 
@@ -170,17 +170,12 @@ func makeRouter() *gin.Engine {
 		metric.GET("/login/error", middlewares.DateQueryMiddleware(), api.GetLoginError)
 	}
 
-	for _, name := range config.GetConfig().Api_host_name {
-		target, err := url.Parse(config.GetConfig().Api_host_list[name])
-		if err != nil {
-			panic(err.Error())
-		}
-
-		proxy := httputil.NewSingleHostReverseProxy(target)
-		route.Any("/"+name, func(c *gin.Context) {
-			proxy.ServeHTTP(c.Writer, c.Request)
-		})
+	apps := route.Group("/apps")
+	{
+		apps.GET("/refresh", middlewares.RefreshApps)
 	}
+
+	route.NoRoute(middlewares.ReturnReverseProxy())
 
 	return route
 }

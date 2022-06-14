@@ -7,6 +7,8 @@ import (
 	"iam/config"
 	"iam/iamdb"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -40,7 +42,7 @@ func IntrospectMiddleware() gin.HandlerFunc {
 			c.Abort()
 		}
 
-		if *result.Active == false && !config.GetConfig().Developer_mode {
+		if !*result.Active && !config.GetConfig().Developer_mode {
 			c.String(http.StatusForbidden, "Invalid authorization")
 			c.Abort()
 		}
@@ -130,18 +132,62 @@ func AccessControlAllowOrigin() gin.HandlerFunc {
 func getUsernameJWT(token string) (string, error) {
 	t, _ := jwt.Parse(token, nil)
 	if t == nil {
-		return "", errors.New("Invalid authorization")
+		return "", errors.New("invalid authorization")
 	}
 
 	claims, _ := t.Claims.(jwt.MapClaims)
 	if claims == nil {
-		return "", errors.New("Invalid token")
+		return "", errors.New("invalid token")
 	}
 
 	username := fmt.Sprintf("%v", claims["preferred_username"])
 	if username == "" {
-		return "", errors.New("Invalid token")
+		return "", errors.New("invalid token")
 	}
 
 	return username, nil
+}
+
+func RefreshApps(c *gin.Context) {
+	_, err := iamdb.GetApplicationList()
+	if err != nil {
+		logger.Error(err.Error())
+
+		if config.GetConfig().Developer_mode {
+			c.String(http.StatusInternalServerError, err.Error())
+		} else {
+			c.Status(http.StatusInternalServerError)
+		}
+		c.Abort()
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func ReturnReverseProxy() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		path := strings.Split(c.Request.URL.Path, "/")
+
+		app_url, exist := config.GetConfig().Api_host_list[path[1]]
+
+		if !exist {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+
+		target, err := url.Parse(app_url)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		c.Request.Host = target.Host
+		c.Request.URL.Path = strings.TrimPrefix(c.Request.RequestURI, "/"+path[1])
+
+		c.Request.Header.Del("Authorization")
+		c.Request.Header.Del("authorization")
+
+		proxy := httputil.NewSingleHostReverseProxy(target)
+
+		proxy.ServeHTTP(c.Writer, c.Request)
+	}
 }

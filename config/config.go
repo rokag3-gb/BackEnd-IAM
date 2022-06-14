@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 
 	"gopkg.in/ini.v1"
 )
@@ -114,20 +113,10 @@ func (conf *IamConfig) initConf() error {
 		conf.Access_control_allow_headers = "*"
 	}
 
-	conf.Api_host_name = cfg.Section("api").Key("host_name").Strings(",")
-	api_host_url := cfg.Section("api").Key("host_url").Strings(",")
-
-	if len(conf.Api_host_name) != len(api_host_url) {
-		return errors.New("check config [api]")
-	}
-
-	conf.Api_host_list = map[string]string{}
-	for i := 0; i < len(conf.Api_host_name); i++ {
-		conf.Api_host_list[conf.Api_host_name[i]] = api_host_url[i]
-	}
-
 	conf.Developer_mode = cfg.Section("debug").Key("developer_mode").MustBool()
 	conf.LogStdout = cfg.Section("log").Key("stdout").MustBool()
+
+	conf.Api_host_list = map[string]string{}
 
 	return nil
 }
@@ -188,18 +177,6 @@ func (conf *IamConfig) initEnvConfig() error {
 		conf.Access_control_allow_headers = "*"
 	}
 
-	conf.Api_host_name = strings.Split(os.Getenv("API_HOST_NAME"), ",")
-	api_host_url := strings.Split(os.Getenv("API_HOST_URL"), ",")
-
-	if len(conf.Api_host_name) != len(api_host_url) {
-		return errors.New("check config [API]")
-	}
-
-	conf.Api_host_list = map[string]string{}
-	for i := 0; i < len(conf.Api_host_name); i++ {
-		conf.Api_host_list[conf.Api_host_name[i]] = api_host_url[i]
-	}
-
 	conf.Developer_mode = false
 	if os.Getenv("DEBUG_DEVELOPER_MODE") == "true" {
 		conf.Developer_mode = true
@@ -209,6 +186,8 @@ func (conf *IamConfig) initEnvConfig() error {
 	if os.Getenv("LOG_STDOUT") == "true" {
 		conf.LogStdout = true
 	}
+
+	conf.Api_host_list = map[string]string{}
 
 	return nil
 }

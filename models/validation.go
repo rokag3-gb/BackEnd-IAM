@@ -130,3 +130,8 @@ type SecretItem struct {
 type AutuhorityUse struct {
 	Use bool `json:"useYn" binding:"required"`
 }
+
+type Applicastions struct {
+	ClientId string `json:"ClientId" binding:"required"`
+	BaseURL  string `json:"BaseURL" binding:"required"`
+}

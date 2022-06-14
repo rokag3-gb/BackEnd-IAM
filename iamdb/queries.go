@@ -1367,3 +1367,41 @@ func CreateUserAddRole(uid string, username string) error {
 
 	return nil
 }
+
+func GetApplicationList() ([]models.Applicastions, error) {
+	query := `select CLIENT_ID, BASE_URL from CLIENT
+	where REALM_ID = 'test-realm'
+	AND NODE_REREG_TIMEOUT != 0
+	AND CLIENT_ID != 'server_side_client'
+	AND BASE_URL is not NULL`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	arr := make([]models.Applicastions, 0)
+
+	for rows.Next() {
+		var m models.Applicastions
+		err = rows.Scan(&m.ClientId, &m.BaseURL)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, m)
+	}
+
+	for k := range config.GetConfig().Api_host_list {
+		delete(config.GetConfig().Api_host_list, k)
+	}
+
+	for _, app := range arr {
+		config.GetConfig().Api_host_list[app.ClientId] = app.BaseURL
+	}
+
+	return arr, nil
+}
