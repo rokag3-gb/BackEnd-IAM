@@ -135,3 +135,18 @@ type Applicastions struct {
 	ClientId string `json:"ClientId" binding:"required"`
 	BaseURL  string `json:"BaseURL" binding:"required"`
 }
+
+type Code struct {
+	ID        int     `json:"id"`
+	KindCode  string  `json:"kindCode" binding:"required"`
+	Code      string  `json:"code" binding:"required"`
+	CodeKey   string  `json:"codeKey"`
+	CodeValue string  `json:"codeValue" binding:"required"`
+	Sort      int     `json:"sort" binding:"required"`
+	IsUse     bool    `json:"isUse" binding:"required"`
+	Remark    string  `json:"remark"`
+	Value1    string  `json:"value1"`
+	Value2    string  `json:"value2"`
+	Value3    string  `json:"value3"`
+	RegDate   *string `json:"regDate"`
+}
