@@ -2,7 +2,6 @@ package api
 
 import (
 	"iam/clients"
-	"iam/config"
 	"iam/iamdb"
 	"iam/models"
 	"net/http"
@@ -15,14 +14,7 @@ import (
 func GetGroup(c *gin.Context) {
 	arr, err := iamdb.GetGroup()
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -33,7 +25,7 @@ func CreateGroup(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	var json models.GroupInfo
 	if err := c.ShouldBindJSON(&json); err != nil {
-		c.String(http.StatusBadRequest, err.Error())
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
@@ -46,21 +38,13 @@ func CreateGroup(c *gin.Context) {
 		clients.KeycloakConfig().Realm,
 		group)
 	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
 	err = iamdb.GroupCreate(newGroup, c.GetString("username"))
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -68,14 +52,12 @@ func CreateGroup(c *gin.Context) {
 }
 
 func DeleteGroup(c *gin.Context) {
-	// TODO: 그룹 삭제 시 권한 체크 없음. 추후 Authority 기능 구현시 권한 체크 기능 넣을 것.
 	token, _ := clients.KeycloakToken(c)
 	groupid := c.Param("groupid")
 
 	err := clients.KeycloakClient().DeleteGroup(c, token.AccessToken, clients.KeycloakConfig().Realm, groupid)
 	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	c.Status(http.StatusNoContent)
@@ -86,14 +68,13 @@ func UpdateGroup(c *gin.Context) {
 	groupid := c.Param("groupid")
 	var json models.GroupInfo
 	if err := c.ShouldBindJSON(&json); err != nil {
-		c.String(http.StatusBadRequest, err.Error())
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	groupToUpdate, err := clients.KeycloakClient().GetGroup(c, token.AccessToken, clients.KeycloakConfig().Realm, groupid)
 	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -101,21 +82,13 @@ func UpdateGroup(c *gin.Context) {
 
 	err = clients.KeycloakClient().UpdateGroup(c, token.AccessToken, clients.KeycloakConfig().Realm, *groupToUpdate)
 	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
 	err = iamdb.GroupUpdate(groupid, c.GetString("username"))
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 

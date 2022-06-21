@@ -22,8 +22,7 @@ func IntrospectMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		auth := c.Request.Header.Get("Authorization")
 		if auth == "" && !config.GetConfig().Developer_mode {
-			c.String(http.StatusForbidden, "No Authorization header provided")
-			c.Abort()
+			logger.ErrorProcess(c, nil, http.StatusForbidden, "No Authorization header provided")
 			return
 		}
 		token := strings.TrimPrefix(auth, "Bearer ")
@@ -33,29 +32,19 @@ func IntrospectMiddleware() gin.HandlerFunc {
 			clients.KeycloakConfig().Realm)
 
 		if err != nil && !config.GetConfig().Developer_mode {
-			logger.Error(err.Error())
-			if config.GetConfig().Developer_mode {
-				c.String(http.StatusInternalServerError, err.Error())
-			} else {
-				c.Status(http.StatusInternalServerError)
-			}
-			c.Abort()
+			logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			return
 		}
 
 		if !*result.Active && !config.GetConfig().Developer_mode {
-			c.String(http.StatusForbidden, "Invalid authorization")
-			c.Abort()
+			logger.ErrorProcess(c, nil, http.StatusForbidden, "Invalid authorization")
+			return
 		}
 
 		username, err := getUsernameJWT(token)
 		if err != nil {
-			logger.Error(err.Error())
-			if config.GetConfig().Developer_mode {
-				c.String(http.StatusInternalServerError, err.Error())
-			} else {
-				c.Status(http.StatusInternalServerError)
-			}
-			c.Abort()
+			logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			return
 		}
 
 		c.Set("username", username)
@@ -67,15 +56,13 @@ func ListQueryRangeMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		first, firstErr := strconv.Atoi(c.DefaultQuery("first", "0"))
 		if firstErr != nil {
-			c.String(http.StatusBadRequest, "'first' must be integer")
-			c.Abort()
+			logger.ErrorProcess(c, nil, http.StatusBadRequest, "'first' must be integer")
 			return
 		}
 		c.Set("first", first)
 		max, maxErr := strconv.Atoi(c.DefaultQuery("max", "100"))
 		if maxErr != nil {
-			c.String(http.StatusBadRequest, "'max' must be integer")
-			c.Abort()
+			logger.ErrorProcess(c, nil, http.StatusBadRequest, "'max' must be integer")
 			return
 		}
 		c.Set("max", max)
@@ -86,8 +73,7 @@ func DateQueryMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		date, err := strconv.Atoi(c.DefaultQuery("date", "7"))
 		if err != nil {
-			c.String(http.StatusBadRequest, "'date' must be integer")
-			c.Abort()
+			logger.ErrorProcess(c, nil, http.StatusBadRequest, "'date' must be integer")
 			return
 		}
 		c.Set("date", date)
@@ -101,14 +87,12 @@ func AuthorityCheckMiddleware() gin.HandlerFunc {
 		rows, err := iamdb.GetUserAuthoritiesForEndpoint(username, config.GetConfig().Keycloak_realm, c.Request.Method, c.Request.URL.Path)
 
 		if err != nil {
-			c.Abort()
+			logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		}
 		defer rows.Close()
 
 		if !rows.Next() && !config.GetConfig().Developer_mode {
-			c.String(http.StatusForbidden, "Access Denied")
-			c.Abort()
-
+			logger.ErrorProcess(c, nil, http.StatusForbidden, "Access Denied")
 			// 결과가 한건도 오지 않으면 권한이 없음
 		}
 
@@ -151,14 +135,7 @@ func getUsernameJWT(token string) (string, error) {
 func RefreshApps(c *gin.Context) {
 	_, err := iamdb.GetApplicationList()
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 	}
 
 	c.Status(http.StatusOK)

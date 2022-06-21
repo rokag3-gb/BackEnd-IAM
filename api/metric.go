@@ -19,18 +19,7 @@ func MetricCount(c *gin.Context) {
 	count, err := iamdb.MetricCount()
 
 	if err != nil {
-		logger.Error(err.Error())
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-
-			if config.GetConfig().Developer_mode {
-				c.String(http.StatusInternalServerError, err.Error())
-			} else {
-				c.Status(http.StatusInternalServerError)
-			}
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -44,18 +33,7 @@ func GetMetricSession(c *gin.Context) {
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		logger.Error(err.Error())
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-
-			if config.GetConfig().Developer_mode {
-				c.String(http.StatusInternalServerError, err.Error())
-			} else {
-				c.Status(http.StatusInternalServerError)
-			}
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -64,18 +42,7 @@ func GetMetricSession(c *gin.Context) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Error(err.Error())
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-
-			if config.GetConfig().Developer_mode {
-				c.String(http.StatusInternalServerError, err.Error())
-			} else {
-				c.Status(http.StatusInternalServerError)
-			}
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	defer resp.Body.Close()
@@ -88,18 +55,7 @@ func GetMetricSession(c *gin.Context) {
 
 	apps, err := iamdb.GetApplications()
 	if err != nil {
-		logger.Error(err.Error())
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-
-			if config.GetConfig().Developer_mode {
-				c.String(http.StatusInternalServerError, err.Error())
-			} else {
-				c.Status(http.StatusInternalServerError)
-			}
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -111,14 +67,14 @@ func GetMetricSession(c *gin.Context) {
 		ret = append(ret, m)
 	}
 
-	for _, app := range ret {
+	for i, app := range ret {
 		for _, ar := range arr {
 			if ar["clientId"] == app.Key {
 				v, err := strconv.Atoi(ar["active"].(string))
 				if err != nil {
 					break
 				}
-				app.Value = v
+				ret[i].Value = v
 			}
 		}
 	}
@@ -129,14 +85,7 @@ func GetMetricSession(c *gin.Context) {
 func GetLoginApplication(c *gin.Context) {
 	m, err := iamdb.GetLoginApplication(c.MustGet("date").(int) - 1)
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -146,14 +95,7 @@ func GetLoginApplication(c *gin.Context) {
 func GetLoginDate(c *gin.Context) {
 	m, err := iamdb.GetLoginDate(c.MustGet("date").(int) - 1)
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -163,14 +105,7 @@ func GetLoginDate(c *gin.Context) {
 func GetLoginError(c *gin.Context) {
 	m, err := iamdb.GetLoginError(c.MustGet("date").(int) - 1)
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 

@@ -2,7 +2,6 @@ package api
 
 import (
 	"iam/clients"
-	"iam/config"
 	"iam/iamdb"
 	"iam/models"
 	"net/http"
@@ -18,14 +17,7 @@ func Users(c *gin.Context) {
 
 	arr, err := iamdb.GetUsers(search, groupid)
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -36,7 +28,7 @@ func CreateUser(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	var json models.CreateUserInfo
 	if err := c.ShouldBindJSON(&json); err != nil {
-		c.String(http.StatusBadRequest, err.Error())
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 	newUserId, err := clients.KeycloakClient().CreateUser(c,
@@ -50,8 +42,7 @@ func CreateUser(c *gin.Context) {
 			Enabled:   gocloak.BoolP(true),
 		})
 	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	err = clients.KeycloakClient().SetPassword(c,
@@ -61,34 +52,19 @@ func CreateUser(c *gin.Context) {
 		json.Password,
 		false)
 	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
 	err = iamdb.UsersCreate(newUserId, c.GetString("username"))
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
 	err = iamdb.CreateUserAddRole(newUserId, c.GetString("username"))
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -102,13 +78,13 @@ func UpdateUser(c *gin.Context) {
 	user, err := clients.KeycloakClient().GetUserByID(c,
 		token.AccessToken, clients.KeycloakConfig().Realm, userid)
 	if err != nil {
-		c.String(http.StatusBadRequest, err.Error())
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
 	var json models.UpdateUserInfo
 	if err := c.ShouldBindJSON(&json); err != nil {
-		c.String(http.StatusBadRequest, err.Error())
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -124,21 +100,13 @@ func UpdateUser(c *gin.Context) {
 		clients.KeycloakConfig().Realm,
 		*user)
 	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
 	err = iamdb.UsersUpdate(userid, c.GetString("username"))
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -154,20 +122,13 @@ func DeleteUser(c *gin.Context) {
 		clients.KeycloakConfig().Realm,
 		userid)
 	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
 	err = iamdb.DeleteUserRoleByUserId(userid)
 	if err != nil {
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -181,8 +142,7 @@ func GetUser(c *gin.Context) {
 	user, err := clients.KeycloakClient().GetUserByID(c,
 		token.AccessToken, clients.KeycloakConfig().Realm, userid)
 	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -205,8 +165,7 @@ func GetUserCredentials(c *gin.Context) {
 	credentials, err := clients.KeycloakClient().GetCredentials(c,
 		token.AccessToken, clients.KeycloakConfig().Realm, userid)
 	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -219,7 +178,7 @@ func ResetUserPassword(c *gin.Context) {
 
 	var json models.ResetUserPasswordInfo
 	if err := c.ShouldBindJSON(&json); err != nil {
-		c.String(http.StatusBadRequest, err.Error())
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -230,8 +189,7 @@ func ResetUserPassword(c *gin.Context) {
 		json.Password,
 		json.Temporary)
 	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -249,8 +207,7 @@ func GetUserGroups(c *gin.Context) {
 			Max:   gocloak.IntP(c.MustGet("max").(int)),
 		})
 	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -268,8 +225,7 @@ func AddUserToGroup(c *gin.Context) {
 		userid,
 		groupid)
 	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -287,8 +243,7 @@ func DeleteUserFromGroup(c *gin.Context) {
 		userid,
 		groupid)
 	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -302,8 +257,7 @@ func GetUserSessions(c *gin.Context) {
 	sessions, err := clients.KeycloakClient().GetUserSessions(c,
 		token.AccessToken, clients.KeycloakConfig().Realm, userid)
 	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -318,8 +272,7 @@ func LogoutUserSession(c *gin.Context) {
 	sessions, err := clients.KeycloakClient().GetUserSessions(c,
 		token.AccessToken, clients.KeycloakConfig().Realm, userid)
 	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -332,7 +285,7 @@ func LogoutUserSession(c *gin.Context) {
 	}
 
 	if !hasSession {
-		c.String(http.StatusBadRequest, "Session not found from user")
+		logger.ErrorProcess(c, nil, http.StatusBadRequest, "Session not found from user")
 		return
 	}
 
@@ -341,8 +294,7 @@ func LogoutUserSession(c *gin.Context) {
 		clients.KeycloakConfig().Realm,
 		sessionid)
 	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -358,8 +310,7 @@ func LogoutAllSessions(c *gin.Context) {
 		clients.KeycloakConfig().Realm,
 		userid)
 	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -373,8 +324,7 @@ func GetUserFederatedIdentities(c *gin.Context) {
 	identities, err := clients.KeycloakClient().GetUserFederatedIdentities(c,
 		token.AccessToken, clients.KeycloakConfig().Realm, userid)
 	if err != nil {
-		apiError := err.(*gocloak.APIError)
-		c.String(apiError.Code, apiError.Message)
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 

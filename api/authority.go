@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"errors"
-	"iam/config"
 	"iam/iamdb"
 	"iam/models"
 	"io/ioutil"
@@ -18,18 +17,7 @@ func GetRoles(c *gin.Context) {
 	RolesInfos, err := iamdb.GetRoles()
 
 	if err != nil {
-		logger.Error(err.Error())
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-
-			if config.GetConfig().Developer_mode {
-				c.String(http.StatusInternalServerError, err.Error())
-			} else {
-				c.Status(http.StatusInternalServerError)
-			}
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -39,25 +27,18 @@ func GetRoles(c *gin.Context) {
 func CreateRoles(c *gin.Context) {
 	roles, err := getRoles(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	if roles.Name == nil {
-		c.Status(http.StatusBadRequest)
-		c.Abort()
+		logger.ErrorProcess(c, nil, http.StatusBadRequest, "required 'name'")
 		return
 	}
 
 	tx, err := iamdb.DBClient().Begin()
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	roleId := uuid.New()
@@ -65,14 +46,7 @@ func CreateRoles(c *gin.Context) {
 	err = iamdb.CreateRolesIdTx(tx, roleId.String(), *roles.Name, c.GetString("username"))
 	if err != nil {
 		tx.Rollback()
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -81,14 +55,7 @@ func CreateRoles(c *gin.Context) {
 			err = iamdb.AssignRoleAuthTx(tx, roleId.String(), authid, c.GetString("username"))
 			if err != nil {
 				tx.Rollback()
-				logger.Error(err.Error())
-
-				if config.GetConfig().Developer_mode {
-					c.String(http.StatusInternalServerError, err.Error())
-				} else {
-					c.Status(http.StatusInternalServerError)
-				}
-				c.Abort()
+				logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 				return
 			}
 		}
@@ -96,14 +63,7 @@ func CreateRoles(c *gin.Context) {
 
 	if err = tx.Commit(); err != nil {
 		tx.Rollback()
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -116,74 +76,40 @@ func DeleteRoles(c *gin.Context) {
 	roleid, err := getRoleID(c)
 
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	tx, err := iamdb.DBClient().Begin()
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
 	err = iamdb.DeleteRolesAuthByRoleIdTx(tx, roleid)
 	if err != nil {
 		tx.Rollback()
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
 	err = iamdb.DeleteUserRoleByRoleIdTx(tx, roleid)
 	if err != nil {
 		tx.Rollback()
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
 	err = iamdb.DeleteRolesTx(tx, roleid)
 	if err != nil {
 		tx.Rollback()
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
 	if err = tx.Commit(); err != nil {
 		tx.Rollback()
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	c.Status(http.StatusNoContent)
@@ -192,30 +118,24 @@ func DeleteRoles(c *gin.Context) {
 func UpdateRoles(c *gin.Context) {
 	roleid, err := getRoleID(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	roles, err := getRoles(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	if roles.Name == nil && roles.DefaultRole == nil {
-		c.String(http.StatusBadRequest, "required 'body'")
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "required 'body'")
 		return
 	}
 
 	tx, err := iamdb.DBClient().Begin()
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -224,14 +144,7 @@ func UpdateRoles(c *gin.Context) {
 	err = iamdb.UpdateRolesTx(tx, roles, c.GetString("username"))
 	if err != nil {
 		tx.Rollback()
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -239,14 +152,7 @@ func UpdateRoles(c *gin.Context) {
 		err = iamdb.DeleteRolesAuthByRoleIdTx(tx, roleid)
 		if err != nil {
 			tx.Rollback()
-			logger.Error(err.Error())
-
-			if config.GetConfig().Developer_mode {
-				c.String(http.StatusInternalServerError, err.Error())
-			} else {
-				c.Status(http.StatusInternalServerError)
-			}
-			c.Abort()
+			logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
 		}
 
@@ -254,14 +160,7 @@ func UpdateRoles(c *gin.Context) {
 			err = iamdb.AssignRoleAuthTx(tx, roleid, authid, c.GetString("username"))
 			if err != nil {
 				tx.Rollback()
-				logger.Error(err.Error())
-
-				if config.GetConfig().Developer_mode {
-					c.String(http.StatusInternalServerError, err.Error())
-				} else {
-					c.Status(http.StatusInternalServerError)
-				}
-				c.Abort()
+				logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 				return
 			}
 		}
@@ -269,14 +168,7 @@ func UpdateRoles(c *gin.Context) {
 
 	if err = tx.Commit(); err != nil {
 		tx.Rollback()
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	c.Status(http.StatusNoContent)
@@ -285,19 +177,13 @@ func UpdateRoles(c *gin.Context) {
 func GetRolesAuth(c *gin.Context) {
 	roleid, err := getRoleID(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	arr, err := iamdb.GetRolseAuth(roleid)
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -307,43 +193,30 @@ func GetRolesAuth(c *gin.Context) {
 func AssignRoleAuth(c *gin.Context) {
 	roleid, err := getRoleID(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	auth, err := getAuth(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	if auth.ID == "" {
-		c.String(http.StatusBadRequest, "required 'id'")
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "required 'Name'")
 		return
 	}
 
 	err = iamdb.CheckRoleAuthID(roleid, auth.ID)
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
 	err = iamdb.AssignRoleAuth(roleid, auth.ID, c.GetString("username"))
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -353,24 +226,19 @@ func AssignRoleAuth(c *gin.Context) {
 func DismissRoleAuth(c *gin.Context) {
 	roleid, err := getRoleID(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	authid, err := getAuthID(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	err = iamdb.DismissRoleAuth(roleid, authid)
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -380,29 +248,25 @@ func DismissRoleAuth(c *gin.Context) {
 func UpdateRoleAuth(c *gin.Context) {
 	use, err := getUse(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	roleid, err := getRoleID(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	authid, err := getAuthID(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	err = iamdb.UpdateRoleAuth(roleid, authid, use.Use, c.GetString("username"))
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -412,19 +276,13 @@ func UpdateRoleAuth(c *gin.Context) {
 func GetUserRole(c *gin.Context) {
 	userID, err := getUserID(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	arr, err := iamdb.GetUserRole(userID)
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -434,41 +292,28 @@ func GetUserRole(c *gin.Context) {
 func AssignUserRole(c *gin.Context) {
 	userid, err := getUserID(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 	roles, err := getRoles(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 	if roles.ID == "" {
-		c.String(http.StatusBadRequest, "required 'id'")
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "required 'id'")
 		return
 	}
 
 	err = iamdb.CheckUserRoleID(userid, roles.ID)
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
 	err = iamdb.AssignUserRole(userid, roles.ID, c.GetString("username"))
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -478,23 +323,18 @@ func AssignUserRole(c *gin.Context) {
 func DismissUserRole(c *gin.Context) {
 	userid, err := getUserID(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 	roleid, err := getRoleID(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	err = iamdb.DismissUserRole(userid, roleid)
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -504,27 +344,23 @@ func DismissUserRole(c *gin.Context) {
 func UpdateUserRole(c *gin.Context) {
 	use, err := getUse(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 	userid, err := getUserID(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 	roleid, err := getRoleID(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	err = iamdb.UpdateUserRole(userid, roleid, use.Use, c.GetString("username"))
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -534,19 +370,13 @@ func UpdateUserRole(c *gin.Context) {
 func GetUserAuth(c *gin.Context) {
 	userid, err := getUserID(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	arr, err := iamdb.GetUserAuth(userid)
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -556,24 +386,19 @@ func GetUserAuth(c *gin.Context) {
 func GetUserAuthActive(c *gin.Context) {
 	userName, err := getUserID(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	authName, err := getAuthID(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	m, err := iamdb.GetUserAuthActive(userName, authName)
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -583,14 +408,7 @@ func GetUserAuthActive(c *gin.Context) {
 func GetAuth(c *gin.Context) {
 	arr, err := iamdb.GetAuth()
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -600,12 +418,12 @@ func GetAuth(c *gin.Context) {
 func CreateAuth(c *gin.Context) {
 	auth, err := getAuth(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	if auth.Name == "" {
-		c.String(http.StatusBadRequest, "required 'Name'")
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "required 'Name'")
 		return
 	}
 
@@ -614,14 +432,7 @@ func CreateAuth(c *gin.Context) {
 
 	err = iamdb.CreateAuth(auth, c.GetString("username"))
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -634,47 +445,27 @@ func DeleteAuth(c *gin.Context) {
 	authid, err := getAuthID(c)
 
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	tx, err := iamdb.DBClient().Begin()
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
 	err = iamdb.DeleteRolesAuthByAuthIdTx(tx, authid)
 	if err != nil {
 		tx.Rollback()
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
 	err = iamdb.DeleteAuth(authid, tx)
 	if err != nil {
 		tx.Rollback()
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -685,11 +476,18 @@ func DeleteAuth(c *gin.Context) {
 func UpdateAuth(c *gin.Context) {
 	authid, err := getAuthID(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	auth, err := getAuth(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
+		return
+	}
+
+	if auth.Name == "" {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "required 'Name'")
 		return
 	}
 
@@ -697,14 +495,7 @@ func UpdateAuth(c *gin.Context) {
 
 	err = iamdb.UpdateAuth(auth, c.GetString("username"))
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -714,19 +505,13 @@ func UpdateAuth(c *gin.Context) {
 func GetAuthInfo(c *gin.Context) {
 	authid, err := getAuthID(c)
 	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	r, err := iamdb.GetAuthInfo(authid)
 	if err != nil {
-		logger.Error(err.Error())
-
-		if config.GetConfig().Developer_mode {
-			c.String(http.StatusInternalServerError, err.Error())
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
-		c.Abort()
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -738,8 +523,6 @@ func GetAuthInfo(c *gin.Context) {
 func getRoles(c *gin.Context) (*models.RolesInfo, error) {
 	value, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
-		c.String(http.StatusBadRequest, "required 'body'")
-		c.Abort()
 		return nil, errors.New("required 'body'")
 	}
 
@@ -747,8 +530,6 @@ func getRoles(c *gin.Context) (*models.RolesInfo, error) {
 	json.Unmarshal([]byte(value), &r)
 
 	if r == nil {
-		c.Status(http.StatusBadRequest)
-		c.Abort()
 		return nil, errors.New("required 'body'")
 	}
 
@@ -758,8 +539,6 @@ func getRoles(c *gin.Context) (*models.RolesInfo, error) {
 func getAuth(c *gin.Context) (*models.AutuhorityInfo, error) {
 	value, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
-		c.String(http.StatusBadRequest, "required 'body'")
-		c.Abort()
 		return nil, errors.New("required 'body'")
 	}
 
@@ -767,8 +546,6 @@ func getAuth(c *gin.Context) (*models.AutuhorityInfo, error) {
 	json.Unmarshal(value, &a)
 
 	if a == nil {
-		c.String(http.StatusBadRequest, "required 'body'")
-		c.Abort()
 		return nil, errors.New("required 'body'")
 	}
 
@@ -779,8 +556,6 @@ func getRoleID(c *gin.Context) (string, error) {
 	roleid := c.Param("roleid")
 
 	if roleid == "" {
-		c.String(http.StatusBadRequest, "required 'Role id'")
-		c.Abort()
 		return "", errors.New("required 'Role id'")
 	}
 
@@ -791,8 +566,6 @@ func getAuthID(c *gin.Context) (string, error) {
 	authid := c.Param("authid")
 
 	if authid == "" {
-		c.String(http.StatusBadRequest, "required 'Auth id'")
-		c.Abort()
 		return "", errors.New("required 'Auth id'")
 	}
 
@@ -803,8 +576,6 @@ func getUserID(c *gin.Context) (string, error) {
 	userid := c.Param("userid")
 
 	if userid == "" {
-		c.String(http.StatusBadRequest, "required 'User id'")
-		c.Abort()
 		return "", errors.New("required 'User id'")
 	}
 
@@ -814,8 +585,6 @@ func getUserID(c *gin.Context) (string, error) {
 func getUse(c *gin.Context) (*models.AutuhorityUse, error) {
 	value, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
-		c.String(http.StatusBadRequest, "required 'body'")
-		c.Abort()
 		return nil, errors.New("required 'body'")
 	}
 
@@ -823,8 +592,6 @@ func getUse(c *gin.Context) (*models.AutuhorityUse, error) {
 	json.Unmarshal(value, &a)
 
 	if a == nil {
-		c.String(http.StatusBadRequest, "required 'body'")
-		c.Abort()
 		return nil, errors.New("required 'body'")
 	}
 

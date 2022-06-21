@@ -154,8 +154,25 @@ func Warning(format string, a ...interface{}) {
 	log.Print("WARN," + infoText() + fmt.Sprintf(format, a...))
 }
 
+func InfoFun(format string, a ...interface{}) {
+	log.Print("INFO," + infoTextFun() + fmt.Sprintf(format, a...))
+}
+
+func ErrorFun(format string, a ...interface{}) {
+	log.Print("ERROR," + infoTextFun() + fmt.Sprintf(format, a...))
+}
+
+func WarningFun(format string, a ...interface{}) {
+	log.Print("WARN," + infoTextFun() + fmt.Sprintf(format, a...))
+}
+
 func infoText() string {
 	_, file, line, _ := runtime.Caller(2)
+	return time.Now().Format("2006-01-02,15:04:05.000") + "," + chopPath(file) + "," + strconv.Itoa(line) + ","
+}
+
+func infoTextFun() string {
+	_, file, line, _ := runtime.Caller(3)
 	return time.Now().Format("2006-01-02,15:04:05.000") + "," + chopPath(file) + "," + strconv.Itoa(line) + ","
 }
 
