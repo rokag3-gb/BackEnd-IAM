@@ -84,7 +84,8 @@ func GetRoles() ([]models.RolesInfo, error) {
 	on r.createId = u1.ID
 	LEFT OUTER JOIN USER_ENTITY u2
 	on r.modifyId = u2.ID
-	where r.REALM_ID = ?`
+	where r.REALM_ID = ?
+	order by r.rName`
 
 	rows, err := db.Query(query, config.GetConfig().Keycloak_realm)
 
@@ -243,10 +244,11 @@ func GetRolseAuth(id string) ([]models.RolesInfo, error) {
 	on ra.createId = u1.ID
 	LEFT OUTER JOIN USER_ENTITY u2
 	on ra.modifyId = u2.ID
-	where 
-	ra.rId = ?`
+	where ra.rId = ?
+	AND	a.REALM_ID = ?
+	order by a.aName`
 
-	rows, err := db.Query(query, id)
+	rows, err := db.Query(query, id, config.GetConfig().Keycloak_realm)
 	if err != nil {
 		return nil, err
 	}
@@ -321,10 +323,11 @@ func GetUserRole(userID string) ([]models.RolesInfo, error) {
 	on ur.createId = u1.ID
 	LEFT OUTER JOIN USER_ENTITY u2
 	on ur.modifyId = u2.ID
-	where
-	ur.userId = ?`
+	where ur.userId = ?
+	AND r.REALM_ID = ?
+	order by r.rName`
 
-	rows, err := db.Query(query, userID)
+	rows, err := db.Query(query, userID, config.GetConfig().Keycloak_realm)
 	if err != nil {
 		return nil, err
 	}
@@ -416,7 +419,8 @@ func GetUserAuth(userID string) ([]models.AutuhorityInfo, error) {
 	where userId = ?
 	and	ur.useYn = 'true'
 	and	ra.useYn = 'true'
-	AND a.REALM_ID = ?`
+	AND a.REALM_ID = ?
+	order by a.aName`
 
 	rows, err := db.Query(query, userID, config.GetConfig().Keycloak_realm)
 
@@ -484,7 +488,8 @@ func GetAuth() ([]models.AutuhorityInfo, error) {
 	on a.createId = u1.ID
 	LEFT OUTER JOIN USER_ENTITY u2
 	on a.modifyId = u2.ID
-	where a.REALM_ID = ?`
+	where a.REALM_ID = ?
+	order by a.aName`
 
 	rows, err := db.Query(query, config.GetConfig().Keycloak_realm)
 	if err != nil {
@@ -686,7 +691,8 @@ func GetGroup() ([]models.GroupItem, error) {
 	LEFT OUTER JOIN USER_ENTITY u2
 	on g.modifyId = u2.ID
 	where
-	g.REALM_ID = ?`
+	g.REALM_ID = ?
+	order by NAME`
 
 	rows, err := db.Query(query, config.GetConfig().Keycloak_realm, config.GetConfig().Keycloak_realm)
 	if err != nil {
@@ -809,6 +815,8 @@ func GetUsers(search string, groupid string) ([]models.GetUserInfo, error) {
 	if groupid != "" {
 		query += ` AND UG.GROUP_ID = ?`
 	}
+
+	query += " ORDER BY U.USERNAME"
 
 	//나중에 방법을 찾아서 정리하는걸로...
 	if search != "" && groupid != "" {
@@ -996,7 +1004,8 @@ func GetSecretGroup(data []models.SecretGroupItem, username string) ([]models.Se
 	on D.createId = u1.ID
 	LEFT OUTER JOIN USER_ENTITY u2
 	on D.modifyId = u2.ID
-	ON C.secretGroup = D.vSecretGroupPath`
+	ON C.secretGroup = D.vSecretGroupPath
+	ORDER BY C.secretGroup`
 
 	rows, err := db.Query(query, username, config.GetConfig().Keycloak_realm)
 	if err != nil {
@@ -1037,7 +1046,8 @@ func GetSecret(groupName string) (map[string]models.SecretItem, error) {
 	on s.createId = u1.ID
 	LEFT OUTER JOIN USER_ENTITY u2
 	on s.modifyId = u2.ID
-	WHERE s.vSecretGroupId = (SELECT vSecretGroupId FROM vSecretGroup WHERE vSecretGroupPath = ? AND REALM_ID = ?)`
+	WHERE s.vSecretGroupId = (SELECT vSecretGroupId FROM vSecretGroup WHERE vSecretGroupPath = ? AND REALM_ID = ?)
+	ORDER BY s.vSecretPath`
 
 	rows, err := db.Query(query, groupName, config.GetConfig().Keycloak_realm)
 	if err != nil {
