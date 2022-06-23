@@ -1429,19 +1429,16 @@ func CreateUserAddRole(uid string, username string) error {
 
 func GetApplicationList() ([]models.Applicastions, error) {
 	query := `select CLIENT_ID, BASE_URL from CLIENT
-	where REALM_ID = 'test-realm'
+	where REALM_ID = ?
 	AND NODE_REREG_TIMEOUT != 0
-	AND CLIENT_ID != 'server_side_client'
+	AND CLIENT_ID != ?
 	AND BASE_URL is not NULL`
 
-	rows, err := db.Query(query)
+	rows, err := db.Query(query, config.GetConfig().Keycloak_realm, config.GetConfig().Keycloak_client_id)
 	if err != nil {
 		return nil, err
 	}
 
-	if err != nil {
-		return nil, err
-	}
 	arr := make([]models.Applicastions, 0)
 
 	for rows.Next() {
@@ -1460,6 +1457,36 @@ func GetApplicationList() ([]models.Applicastions, error) {
 
 	for _, app := range arr {
 		config.GetConfig().Api_host_list[app.ClientId] = app.BaseURL
+	}
+
+	return arr, nil
+}
+
+func GetIdpCount() ([]models.MetricItem, error) {
+	query := `select 
+	A.PROVIDER_ALIAS, 
+	count(B.IDENTITY_PROVIDER) as count
+	from IDENTITY_PROVIDER A
+	LEFT OUTER JOIN FEDERATED_IDENTITY B
+	ON B.IDENTITY_PROVIDER = A.PROVIDER_ID
+	WHERE A.REALM_ID = ?
+	GROUP BY A.PROVIDER_ALIAS`
+
+	rows, err := db.Query(query, config.GetConfig().Keycloak_realm)
+	if err != nil {
+		return nil, err
+	}
+
+	arr := make([]models.MetricItem, 0)
+
+	for rows.Next() {
+		var m models.MetricItem
+		err = rows.Scan(&m.Key, &m.Value)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, m)
 	}
 
 	return arr, nil

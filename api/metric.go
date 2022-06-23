@@ -111,3 +111,13 @@ func GetLoginError(c *gin.Context) {
 
 	c.JSON(http.StatusOK, m)
 }
+
+func GetIdpCount(c *gin.Context) {
+	m, err := iamdb.GetIdpCount()
+	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	c.JSON(http.StatusOK, m)
+}

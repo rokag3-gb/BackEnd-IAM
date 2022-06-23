@@ -168,6 +168,7 @@ func makeRouter() *gin.Engine {
 		metric.GET("/login/application", middlewares.DateQueryMiddleware(), api.GetLoginApplication)
 		metric.GET("/login/date", middlewares.DateQueryMiddleware(), api.GetLoginDate)
 		metric.GET("/login/error", middlewares.DateQueryMiddleware(), api.GetLoginError)
+		metric.GET("/idp/count", api.GetIdpCount)
 	}
 
 	apps := route.Group("/apps")
