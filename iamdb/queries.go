@@ -1300,6 +1300,86 @@ func GetLoginApplication(date int) ([]models.MetricItem, error) {
 	return arr, nil
 }
 
+func GetLoginApplicationDate(date int) ([]map[string]interface{}, error) {
+	query := `select 
+	E.CLIENT_ID,
+	 CONVERT(CHAR(10), E.SYSTEM_DATE, 23),
+	ISNULL(B.COUNT, 0) as LOGIN_COUNT
+	from
+	(
+	select 
+	A.CLIENT_ID, 
+	A.EVENT_DATE,
+	count(CLIENT_ID) as COUNT
+	from 
+	(
+	SELECT
+	CLIENT_ID,
+	CONVERT(DATE, DATEADD(SECOND, EVENT_TIME/1000, '01/01/1970 09:00:00')) as EVENT_DATE
+	FROM EVENT_ENTITY
+	where  TYPE = 'LOGIN'
+	) A
+	GROUP BY A.CLIENT_ID, A.EVENT_DATE
+	) B
+	RIGHT OUTER JOIN
+	(
+	select * from
+	(select CLIENT_ID from CLIENT
+	where
+	REALM_ID = ?
+	AND NODE_REREG_TIMEOUT = -1
+	AND CLIENT_ID != ?
+	) C
+	join
+	(
+	SELECT CONVERT(DATE, DATEADD(DAY, NUMBER, getdate()-?), 112) AS SYSTEM_DATE
+	FROM MASTER..SPT_VALUES WITH(NOLOCK)
+	WHERE TYPE = 'P'
+	AND NUMBER <= DATEDIFF(DAY, getdate()-?, getdate())
+	) D
+	ON 1=1
+	) E
+	ON B.EVENT_DATE = E.SYSTEM_DATE
+	AND B.CLIENT_ID = E.CLIENT_ID
+	ORDER BY E.SYSTEM_DATE, E.CLIENT_ID`
+
+	rows, err := db.Query(query,
+		config.GetConfig().Keycloak_realm,
+		config.GetConfig().Keycloak_client_id,
+		date,
+		date)
+
+	if err != nil {
+		return nil, err
+	}
+
+	arr := make([]map[string]interface{}, 0)
+	tmpMap := make(map[string]map[string]interface{})
+
+	for rows.Next() {
+		var client_id string
+		var event_date string
+		var login_count int
+
+		err = rows.Scan(&client_id, &event_date, &login_count)
+		if err != nil {
+			return nil, err
+		}
+
+		m, exist := tmpMap[event_date]
+		if !exist {
+			m = make(map[string]interface{})
+			tmpMap[event_date] = m
+			arr = append(arr, m)
+		}
+
+		m[client_id] = login_count
+		m["date"] = event_date
+	}
+
+	return arr, nil
+}
+
 func GetLoginDate(date int) ([]models.MetricItem, error) {
 	query := `select 
 	FORMAT(C.SYSTEM_DATE, 'yyyy-MM-dd') as date,
