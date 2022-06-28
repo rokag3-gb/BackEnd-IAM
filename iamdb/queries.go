@@ -1193,7 +1193,7 @@ func MetricCount() (map[string]int, error) {
 	query := `select 
 	(select count(*) from USER_ENTITY where REALM_ID = ? AND SERVICE_ACCOUNT_CLIENT_LINK is NULL) AS users,
 	(select count(*) from KEYCLOAK_GROUP where REALM_ID = ?) AS groups,
-	(select count(*) from CLIENT where REALM_ID = ? AND NODE_REREG_TIMEOUT = -1) AS applicastions,
+	(select count(*) from CLIENT where REALM_ID = ? AND (NAME IS NULL OR LEN(NAME) = 0)) AS applicastions,
 	(select count(*) from roles where REALM_ID = ?) AS roles,
 	(select count(*) from authority where REALM_ID = ?) AS authorities`
 
@@ -1229,9 +1229,9 @@ func MetricCount() (map[string]int, error) {
 }
 
 func GetApplications() ([]string, error) {
-	query := `select CLIENT_ID from CLIENT where REALM_ID = ? AND NODE_REREG_TIMEOUT = -1 AND CLIENT_ID != ?`
+	query := `select CLIENT_ID from CLIENT where REALM_ID = ? AND (NAME IS NULL OR LEN(NAME) = 0)`
 
-	rows, err := db.Query(query, config.GetConfig().Keycloak_realm, config.GetConfig().Keycloak_client_id)
+	rows, err := db.Query(query, config.GetConfig().Keycloak_realm)
 	if err != nil {
 		return nil, err
 	}
@@ -1269,8 +1269,7 @@ func GetLoginApplication(date int) ([]models.MetricItem, error) {
 	(select CLIENT_ID from CLIENT
 	where
 	REALM_ID = ?
-	AND NODE_REREG_TIMEOUT = -1
-	AND CLIENT_ID != ?
+	AND (NAME IS NULL OR LEN(NAME) = 0)
 	) B
 	ON A.CLIENT_ID = B.CLIENT_ID
 	group by B.client_id`
@@ -1279,8 +1278,7 @@ func GetLoginApplication(date int) ([]models.MetricItem, error) {
 		config.GetConfig().Keycloak_client_id,
 		config.GetConfig().Keycloak_realm,
 		date,
-		config.GetConfig().Keycloak_realm,
-		config.GetConfig().Keycloak_client_id)
+		config.GetConfig().Keycloak_realm)
 
 	if err != nil {
 		return nil, err
@@ -1327,8 +1325,7 @@ func GetLoginApplicationDate(date int) ([]map[string]interface{}, error) {
 	(select CLIENT_ID from CLIENT
 	where
 	REALM_ID = ?
-	AND NODE_REREG_TIMEOUT = -1
-	AND CLIENT_ID != ?
+	AND  (NAME IS NULL OR LEN(NAME) = 0)
 	) C
 	join
 	(
@@ -1345,7 +1342,6 @@ func GetLoginApplicationDate(date int) ([]map[string]interface{}, error) {
 
 	rows, err := db.Query(query,
 		config.GetConfig().Keycloak_realm,
-		config.GetConfig().Keycloak_client_id,
 		date,
 		date)
 
@@ -1398,8 +1394,7 @@ func GetLoginDate(date int) ([]models.MetricItem, error) {
 	(select CLIENT_ID from CLIENT
 	where
 	REALM_ID = ?
-	AND NODE_REREG_TIMEOUT = -1
-	AND CLIENT_ID != ?) D
+	AND (NAME IS NULL OR LEN(NAME) = 0)) D
 	ON E.CLIENT_ID = D.CLIENT_ID
 	where  TYPE = 'LOGIN'
 	) A
@@ -1417,7 +1412,6 @@ func GetLoginDate(date int) ([]models.MetricItem, error) {
 
 	rows, err := db.Query(query,
 		config.GetConfig().Keycloak_realm,
-		config.GetConfig().Keycloak_client_id,
 		date, date, date)
 
 	if err != nil {
@@ -1510,11 +1504,9 @@ func CreateUserAddRole(uid string, username string) error {
 func GetApplicationList() ([]models.Applicastions, error) {
 	query := `select CLIENT_ID, BASE_URL from CLIENT
 	where REALM_ID = ?
-	AND NODE_REREG_TIMEOUT != 0
-	AND CLIENT_ID != ?
-	AND BASE_URL is not NULL`
+	AND  (NAME IS NULL OR LEN(NAME) = 0)`
 
-	rows, err := db.Query(query, config.GetConfig().Keycloak_realm, config.GetConfig().Keycloak_client_id)
+	rows, err := db.Query(query, config.GetConfig().Keycloak_realm)
 	if err != nil {
 		return nil, err
 	}
