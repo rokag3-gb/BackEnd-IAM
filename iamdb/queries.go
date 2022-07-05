@@ -1528,7 +1528,9 @@ func GetApplicationList() ([]models.Applicastions, error) {
 	}
 
 	for _, app := range arr {
-		config.GetConfig().Api_host_list[app.ClientId] = app.BaseURL
+		if app.BaseURL != nil {
+			config.GetConfig().Api_host_list[app.ClientId] = *app.BaseURL
+		}
 	}
 
 	return arr, nil

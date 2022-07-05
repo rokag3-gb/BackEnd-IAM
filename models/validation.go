@@ -132,8 +132,8 @@ type AutuhorityUse struct {
 }
 
 type Applicastions struct {
-	ClientId string `json:"ClientId" binding:"required"`
-	BaseURL  string `json:"BaseURL" binding:"required"`
+	ClientId string  `json:"ClientId" binding:"required"`
+	BaseURL  *string `json:"BaseURL" binding:"required"`
 }
 
 type Code struct {
