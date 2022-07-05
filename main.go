@@ -177,15 +177,6 @@ func makeRouter() *gin.Engine {
 		apps.GET("/refresh", middlewares.RefreshApps)
 	}
 
-	code := route.Group("/code")
-	{
-		code.GET("/:codeKey", api.GetCodeItem)
-		code.GET("/:codeKey/childs", api.GetCodeChilds)
-		code.POST("/", api.CreateCodeItem)
-		code.PUT("/:codeKey", api.UpdateCodeItem)
-		code.DELETE("/:codeKey", api.DeleteCodeItem)
-	}
-
 	route.NoRoute(middlewares.ReturnReverseProxy())
 
 	return route
