@@ -1504,7 +1504,7 @@ func CreateUserAddRole(uid string, username string) error {
 func GetApplicationList() ([]models.Applicastions, error) {
 	query := `select CLIENT_ID, BASE_URL from CLIENT
 	where REALM_ID = ?
-	AND  (NAME IS NULL OR LEN(NAME) = 0)`
+	AND  (MANAGEMENT_URL IS NOT NULL OR LEN(MANAGEMENT_URL) != 0)`
 
 	rows, err := db.Query(query, config.GetConfig().Keycloak_realm)
 	if err != nil {
