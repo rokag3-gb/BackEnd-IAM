@@ -158,7 +158,8 @@ func ReturnReverseProxy() gin.HandlerFunc {
 		}
 
 		c.Request.Host = target.Host
-		c.Request.URL.Path = strings.TrimPrefix(c.Request.RequestURI, "/"+path[1])
+		c.Request.RequestURI = strings.TrimPrefix(c.Request.RequestURI, "/"+path[1])
+		c.Request.URL.Path = strings.TrimPrefix(c.Request.URL.Path, "/"+path[1])
 
 		c.Request.Header.Del("Authorization")
 		c.Request.Header.Del("authorization")
