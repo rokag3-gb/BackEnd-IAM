@@ -745,7 +745,7 @@ func GroupUpdate(groupId string, username string) error {
 	return err
 }
 
-func GetUsers(search string, groupid string) ([]models.GetUserInfo, error) {
+func GetUsers(search string, groupid string, userids []string) ([]models.GetUserInfo, error) {
 	var rows *sql.Rows
 	var err error
 
@@ -816,18 +816,30 @@ func GetUsers(search string, groupid string) ([]models.GetUserInfo, error) {
 		query += ` AND UG.GROUP_ID = ?`
 	}
 
+	if len(userids) > 0 {
+		placeholder := strings.Repeat("?,", len(userids))
+		placeholder = placeholder[:len(placeholder)-1]
+		query += " AND U.ID IN (" + placeholder + ")"
+	}
+
 	query += " ORDER BY U.USERNAME"
 
-	//나중에 방법을 찾아서 정리하는걸로...
-	if search != "" && groupid != "" {
-		rows, err = db.Query(query, config.GetConfig().Keycloak_realm, "%"+search+"%", groupid)
-	} else if search != "" {
-		rows, err = db.Query(query, config.GetConfig().Keycloak_realm, "%"+search+"%")
-	} else if groupid != "" {
-		rows, err = db.Query(query, config.GetConfig().Keycloak_realm, groupid)
-	} else {
-		rows, err = db.Query(query, config.GetConfig().Keycloak_realm)
+	queryParams := []interface{}{config.GetConfig().Keycloak_realm}
+	if search != "" {
+		queryParams = append(queryParams, "%"+search+"%")
 	}
+
+	if groupid != "" {
+		queryParams = append(queryParams, groupid)
+	}
+
+	if len(userids) > 0 {
+		for item := range userids {
+			queryParams = append(queryParams, userids[item])
+		}
+	}
+
+	rows, err = db.Query(query, queryParams...)
 
 	if err != nil {
 		return nil, err
