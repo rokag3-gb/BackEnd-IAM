@@ -14,8 +14,9 @@ import (
 func Users(c *gin.Context) {
 	search := c.Query("search")
 	groupid := c.Query("groupid")
+	userids := c.QueryArray("ids")
 
-	arr, err := iamdb.GetUsers(search, groupid)
+	arr, err := iamdb.GetUsers(search, groupid, userids)
 	if err != nil {
 		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
