@@ -58,7 +58,7 @@ type RolesInfo struct {
 	ID          string    `json:"id" binding:"required"`
 	Name        *string   `json:"name" binding:"required"`
 	Use         bool      `json:"useYn,omitempty"`
-	DefaultRole *bool     `json:"defaultRole,omitempty"`
+	DefaultRole bool      `json:"defaultRole,omitempty"`
 	AuthId      *[]string `json:"authId,omitempty"`
 	CreateDate  *string   `json:"createDate"`
 	Creator     *string   `json:"creator"`

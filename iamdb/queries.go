@@ -158,24 +158,11 @@ func GetAuthIdByName(authname string) (string, error) {
 	return id, nil
 }
 
-func CreateRoles(role *models.RolesInfo, username string) error {
-	query := `INSERT INTO roles(rName, defaultRole, REALM_ID, createId, modifyId) 
-	select ?, ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
+func CreateRolesIdTx(tx *sql.Tx, id string, name string, defaultRole bool, username string) error {
+	query := `INSERT INTO roles(rId, rName, defaultRole, REALM_ID, createId, modifyId) 
+	select ?, ?, ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
-	var DefaultRole bool = false
-	if role.DefaultRole != nil && *role.DefaultRole == true {
-		DefaultRole = true
-	}
-
-	_, err := db.Query(query, role.Name, DefaultRole, config.GetConfig().Keycloak_realm, username, config.GetConfig().Keycloak_realm)
-	return err
-}
-
-func CreateRolesIdTx(tx *sql.Tx, id string, name string, username string) error {
-	query := `INSERT INTO roles(rId, rName, REALM_ID, createId, modifyId) 
-	select ?, ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
-
-	_, err := tx.Query(query, id, name, config.GetConfig().Keycloak_realm, username, config.GetConfig().Keycloak_realm)
+	_, err := tx.Query(query, id, name, defaultRole, config.GetConfig().Keycloak_realm, username, config.GetConfig().Keycloak_realm)
 	return err
 }
 

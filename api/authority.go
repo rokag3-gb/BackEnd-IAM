@@ -32,7 +32,7 @@ func CreateRoles(c *gin.Context) {
 	}
 
 	if roles.Name == nil {
-		logger.ErrorProcess(c, nil, http.StatusBadRequest, "required 'name'")
+		logger.ErrorProcess(c, err, http.StatusBadRequest, "required 'body'")
 		return
 	}
 
@@ -43,7 +43,7 @@ func CreateRoles(c *gin.Context) {
 	}
 	roleId := uuid.New()
 
-	err = iamdb.CreateRolesIdTx(tx, roleId.String(), *roles.Name, c.GetString("username"))
+	err = iamdb.CreateRolesIdTx(tx, roleId.String(), *roles.Name, roles.DefaultRole, c.GetString("username"))
 	if err != nil {
 		tx.Rollback()
 		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -128,7 +128,7 @@ func UpdateRoles(c *gin.Context) {
 		return
 	}
 
-	if roles.Name == nil && roles.DefaultRole == nil {
+	if roles.Name == nil {
 		logger.ErrorProcess(c, err, http.StatusBadRequest, "required 'body'")
 		return
 	}

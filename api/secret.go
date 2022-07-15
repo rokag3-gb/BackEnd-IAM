@@ -96,7 +96,7 @@ func CreateSecretGroup(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.CreateRolesIdTx(tx, roleId.String(), rolename, c.GetString("username"))
+	err = iamdb.CreateRolesIdTx(tx, roleId.String(), rolename, false, c.GetString("username"))
 	if err != nil {
 		tx.Rollback()
 		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
