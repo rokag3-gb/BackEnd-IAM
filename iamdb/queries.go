@@ -1247,54 +1247,6 @@ func GetApplications() ([]string, error) {
 	}
 
 	return arr, nil
-
-}
-
-func GetLoginApplication(date int) ([]models.MetricItem, error) {
-	query := `select B.CLIENT_ID
-	, count(A.CLIENT_ID) as count
-	from
-	(select * FROM
-	(SELECT
-	CLIENT_ID, DATEADD(SECOND, EVENT_TIME/1000, '01/01/1970 09:00:00') as etime
-	FROM EVENT_ENTITY
-	where CLIENT_ID != ?
-	AND TYPE = 'LOGIN'
-	AND REALM_ID = ?
-	) AA 
-	where AA.etime > getdate()-?
-	) A
-	RIGHT OUTER JOIN
-	(select CLIENT_ID from CLIENT
-	where
-	REALM_ID = ?
-	AND (NAME IS NULL OR LEN(NAME) = 0)
-	) B
-	ON A.CLIENT_ID = B.CLIENT_ID
-	group by B.client_id`
-
-	rows, err := db.Query(query,
-		config.GetConfig().Keycloak_client_id,
-		config.GetConfig().Keycloak_realm,
-		date,
-		config.GetConfig().Keycloak_realm)
-
-	if err != nil {
-		return nil, err
-	}
-	arr := make([]models.MetricItem, 0)
-
-	for rows.Next() {
-		var m models.MetricItem
-		err = rows.Scan(&m.Key, &m.Value)
-		if err != nil {
-			return nil, err
-		}
-
-		arr = append(arr, m)
-	}
-
-	return arr, nil
 }
 
 func GetLoginApplicationDate(date int) ([]map[string]interface{}, error) {
@@ -1315,6 +1267,7 @@ func GetLoginApplicationDate(date int) ([]map[string]interface{}, error) {
 	CONVERT(DATE, DATEADD(SECOND, EVENT_TIME/1000, '01/01/1970 09:00:00')) as EVENT_DATE
 	FROM EVENT_ENTITY
 	where  TYPE = 'LOGIN'
+	AND JSON_VALUE(DETAILS_JSON, '$.response_mode') IS NULL
 	) A
 	GROUP BY A.CLIENT_ID, A.EVENT_DATE
 	) B
@@ -1370,62 +1323,6 @@ func GetLoginApplicationDate(date int) ([]map[string]interface{}, error) {
 
 		m[client_id] = login_count
 		m["date"] = event_date
-	}
-
-	return arr, nil
-}
-
-func GetLoginDate(date int) ([]models.MetricItem, error) {
-	query := `select 
-	FORMAT(C.SYSTEM_DATE, 'yyyy-MM-dd') as date,
-	count(B.ID) as count
-	from
-	(
-	select
-	CONVERT(DATE, etime) as eDate,
-	*
-	from
-	(SELECT
-	E.ID,
-	DATEADD(SECOND, EVENT_TIME/1000, '01/01/1970 09:00:00') as etime
-	FROM EVENT_ENTITY E
-	JOIN
-	(select CLIENT_ID from CLIENT
-	where
-	REALM_ID = ?
-	AND (NAME IS NULL OR LEN(NAME) = 0)) D
-	ON E.CLIENT_ID = D.CLIENT_ID
-	where  TYPE = 'LOGIN'
-	) A
-	where etime > getdate()-?
-	) B
-	right outer JOIN 
-	(
-	SELECT CONVERT(DATE, DATEADD(DAY, NUMBER, getdate()-?), 112) AS SYSTEM_DATE
-	FROM MASTER..SPT_VALUES WITH(NOLOCK)
-	WHERE TYPE = 'P'
-	AND NUMBER <= DATEDIFF(DAY, getdate()-?, getdate())
-	) C
-	ON B.eDate = C.SYSTEM_DATE
-	group by C.SYSTEM_DATE`
-
-	rows, err := db.Query(query,
-		config.GetConfig().Keycloak_realm,
-		date, date, date)
-
-	if err != nil {
-		return nil, err
-	}
-	arr := make([]models.MetricItem, 0)
-
-	for rows.Next() {
-		var m models.MetricItem
-		err = rows.Scan(&m.Key, &m.Value)
-		if err != nil {
-			return nil, err
-		}
-
-		arr = append(arr, m)
 	}
 
 	return arr, nil
