@@ -95,7 +95,7 @@ func makeRouter() *gin.Engine {
 	route.Use(middlewares.IntrospectMiddleware())
 	route.Use(middlewares.AuthorityCheckMiddleware())
 
-	authority := route.Group("/authority")
+	authority := route.Group("/iam/authority")
 	{
 		authority.GET("/roles", api.GetRoles)
 		authority.POST("/roles", api.CreateRoles)
@@ -118,7 +118,7 @@ func makeRouter() *gin.Engine {
 		authority.GET("/auth/:authid", api.GetAuthInfo)
 	}
 
-	groups := route.Group("/groups")
+	groups := route.Group("/iam/groups")
 	{
 		groups.GET("", api.GetGroup)
 		groups.POST("", api.CreateGroup)
@@ -126,7 +126,7 @@ func makeRouter() *gin.Engine {
 		groups.PUT("/:groupid", api.UpdateGroup)
 	}
 
-	users := route.Group("/users")
+	users := route.Group("/iam/users")
 	{
 		users.GET("", api.Users)
 		users.POST("", api.CreateUser)
@@ -144,7 +144,7 @@ func makeRouter() *gin.Engine {
 		users.GET("/:userid/federated-identity", api.GetUserFederatedIdentities)
 	}
 
-	secret := route.Group("/secret")
+	secret := route.Group("/iam/secret")
 	{
 		secret.GET("", api.GetSecretGroup)
 		secret.POST("", api.CreateSecretGroup)
@@ -161,7 +161,7 @@ func makeRouter() *gin.Engine {
 		secret.DELETE("/:groupName/metadata/:secretName", api.DeleteSecretMetadata)
 	}
 
-	metric := route.Group("/metric")
+	metric := route.Group("/iam/metric")
 	{
 		metric.GET("/count", api.MetricCount)
 		metric.GET("/session", api.GetMetricSession)
@@ -172,7 +172,7 @@ func makeRouter() *gin.Engine {
 		metric.GET("/idp/count", api.GetIdpCount)
 	}
 
-	apps := route.Group("/apps")
+	apps := route.Group("/iam/apps")
 	{
 		apps.GET("/refresh", middlewares.RefreshApps)
 	}
