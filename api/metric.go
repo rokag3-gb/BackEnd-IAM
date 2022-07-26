@@ -82,6 +82,16 @@ func GetMetricSession(c *gin.Context) {
 	c.JSON(http.StatusOK, ret)
 }
 
+func GetLoginApplication(c *gin.Context) {
+	m, err := iamdb.GetLoginApplication(c.MustGet("date").(int) - 1)
+	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	c.JSON(http.StatusOK, m)
+}
+
 func GetLoginApplicationDate(c *gin.Context) {
 	m, err := iamdb.GetLoginApplicationDate(c.MustGet("date").(int) - 1)
 	if err != nil {

@@ -1249,6 +1249,53 @@ func GetApplications() ([]string, error) {
 	return arr, nil
 }
 
+func GetLoginApplication(date int) ([]models.MetricItem, error) {
+	query := `select B.CLIENT_ID
+	, count(A.CLIENT_ID) as count
+	from
+	(select * FROM
+	(SELECT
+	CLIENT_ID, DATEADD(SECOND, EVENT_TIME/1000, '01/01/1970 09:00:00') as etime
+	FROM EVENT_ENTITY
+	where CLIENT_ID != ?
+	AND TYPE = 'LOGIN'
+	AND REALM_ID = ?
+	) AA 
+	where AA.etime > getdate()-?
+	) A
+	RIGHT OUTER JOIN
+	(select CLIENT_ID from CLIENT
+	where
+	REALM_ID = ?
+	AND (NAME IS NULL OR LEN(NAME) = 0)
+	) B
+	ON A.CLIENT_ID = B.CLIENT_ID
+	group by B.client_id`
+
+	rows, err := db.Query(query,
+		config.GetConfig().Keycloak_client_id,
+		config.GetConfig().Keycloak_realm,
+		date,
+		config.GetConfig().Keycloak_realm)
+
+	if err != nil {
+		return nil, err
+	}
+	arr := make([]models.MetricItem, 0)
+
+	for rows.Next() {
+		var m models.MetricItem
+		err = rows.Scan(&m.Key, &m.Value)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, m)
+	}
+
+	return arr, nil
+}
+
 func GetLoginApplicationDate(date int) ([]map[string]interface{}, error) {
 	query := `select 
 	E.CLIENT_ID,
