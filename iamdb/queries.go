@@ -975,14 +975,14 @@ func GetSecretGroup(data []models.SecretGroupItem, username string) ([]models.Se
 		sg varchar(310)
 	)`
 	for _, d := range data {
-		query += "insert into @values values ('/secret/" + d.Name + "/')"
+		query += "insert into @values values ('/iam/secret/" + d.Name + "/')"
 	}
 	query += `select C.secretGroup, 
 	FORMAT(D.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
 	u1.USERNAME as Creator, 
 	FORMAT(D.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
 	u2.USERNAME as Modifier
-	from (select REPLACE(REPLACE(B.sg,'/secret/',''),'/','') as secretGroup 
+	from (select REPLACE(REPLACE(B.sg,'/iam/secret/',''),'/','') as secretGroup 
 	from (select
 	REPLACE(url,'*','%%') as auth_url
 	from USER_ENTITY u
