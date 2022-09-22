@@ -27,7 +27,7 @@ func resultErrorCheck(rows *sql.Rows) error {
 	return nil
 }
 
-func ConnectionTest() {
+func ConnectionTest(db *sql.DB) {
 	query := "select 1"
 
 	rows, err := db.Query(query)
@@ -43,6 +43,10 @@ func ConnectionTest() {
 }
 
 func GetUserAuthoritiesForEndpoint(username string, realm string, method string, endpoint string) (*sql.Rows, error) {
+	db, err := DBClient()
+	if err != nil {
+		return nil, err
+	}
 	query := `select
 	1
 	from
@@ -74,6 +78,11 @@ func GetUserAuthoritiesForEndpoint(username string, realm string, method string,
 }
 
 func GetRoles() ([]models.RolesInfo, error) {
+	db, err := DBClient()
+	if err != nil {
+		return nil, err
+	}
+
 	query := `select r.rId, r.rName, r.defaultRole,
 	FORMAT(r.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
 	u1.USERNAME as Creator, 
@@ -111,6 +120,11 @@ func GetRoles() ([]models.RolesInfo, error) {
 }
 
 func GetRoleIdByName(rolename string) (string, error) {
+	db, err := DBClient()
+	if err != nil {
+		return "", err
+	}
+
 	query := `select rId from roles
 	where rName = ?
 	AND REALM_ID = ?`
@@ -135,6 +149,11 @@ func GetRoleIdByName(rolename string) (string, error) {
 }
 
 func GetAuthIdByName(authname string) (string, error) {
+	db, err := DBClient()
+	if err != nil {
+		return "", err
+	}
+
 	query := `select aId from authority
 	where aName = ?
 	AND REALM_ID = ?`
@@ -215,6 +234,11 @@ func UpdateRolesTx(tx *sql.Tx, role *models.RolesInfo, username string) error {
 }
 
 func GetRolseAuth(id string) ([]models.RolesInfo, error) {
+	db, err := DBClient()
+	if err != nil {
+		return nil, err
+	}
+
 	query := `select
 	a.aId, a.aName, ra.useYn, 
 	FORMAT(ra.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
@@ -258,6 +282,11 @@ func GetRolseAuth(id string) ([]models.RolesInfo, error) {
 }
 
 func AssignRoleAuth(roleID string, authID string, username string) error {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return dbErr
+	}
+
 	query := `INSERT INTO roles_authority_mapping(rId, aId, createId, modifyId)
 	select ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
@@ -274,6 +303,11 @@ func AssignRoleAuthTx(tx *sql.Tx, roleID string, authID string, username string)
 }
 
 func DismissRoleAuth(roleID string, authID string) error {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return dbErr
+	}
+
 	query := `DELETE FROM roles_authority_mapping where rId = ? AND aId = ?
 	SELECT @@ROWCOUNT`
 
@@ -283,6 +317,11 @@ func DismissRoleAuth(roleID string, authID string) error {
 }
 
 func UpdateRoleAuth(roleID string, authID string, use bool, username string) error {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return dbErr
+	}
+
 	query := `UPDATE roles_authority_mapping SET 
 	useYn = ?, 
 	modifyDate=GETDATE(), 
@@ -297,6 +336,11 @@ func UpdateRoleAuth(roleID string, authID string, use bool, username string) err
 }
 
 func GetUserRole(userID string) ([]models.RolesInfo, error) {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
 	query := `select r.rId, r.rName, r.defaultRole, ur.useYn,
 	FORMAT(ur.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
 	u1.USERNAME as Creator, 
@@ -336,6 +380,11 @@ func GetUserRole(userID string) ([]models.RolesInfo, error) {
 }
 
 func AssignUserRole(userID string, roleID string, username string) error {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return dbErr
+	}
+
 	query := `INSERT INTO user_roles_mapping(userId, rId, createId, modifyId)
 	select ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
@@ -352,6 +401,11 @@ func AssignUserRoleTx(tx *sql.Tx, userID string, roleID string, username string)
 }
 
 func DismissUserRole(userID string, roleID string) error {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return dbErr
+	}
+
 	query := `DELETE FROM user_roles_mapping where userId = ? AND rId = ?
 	SELECT @@ROWCOUNT`
 
@@ -376,6 +430,11 @@ func DeleteUserRoleByRoleIdTx(tx *sql.Tx, roleName string) error {
 }
 
 func UpdateUserRole(userID string, roleID string, use bool, username string) error {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return dbErr
+	}
+
 	query := `UPDATE user_roles_mapping SET 
 	useYn = ?, 
 	modifyDate=GETDATE(), 
@@ -389,6 +448,11 @@ func UpdateUserRole(userID string, roleID string, use bool, username string) err
 }
 
 func GetUserAuth(userID string) ([]models.AutuhorityInfo, error) {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
 	query := `select a.aId, a.aName, a.url, a.method, 
 	FORMAT(a.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
 	u1.USERNAME as Creator, 
@@ -433,6 +497,11 @@ func GetUserAuth(userID string) ([]models.AutuhorityInfo, error) {
 }
 
 func GetUserAuthActive(userName string, authName string) (map[string]interface{}, error) {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
 	query := `select 1
 	from USER_ENTITY u
 	join user_roles_mapping ur 
@@ -465,6 +534,11 @@ func GetUserAuthActive(userName string, authName string) (map[string]interface{}
 }
 
 func GetAuth() ([]models.AutuhorityInfo, error) {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
 	query := `select a.aId, a.aName, a.url, a.method, 
 	FORMAT(a.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
 	u1.USERNAME as Creator, 
@@ -500,6 +574,11 @@ func GetAuth() ([]models.AutuhorityInfo, error) {
 }
 
 func CreateAuth(auth *models.AutuhorityInfo, username string) error {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return dbErr
+	}
+
 	query := `INSERT INTO authority(aId, aName, url, method, REALM_ID, createId, modifyId)
 	select ?, ?, ?, ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
@@ -534,6 +613,11 @@ func DeleteAuthNameTx(tx *sql.Tx, name string) error {
 }
 
 func UpdateAuth(auth *models.AutuhorityInfo, username string) error {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return dbErr
+	}
+
 	query := `UPDATE authority SET 
 	aName = ?, 
 	url = ?, 
@@ -549,6 +633,11 @@ func UpdateAuth(auth *models.AutuhorityInfo, username string) error {
 }
 
 func GetAuthInfo(authID string) (*models.AutuhorityInfo, error) {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
 	query := `select a.aId, a.aName, a.url, a.method, 
 	FORMAT(a.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
 	u1.USERNAME as Creator, 
@@ -601,6 +690,11 @@ func DeleteRolesAuthByAuthNameTx(tx *sql.Tx, roleName string) error {
 }
 
 func DeleteUserRoleByUserId(id string) error {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return dbErr
+	}
+
 	query := `DELETE user_roles_mapping where userId = ?`
 
 	_, err := db.Query(query, id)
@@ -608,6 +702,11 @@ func DeleteUserRoleByUserId(id string) error {
 }
 
 func CheckRoleAuthID(roleID string, authID string) error {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return dbErr
+	}
+
 	query := `select count(*) as result
 	from
 	(
@@ -637,6 +736,11 @@ func CheckRoleAuthID(roleID string, authID string) error {
 }
 
 func CheckUserRoleID(userID string, roleID string) error {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return dbErr
+	}
+
 	query := `select count(*) as result
 	from
 	(
@@ -666,6 +770,11 @@ func CheckUserRoleID(userID string, roleID string) error {
 }
 
 func GetGroup() ([]models.GroupItem, error) {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
 	query := `SELECT g.ID, NAME, 
 	ISNULL((select count(USER_ID) from USER_GROUP_MEMBERSHIP where GROUP_ID = g.ID AND g.REALM_ID = ? group by GROUP_ID), 0) as countMembers,
 	FORMAT(g.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
@@ -703,6 +812,11 @@ func GetGroup() ([]models.GroupItem, error) {
 }
 
 func GroupCreate(groupId string, username string) error {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return dbErr
+	}
+
 	query := `UPDATE KEYCLOAK_GROUP SET 
 	createId=B.ID,
 	createDate=GETDATE(),
@@ -719,6 +833,11 @@ func GroupCreate(groupId string, username string) error {
 }
 
 func GroupUpdate(groupId string, username string) error {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return dbErr
+	}
+
 	query := `UPDATE KEYCLOAK_GROUP SET 
 	modifyId=B.ID,
 	modifyDate=GETDATE()
@@ -733,6 +852,11 @@ func GroupUpdate(groupId string, username string) error {
 }
 
 func GetUsers(search string, groupid string, userids []string) ([]models.GetUserInfo, error) {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
 	var rows *sql.Rows
 	var err error
 
@@ -849,6 +973,11 @@ func GetUsers(search string, groupid string, userids []string) ([]models.GetUser
 }
 
 func GetUserDetail(userId string) ([]models.GetUserInfo, error) {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
 	query := `SELECT U.ID, U.ENABLED, U.USERNAME, U.FIRST_NAME, U.LAST_NAME, U.EMAIL, 
 	(SELECT STRING_AGG(REQUIRED_ACTION, ',') FROM USER_REQUIRED_ACTION WHERE USER_ID=U.ID) as REQUIRED_ACTION,
 	FORMAT(U.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
@@ -893,6 +1022,11 @@ func GetUserDetail(userId string) ([]models.GetUserInfo, error) {
 }
 
 func UsersCreate(userId string, username string) error {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return dbErr
+	}
+
 	query := `UPDATE USER_ENTITY SET 
 	createId=B.ID,
 	createDate=GETDATE(),
@@ -909,6 +1043,11 @@ func UsersCreate(userId string, username string) error {
 }
 
 func UsersUpdate(userId string, username string) error {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return dbErr
+	}
+
 	query := `UPDATE USER_ENTITY SET 
 	modifyId=B.ID,
 	modifyDate=GETDATE()
@@ -938,6 +1077,11 @@ func DeleteSecretGroupTx(tx *sql.Tx, secretGroupPath string) error {
 }
 
 func MergeSecret(secretPath string, secretGroupPath string, username string) error {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return dbErr
+	}
+
 	query := `MERGE INTO vSecret A
 	USING (SELECT 
 	? as spath, 
@@ -960,6 +1104,11 @@ func MergeSecret(secretPath string, secretGroupPath string, username string) err
 }
 
 func DeleteSecret(secretPath string, secretGroupPath string) error {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return dbErr
+	}
+
 	query := `DELETE FROM vSecret WHERE vSecretPath = ?
 	AND vSecretGroupId = (select vSecretGroupId from vSecretGroup where vSecretGroupPath = ?)
 	SELECT @@ROWCOUNT`
@@ -970,6 +1119,11 @@ func DeleteSecret(secretPath string, secretGroupPath string) error {
 }
 
 func GetSecretGroup(data []models.SecretGroupItem, username string) ([]models.SecretGroupItem, error) {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
 	query := `declare @values table
 	(
 		sg varchar(310)
@@ -1035,6 +1189,11 @@ func GetSecretGroup(data []models.SecretGroupItem, username string) ([]models.Se
 }
 
 func GetSecret(groupName string) (map[string]models.SecretItem, error) {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
 	query := `SELECT s.vSecretPath, 
 	FORMAT(s.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
 	u1.USERNAME as Creator, 
@@ -1071,6 +1230,11 @@ func GetSecret(groupName string) (map[string]models.SecretItem, error) {
 
 func GetSecretGroupMetadata(groupName string) (models.SecretGroupResponse, error) {
 	var result models.SecretGroupResponse
+
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return result, dbErr
+	}
 
 	result.Roles = make([]models.IdItem, 0)
 	result.Users = make([]models.IdItem, 0)
@@ -1159,6 +1323,11 @@ func GetSecretGroupMetadata(groupName string) (models.SecretGroupResponse, error
 }
 
 func GetSecretByName(groupName string, secretName string) (*models.SecretItem, error) {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
 	query := `SELECT s.vSecretPath, 
 	FORMAT(s.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
 	u1.USERNAME as Creator, 
@@ -1189,6 +1358,11 @@ func GetSecretByName(groupName string, secretName string) (*models.SecretItem, e
 }
 
 func MetricCount() (map[string]int, error) {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
 	query := `select 
 	(select count(*) from USER_ENTITY where REALM_ID = ? AND SERVICE_ACCOUNT_CLIENT_LINK is NULL) AS users,
 	(select count(*) from KEYCLOAK_GROUP where REALM_ID = ?) AS groups,
@@ -1228,6 +1402,11 @@ func MetricCount() (map[string]int, error) {
 }
 
 func GetApplications() ([]string, error) {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
 	query := `select CLIENT_ID from CLIENT where REALM_ID = ? AND (NAME IS NULL OR LEN(NAME) = 0)`
 
 	rows, err := db.Query(query, config.GetConfig().Keycloak_realm)
@@ -1250,6 +1429,11 @@ func GetApplications() ([]string, error) {
 }
 
 func GetLoginApplication(date int) ([]models.MetricItem, error) {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
 	query := `select B.CLIENT_ID
 	, count(A.CLIENT_ID) as count
 	from
@@ -1297,6 +1481,11 @@ func GetLoginApplication(date int) ([]models.MetricItem, error) {
 }
 
 func GetLoginApplicationDate(date int) ([]map[string]interface{}, error) {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
 	query := `select 
 	E.CLIENT_ID,
 	 CONVERT(CHAR(10), E.SYSTEM_DATE, 23),
@@ -1376,6 +1565,11 @@ func GetLoginApplicationDate(date int) ([]map[string]interface{}, error) {
 }
 
 func GetLoginError(date int) ([]models.MetricItem, error) {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
 	query := `declare @values table
 	(
 		error varchar(64),
@@ -1424,6 +1618,11 @@ func GetLoginError(date int) ([]models.MetricItem, error) {
 }
 
 func CreateUserAddRole(uid string, username string) error {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return dbErr
+	}
+
 	query := `DECLARE @C_USERNAME nvarchar(255);
 	SET @C_USERNAME = (SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?)
 	
@@ -1445,6 +1644,11 @@ func CreateUserAddRole(uid string, username string) error {
 }
 
 func GetApplicationList() ([]models.Applicastions, error) {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
 	query := `select CLIENT_ID, BASE_URL from CLIENT
 	where REALM_ID = ?
 	AND  (MANAGEMENT_URL IS NOT NULL OR LEN(MANAGEMENT_URL) != 0)`
@@ -1480,6 +1684,11 @@ func GetApplicationList() ([]models.Applicastions, error) {
 }
 
 func GetIdpCount() ([]models.MetricItem, error) {
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
 	query := `select 
 	A.PROVIDER_ALIAS, 
 	count(B.IDENTITY_PROVIDER) as count

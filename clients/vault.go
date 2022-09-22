@@ -7,7 +7,6 @@ import (
 	"github.com/hashicorp/vault/api"
 )
 
-var vaultClient *api.Client = nil
 var vaultConfig vltConfig = vltConfig{}
 
 var httpClient = &http.Client{
@@ -26,6 +25,7 @@ func InitVaultClient(token string, endpoint string) error {
 			Endpoint: endpoint,
 		}
 	}
+	vaultClient := VaultClient()
 	if vaultClient == nil {
 		vaultClient, _ = api.NewClient(&api.Config{Address: vaultConfig.Endpoint, HttpClient: httpClient})
 		vaultClient.SetToken(vaultConfig.Token)
@@ -40,6 +40,8 @@ func InitVaultClient(token string, endpoint string) error {
 }
 
 func VaultClient() *api.Client {
+	var vaultClient, _ = api.NewClient(&api.Config{Address: vaultConfig.Endpoint, HttpClient: httpClient})
+	vaultClient.SetToken(vaultConfig.Token)
 	return vaultClient
 }
 

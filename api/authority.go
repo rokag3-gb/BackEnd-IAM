@@ -36,7 +36,13 @@ func CreateRoles(c *gin.Context) {
 		return
 	}
 
-	tx, err := iamdb.DBClient().Begin()
+	db, err := iamdb.DBClient()
+	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	tx, err := db.Begin()
 	if err != nil {
 		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -80,7 +86,13 @@ func DeleteRoles(c *gin.Context) {
 		return
 	}
 
-	tx, err := iamdb.DBClient().Begin()
+	db, err := iamdb.DBClient()
+	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	tx, err := db.Begin()
 	if err != nil {
 		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -133,7 +145,13 @@ func UpdateRoles(c *gin.Context) {
 		return
 	}
 
-	tx, err := iamdb.DBClient().Begin()
+	db, err := iamdb.DBClient()
+	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	tx, err := db.Begin()
 	if err != nil {
 		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -449,7 +467,13 @@ func DeleteAuth(c *gin.Context) {
 		return
 	}
 
-	tx, err := iamdb.DBClient().Begin()
+	db, err := iamdb.DBClient()
+	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	tx, err := db.Begin()
 	if err != nil {
 		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

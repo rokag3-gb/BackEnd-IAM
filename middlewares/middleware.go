@@ -162,7 +162,12 @@ func ReturnReverseProxy() gin.HandlerFunc {
 		c.Request.URL.Path = strings.TrimPrefix(c.Request.URL.Path, "/"+path[1])
 
 		proxy := httputil.NewSingleHostReverseProxy(target)
+		proxy.ErrorHandler = ErrHandle
 
 		proxy.ServeHTTP(c.Writer, c.Request)
 	}
+}
+
+func ErrHandle(res http.ResponseWriter, req *http.Request, err error) {
+	logger.Error("ReverseProxy Err : " + err.Error())
 }
