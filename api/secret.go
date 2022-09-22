@@ -71,6 +71,7 @@ func CreateSecretGroup(c *gin.Context) {
 	}
 
 	db, err := iamdb.DBClient()
+	defer db.Close()
 	if err != nil {
 		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -166,6 +167,7 @@ func DeleteSecretGroup(c *gin.Context) {
 	groupName := c.Param("groupName")
 
 	db, err := iamdb.DBClient()
+	defer db.Close()
 	if err != nil {
 		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -296,6 +298,7 @@ func UpdateSecretGroup(c *gin.Context) {
 	}
 
 	db, err := iamdb.DBClient()
+	defer db.Close()
 	if err != nil {
 		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

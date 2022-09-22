@@ -44,6 +44,7 @@ func ConnectionTest(db *sql.DB) {
 
 func GetUserAuthoritiesForEndpoint(username string, realm string, method string, endpoint string) (*sql.Rows, error) {
 	db, err := DBClient()
+	defer db.Close()
 	if err != nil {
 		return nil, err
 	}
@@ -79,6 +80,7 @@ func GetUserAuthoritiesForEndpoint(username string, realm string, method string,
 
 func GetRoles() ([]models.RolesInfo, error) {
 	db, err := DBClient()
+	defer db.Close()
 	if err != nil {
 		return nil, err
 	}
@@ -121,6 +123,7 @@ func GetRoles() ([]models.RolesInfo, error) {
 
 func GetRoleIdByName(rolename string) (string, error) {
 	db, err := DBClient()
+	defer db.Close()
 	if err != nil {
 		return "", err
 	}
@@ -150,6 +153,7 @@ func GetRoleIdByName(rolename string) (string, error) {
 
 func GetAuthIdByName(authname string) (string, error) {
 	db, err := DBClient()
+	defer db.Close()
 	if err != nil {
 		return "", err
 	}
@@ -235,6 +239,7 @@ func UpdateRolesTx(tx *sql.Tx, role *models.RolesInfo, username string) error {
 
 func GetRolseAuth(id string) ([]models.RolesInfo, error) {
 	db, err := DBClient()
+	defer db.Close()
 	if err != nil {
 		return nil, err
 	}
@@ -283,6 +288,7 @@ func GetRolseAuth(id string) ([]models.RolesInfo, error) {
 
 func AssignRoleAuth(roleID string, authID string, username string) error {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
@@ -304,6 +310,7 @@ func AssignRoleAuthTx(tx *sql.Tx, roleID string, authID string, username string)
 
 func DismissRoleAuth(roleID string, authID string) error {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
@@ -318,6 +325,7 @@ func DismissRoleAuth(roleID string, authID string) error {
 
 func UpdateRoleAuth(roleID string, authID string, use bool, username string) error {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
@@ -337,6 +345,7 @@ func UpdateRoleAuth(roleID string, authID string, use bool, username string) err
 
 func GetUserRole(userID string) ([]models.RolesInfo, error) {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
@@ -381,6 +390,7 @@ func GetUserRole(userID string) ([]models.RolesInfo, error) {
 
 func AssignUserRole(userID string, roleID string, username string) error {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
@@ -402,6 +412,7 @@ func AssignUserRoleTx(tx *sql.Tx, userID string, roleID string, username string)
 
 func DismissUserRole(userID string, roleID string) error {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
@@ -431,6 +442,7 @@ func DeleteUserRoleByRoleIdTx(tx *sql.Tx, roleName string) error {
 
 func UpdateUserRole(userID string, roleID string, use bool, username string) error {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
@@ -449,6 +461,7 @@ func UpdateUserRole(userID string, roleID string, use bool, username string) err
 
 func GetUserAuth(userID string) ([]models.AutuhorityInfo, error) {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
@@ -498,6 +511,7 @@ func GetUserAuth(userID string) ([]models.AutuhorityInfo, error) {
 
 func GetUserAuthActive(userName string, authName string) (map[string]interface{}, error) {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
@@ -535,6 +549,7 @@ func GetUserAuthActive(userName string, authName string) (map[string]interface{}
 
 func GetAuth() ([]models.AutuhorityInfo, error) {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
@@ -575,6 +590,7 @@ func GetAuth() ([]models.AutuhorityInfo, error) {
 
 func CreateAuth(auth *models.AutuhorityInfo, username string) error {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
@@ -614,6 +630,7 @@ func DeleteAuthNameTx(tx *sql.Tx, name string) error {
 
 func UpdateAuth(auth *models.AutuhorityInfo, username string) error {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
@@ -634,6 +651,7 @@ func UpdateAuth(auth *models.AutuhorityInfo, username string) error {
 
 func GetAuthInfo(authID string) (*models.AutuhorityInfo, error) {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
@@ -691,6 +709,7 @@ func DeleteRolesAuthByAuthNameTx(tx *sql.Tx, roleName string) error {
 
 func DeleteUserRoleByUserId(id string) error {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
@@ -703,6 +722,7 @@ func DeleteUserRoleByUserId(id string) error {
 
 func CheckRoleAuthID(roleID string, authID string) error {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
@@ -737,6 +757,7 @@ func CheckRoleAuthID(roleID string, authID string) error {
 
 func CheckUserRoleID(userID string, roleID string) error {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
@@ -771,6 +792,7 @@ func CheckUserRoleID(userID string, roleID string) error {
 
 func GetGroup() ([]models.GroupItem, error) {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
@@ -813,6 +835,7 @@ func GetGroup() ([]models.GroupItem, error) {
 
 func GroupCreate(groupId string, username string) error {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
@@ -834,6 +857,7 @@ func GroupCreate(groupId string, username string) error {
 
 func GroupUpdate(groupId string, username string) error {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
@@ -853,6 +877,7 @@ func GroupUpdate(groupId string, username string) error {
 
 func GetUsers(search string, groupid string, userids []string) ([]models.GetUserInfo, error) {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
@@ -974,6 +999,7 @@ func GetUsers(search string, groupid string, userids []string) ([]models.GetUser
 
 func GetUserDetail(userId string) ([]models.GetUserInfo, error) {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
@@ -1023,6 +1049,7 @@ func GetUserDetail(userId string) ([]models.GetUserInfo, error) {
 
 func UsersCreate(userId string, username string) error {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
@@ -1044,6 +1071,7 @@ func UsersCreate(userId string, username string) error {
 
 func UsersUpdate(userId string, username string) error {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
@@ -1078,6 +1106,7 @@ func DeleteSecretGroupTx(tx *sql.Tx, secretGroupPath string) error {
 
 func MergeSecret(secretPath string, secretGroupPath string, username string) error {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
@@ -1105,6 +1134,7 @@ func MergeSecret(secretPath string, secretGroupPath string, username string) err
 
 func DeleteSecret(secretPath string, secretGroupPath string) error {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
@@ -1120,6 +1150,7 @@ func DeleteSecret(secretPath string, secretGroupPath string) error {
 
 func GetSecretGroup(data []models.SecretGroupItem, username string) ([]models.SecretGroupItem, error) {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
@@ -1190,6 +1221,7 @@ func GetSecretGroup(data []models.SecretGroupItem, username string) ([]models.Se
 
 func GetSecret(groupName string) (map[string]models.SecretItem, error) {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
@@ -1232,6 +1264,7 @@ func GetSecretGroupMetadata(groupName string) (models.SecretGroupResponse, error
 	var result models.SecretGroupResponse
 
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return result, dbErr
 	}
@@ -1324,6 +1357,7 @@ func GetSecretGroupMetadata(groupName string) (models.SecretGroupResponse, error
 
 func GetSecretByName(groupName string, secretName string) (*models.SecretItem, error) {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
@@ -1359,6 +1393,7 @@ func GetSecretByName(groupName string, secretName string) (*models.SecretItem, e
 
 func MetricCount() (map[string]int, error) {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
@@ -1403,6 +1438,7 @@ func MetricCount() (map[string]int, error) {
 
 func GetApplications() ([]string, error) {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
@@ -1430,6 +1466,7 @@ func GetApplications() ([]string, error) {
 
 func GetLoginApplication(date int) ([]models.MetricItem, error) {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
@@ -1482,6 +1519,7 @@ func GetLoginApplication(date int) ([]models.MetricItem, error) {
 
 func GetLoginApplicationDate(date int) ([]map[string]interface{}, error) {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
@@ -1566,6 +1604,7 @@ func GetLoginApplicationDate(date int) ([]map[string]interface{}, error) {
 
 func GetLoginError(date int) ([]models.MetricItem, error) {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
@@ -1619,6 +1658,7 @@ func GetLoginError(date int) ([]models.MetricItem, error) {
 
 func CreateUserAddRole(uid string, username string) error {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
@@ -1645,6 +1685,7 @@ func CreateUserAddRole(uid string, username string) error {
 
 func GetApplicationList() ([]models.Applicastions, error) {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
@@ -1685,6 +1726,7 @@ func GetApplicationList() ([]models.Applicastions, error) {
 
 func GetIdpCount() ([]models.MetricItem, error) {
 	db, dbErr := DBClient()
+	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
