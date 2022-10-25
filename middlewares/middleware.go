@@ -52,6 +52,39 @@ func IntrospectMiddleware() gin.HandlerFunc {
 	}
 }
 
+func GetUserIdMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		auth := c.Request.Header.Get("Authorization")
+		if auth == "" && !config.GetConfig().Developer_mode {
+			logger.ErrorProcess(c, nil, http.StatusForbidden, "No Authorization header provided")
+			return
+		}
+		token := strings.TrimPrefix(auth, "Bearer ")
+		result, err := clients.KeycloakClient().RetrospectToken(c, token,
+			clients.KeycloakConfig().ClientID,
+			clients.KeycloakConfig().ClientSecret,
+			clients.KeycloakConfig().Realm)
+
+		if err != nil && !config.GetConfig().Developer_mode {
+			logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			return
+		}
+
+		if !*result.Active && !config.GetConfig().Developer_mode {
+			logger.ErrorProcess(c, nil, http.StatusForbidden, "Invalid authorization")
+			return
+		}
+
+		userid, err := getUserIdJWT(token)
+		if err != nil {
+			logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			return
+		}
+
+		c.Set("userId", userid)
+	}
+}
+
 func ListQueryRangeMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		first, firstErr := strconv.Atoi(c.DefaultQuery("first", "0"))
@@ -125,6 +158,25 @@ func getUsernameJWT(token string) (string, error) {
 	}
 
 	username := fmt.Sprintf("%v", claims["preferred_username"])
+	if username == "" {
+		return "", errors.New("invalid token")
+	}
+
+	return username, nil
+}
+
+func getUserIdJWT(token string) (string, error) {
+	t, _ := jwt.Parse(token, nil)
+	if t == nil {
+		return "", errors.New("invalid authorization")
+	}
+
+	claims, _ := t.Claims.(jwt.MapClaims)
+	if claims == nil {
+		return "", errors.New("invalid token")
+	}
+
+	username := fmt.Sprintf("%v", claims["sub"])
 	if username == "" {
 		return "", errors.New("invalid token")
 	}
