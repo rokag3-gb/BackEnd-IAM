@@ -43,8 +43,6 @@ func main() {
 
 	iamdb.InitDbClient("mssql", conf.Db_connect_string)
 
-	iamdb.GetApplicationList()
-
 	route := makeRouter()
 
 	if conf.Http_port != "" {
@@ -91,11 +89,9 @@ func makeRouter() *gin.Engine {
 
 	route := gin.Default()
 
-	route.Use(middlewares.AccessControlAllowOrigin())
-	route.Use(middlewares.IntrospectMiddleware())
-	route.Use(middlewares.AuthorityCheckMiddleware())
+	route.Use(middlewares.GetUserMiddleware())
 
-	authority := route.Group("/iam/authority")
+	authority := route.Group("/authority")
 	{
 		authority.GET("/roles", api.GetRoles)
 		authority.POST("/roles", api.CreateRoles)
@@ -111,7 +107,7 @@ func makeRouter() *gin.Engine {
 		authority.PUT("/user/:userid/roles/:roleid", api.UpdateUserRole)
 		authority.GET("/user/:userid/auth", api.GetUserAuth)
 		authority.GET("/user/:userid/auth/:authid", api.GetUserAuthActive) //실제로 전달되는것은 username과 role name 입니다. gin 제한사항으로 인하여 이름 변경이 불가능
-		authority.GET("/user/auth", middlewares.GetUserIdMiddleware(), api.GetMyAuth)
+		authority.GET("/user/auth", middlewares.GetUserMiddleware(), api.GetMyAuth)
 		authority.GET("/auth", api.GetAuth)
 		authority.POST("/auth", api.CreateAuth)
 		authority.DELETE("/auth/:authid", api.DeleteAuth)
@@ -119,7 +115,7 @@ func makeRouter() *gin.Engine {
 		authority.GET("/auth/:authid", api.GetAuthInfo)
 	}
 
-	groups := route.Group("/iam/groups")
+	groups := route.Group("/groups")
 	{
 		groups.GET("", api.GetGroup)
 		groups.POST("", api.CreateGroup)
@@ -127,7 +123,7 @@ func makeRouter() *gin.Engine {
 		groups.PUT("/:groupid", api.UpdateGroup)
 	}
 
-	users := route.Group("/iam/users")
+	users := route.Group("/users")
 	{
 		users.GET("", api.Users)
 		users.POST("", api.CreateUser)
@@ -145,7 +141,7 @@ func makeRouter() *gin.Engine {
 		users.GET("/:userid/federated-identity", api.GetUserFederatedIdentities)
 	}
 
-	secret := route.Group("/iam/secret")
+	secret := route.Group("/secret")
 	{
 		secret.GET("", api.GetSecretGroup)
 		secret.POST("", api.CreateSecretGroup)
@@ -162,7 +158,7 @@ func makeRouter() *gin.Engine {
 		secret.DELETE("/:groupName/metadata/:secretName", api.DeleteSecretMetadata)
 	}
 
-	metric := route.Group("/iam/metric")
+	metric := route.Group("/metric")
 	{
 		metric.GET("/count", api.MetricCount)
 		metric.GET("/session", api.GetMetricSession)
@@ -172,12 +168,7 @@ func makeRouter() *gin.Engine {
 		metric.GET("/idp/count", api.GetIdpCount)
 	}
 
-	apps := route.Group("/iam/apps")
-	{
-		apps.GET("/refresh", middlewares.RefreshApps)
-	}
-
-	route.NoRoute(middlewares.ReturnReverseProxy())
+	route.NoRoute(middlewares.PageNotFound())
 
 	return route
 }

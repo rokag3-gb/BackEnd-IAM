@@ -42,42 +42,6 @@ func ConnectionTest(db *sql.DB) {
 	}
 }
 
-func GetUserAuthoritiesForEndpoint(username string, realm string, method string, endpoint string) (*sql.Rows, error) {
-	db, err := DBClient()
-	defer db.Close()
-	if err != nil {
-		return nil, err
-	}
-	query := `select
-	1
-	from
-	USER_ENTITY u join
-	user_roles_mapping ur
-	on
-	u.id = ur.userId
-	join
-	roles_authority_mapping ra
-	on
-	ur.rId = ra.rId
-	join
-	authority a
-	on
-	ra.aId = a.aId
-	where
-	u.USERNAME = ? AND
-	u.REALM_ID = ? AND
-	(a.method = ? OR a.method = 'ALL') AND
-	(
-		PATINDEX(REPLACE(a.url,'*','%%'), ?) = 1
-		OR
-		PATINDEX(REPLACE(a.url,'*','%%'), ?) = 1
-	)
-	`
-
-	rows, err := db.Query(query, username, realm, method, endpoint, endpoint+"/")
-	return rows, err
-}
-
 func GetRoles() ([]models.RolesInfo, error) {
 	db, err := DBClient()
 	defer db.Close()
@@ -1721,47 +1685,6 @@ func CreateUserAddRole(uid string, username string) error {
 	}
 
 	return nil
-}
-
-func GetApplicationList() ([]models.Applicastions, error) {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return nil, dbErr
-	}
-
-	query := `select CLIENT_ID, BASE_URL from CLIENT
-	where REALM_ID = ?
-	AND  (MANAGEMENT_URL IS NOT NULL OR LEN(MANAGEMENT_URL) != 0)`
-
-	rows, err := db.Query(query, config.GetConfig().Keycloak_realm)
-	if err != nil {
-		return nil, err
-	}
-
-	arr := make([]models.Applicastions, 0)
-
-	for rows.Next() {
-		var m models.Applicastions
-		err = rows.Scan(&m.ClientId, &m.BaseURL)
-		if err != nil {
-			return nil, err
-		}
-
-		arr = append(arr, m)
-	}
-
-	for k := range config.GetConfig().Api_host_list {
-		delete(config.GetConfig().Api_host_list, k)
-	}
-
-	for _, app := range arr {
-		if app.BaseURL != nil {
-			config.GetConfig().Api_host_list[app.ClientId] = *app.BaseURL
-		}
-	}
-
-	return arr, nil
 }
 
 func GetIdpCount() ([]models.MetricItem, error) {
