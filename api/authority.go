@@ -207,6 +207,18 @@ func GetMyAuth(c *gin.Context) {
 	c.JSON(http.StatusOK, arr)
 }
 
+func GetMenuAuth(c *gin.Context) {
+	userId := c.GetString("userId")
+
+	arr, err := iamdb.GetMenuAuth(userId)
+	if err != nil {
+		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	c.JSON(http.StatusOK, arr)
+}
+
 func GetRolesAuth(c *gin.Context) {
 	roleid, err := getRoleID(c)
 	if err != nil {

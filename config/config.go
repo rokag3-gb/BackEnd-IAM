@@ -58,7 +58,7 @@ func InitConfig() error {
 }
 
 func (conf *IamConfig) initConf() error {
-	cfg, err := ini.Load("config.conf")
+	cfg, err := ini.Load("iam.conf")
 	if err != nil {
 		return err
 	}

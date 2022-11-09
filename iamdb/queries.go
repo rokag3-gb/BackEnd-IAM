@@ -241,6 +241,47 @@ func GetMyAuth(id string) ([]string, error) {
 	return arr, err
 }
 
+func GetMenuAuth(id string) ([]string, error) {
+	db, err := DBClient()
+	defer db.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	query := `select a.aName
+	from user_roles_mapping ur 
+	join roles_authority_mapping ra 
+	on ur.rId = ra.rId
+	join authority a 
+	on ra.aId = a.aId
+	where userId = ?
+	and	ur.useYn = 1
+	and	ra.useYn = 1
+	AND a.REALM_ID = ?
+	AND (a.method = 'DISABLE' OR a.method = 'SHOW')
+	order by a.aName`
+
+	rows, err := db.Query(query, id, config.GetConfig().Keycloak_realm)
+	if err != nil {
+		return nil, err
+	}
+
+	var arr = make([]string, 0)
+
+	for rows.Next() {
+		var r string
+
+		err := rows.Scan(&r)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, r)
+	}
+
+	return arr, err
+}
+
 func GetRolseAuth(id string) ([]models.RolesInfo, error) {
 	db, err := DBClient()
 	defer db.Close()

@@ -113,6 +113,7 @@ func makeRouter() *gin.Engine {
 		authority.DELETE("/auth/:authid", api.DeleteAuth)
 		authority.PUT("/auth/:authid", api.UpdateAuth)
 		authority.GET("/auth/:authid", api.GetAuthInfo)
+		authority.GET("/auth/menu", middlewares.GetUserMiddleware(), api.GetMenuAuth)
 	}
 
 	groups := route.Group("/groups")
