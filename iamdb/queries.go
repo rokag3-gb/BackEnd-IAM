@@ -241,14 +241,24 @@ func GetMyAuth(id string) ([]string, error) {
 	return arr, err
 }
 
-func GetMenuAuth(id string) ([]string, error) {
+func GetMenuAuth(id string, site string) ([]models.MenuAutuhorityInfo, error) {
 	db, err := DBClient()
 	defer db.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	query := `select a.aName
+	query := `declare @values table
+	(
+		aName varchar(310)
+		, url varchar(310)
+		, method varchar(310)
+	)
+	
+	insert @values(aName, url, method)
+	(select a.aName
+	, a.url
+	, a.method
 	from user_roles_mapping ur 
 	join roles_authority_mapping ra 
 	on ur.rId = ra.rId
@@ -258,20 +268,40 @@ func GetMenuAuth(id string) ([]string, error) {
 	and	ur.useYn = 1
 	and	ra.useYn = 1
 	AND a.REALM_ID = ?
-	AND (a.method = 'DISABLE' OR a.method = 'SHOW')
-	order by a.aName`
+	AND (a.method = 'DISABLE')
+	AND PATINDEX('SIDE_MENU/' + ? +'/%', a.url) = 1)
+	
+	insert @values(aName, url, method)
+	(select a.aName
+	, a.url
+	, a.method
+	from user_roles_mapping ur 
+	join roles_authority_mapping ra 
+	on ur.rId = ra.rId
+	join authority a 
+	on ra.aId = a.aId
+	where userId = ?
+	and	ur.useYn = 1
+	and	ra.useYn = 1
+	AND a.REALM_ID = ?
+	AND (a.method = 'SHOW')
+	AND PATINDEX('SIDE_MENU/' + ? +'/%', a.url) = 1
+	AND a.url NOT IN(SELECT url FROM @values))
+	
+	SELECT aName, url, method FROM @values
+	ORDER BY aName`
 
-	rows, err := db.Query(query, id, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, id, config.GetConfig().Keycloak_realm, site, id, config.GetConfig().Keycloak_realm, site)
 	if err != nil {
 		return nil, err
 	}
 
-	var arr = make([]string, 0)
+	var arr = make([]models.MenuAutuhorityInfo, 0)
 
 	for rows.Next() {
-		var r string
+		var r models.MenuAutuhorityInfo
 
-		err := rows.Scan(&r)
+		err := rows.Scan(&r.Name, &r.URL, &r.Method)
 		if err != nil {
 			return nil, err
 		}

@@ -107,13 +107,13 @@ func makeRouter() *gin.Engine {
 		authority.PUT("/user/:userid/roles/:roleid", api.UpdateUserRole)
 		authority.GET("/user/:userid/auth", api.GetUserAuth)
 		authority.GET("/user/:userid/auth/:authid", api.GetUserAuthActive) //실제로 전달되는것은 username과 role name 입니다. gin 제한사항으로 인하여 이름 변경이 불가능
-		authority.GET("/user/auth", middlewares.GetUserMiddleware(), api.GetMyAuth)
+		authority.GET("/user/auth", api.GetMyAuth)
 		authority.GET("/auth", api.GetAuth)
 		authority.POST("/auth", api.CreateAuth)
 		authority.DELETE("/auth/:authid", api.DeleteAuth)
 		authority.PUT("/auth/:authid", api.UpdateAuth)
 		authority.GET("/auth/:authid", api.GetAuthInfo)
-		authority.GET("/auth/menu", middlewares.GetUserMiddleware(), api.GetMenuAuth)
+		authority.GET("/auth/menu/:site", api.GetMenuAuth)
 	}
 
 	groups := route.Group("/groups")

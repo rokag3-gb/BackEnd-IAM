@@ -209,8 +209,13 @@ func GetMyAuth(c *gin.Context) {
 
 func GetMenuAuth(c *gin.Context) {
 	userId := c.GetString("userId")
+	site := c.Param("site")
 
-	arr, err := iamdb.GetMenuAuth(userId)
+	if site == "" {
+		logger.ErrorProcess(c, nil, http.StatusBadRequest, "")
+	}
+
+	arr, err := iamdb.GetMenuAuth(userId, site)
 	if err != nil {
 		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

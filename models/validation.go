@@ -78,6 +78,12 @@ type AutuhorityInfo struct {
 	Modifier   *string `json:"modifier"`
 }
 
+type MenuAutuhorityInfo struct {
+	Name   string  `json:"name" binding:"required"`
+	URL    *string `json:"url,required"`
+	Method *string `json:"method,required"`
+}
+
 type GroupItem struct {
 	ID           string  `json:"id" binding:"required"`
 	Name         string  `json:"name" binding:"required"`
