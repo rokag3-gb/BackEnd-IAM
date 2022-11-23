@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"iam/clients"
+	"iam/common"
 	"iam/config"
 	"iam/iamdb"
 	"iam/models"
@@ -11,7 +12,6 @@ import (
 	"net/http"
 	"strconv"
 
-	logger "cloudmt.co.kr/mateLogger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,7 +19,7 @@ func MetricCount(c *gin.Context) {
 	count, err := iamdb.MetricCount()
 
 	if err != nil {
-		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -33,7 +33,7 @@ func GetMetricSession(c *gin.Context) {
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -42,7 +42,7 @@ func GetMetricSession(c *gin.Context) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	defer resp.Body.Close()
@@ -55,7 +55,7 @@ func GetMetricSession(c *gin.Context) {
 
 	apps, err := iamdb.GetApplications()
 	if err != nil {
-		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -85,7 +85,7 @@ func GetMetricSession(c *gin.Context) {
 func GetLoginApplication(c *gin.Context) {
 	m, err := iamdb.GetLoginApplication(c.MustGet("date").(int) - 1)
 	if err != nil {
-		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -95,7 +95,7 @@ func GetLoginApplication(c *gin.Context) {
 func GetLoginApplicationDate(c *gin.Context) {
 	m, err := iamdb.GetLoginApplicationDate(c.MustGet("date").(int) - 1)
 	if err != nil {
-		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -105,7 +105,7 @@ func GetLoginApplicationDate(c *gin.Context) {
 func GetLoginError(c *gin.Context) {
 	m, err := iamdb.GetLoginError(c.MustGet("date").(int) - 1)
 	if err != nil {
-		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -115,7 +115,7 @@ func GetLoginError(c *gin.Context) {
 func GetIdpCount(c *gin.Context) {
 	m, err := iamdb.GetIdpCount()
 	if err != nil {
-		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 

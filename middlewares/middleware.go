@@ -3,12 +3,12 @@ package middlewares
 import (
 	"errors"
 	"fmt"
+	"iam/common"
 	"iam/config"
 	"net/http"
 	"strconv"
 	"strings"
 
-	logger "cloudmt.co.kr/mateLogger"
 	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -18,20 +18,20 @@ func GetUserMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		auth := c.Request.Header.Get("Authorization")
 		if auth == "" && !config.GetConfig().Developer_mode {
-			logger.ErrorProcess(c, nil, http.StatusForbidden, "No Authorization header provided")
+			common.ErrorProcess(c, nil, http.StatusForbidden, "No Authorization header provided")
 			return
 		}
 		token := strings.TrimPrefix(auth, "Bearer ")
 
 		username, err := getUsernameJWT(token)
 		if err != nil {
-			logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
 		}
 
 		userid, err := getUserIdJWT(token)
 		if err != nil {
-			logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
 		}
 
@@ -83,13 +83,13 @@ func ListQueryRangeMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		first, firstErr := strconv.Atoi(c.DefaultQuery("first", "0"))
 		if firstErr != nil {
-			logger.ErrorProcess(c, nil, http.StatusBadRequest, "'first' must be integer")
+			common.ErrorProcess(c, nil, http.StatusBadRequest, "'first' must be integer")
 			return
 		}
 		c.Set("first", first)
 		max, maxErr := strconv.Atoi(c.DefaultQuery("max", "100"))
 		if maxErr != nil {
-			logger.ErrorProcess(c, nil, http.StatusBadRequest, "'max' must be integer")
+			common.ErrorProcess(c, nil, http.StatusBadRequest, "'max' must be integer")
 			return
 		}
 		c.Set("max", max)
@@ -100,7 +100,7 @@ func DateQueryMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		date, err := strconv.Atoi(c.DefaultQuery("date", "7"))
 		if err != nil {
-			logger.ErrorProcess(c, nil, http.StatusBadRequest, "'date' must be integer")
+			common.ErrorProcess(c, nil, http.StatusBadRequest, "'date' must be integer")
 			return
 		}
 		c.Set("date", date)

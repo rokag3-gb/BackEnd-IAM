@@ -2,11 +2,11 @@ package api
 
 import (
 	"iam/clients"
+	"iam/common"
 	"iam/iamdb"
 	"iam/models"
 	"net/http"
 
-	logger "cloudmt.co.kr/mateLogger"
 	"github.com/Nerzal/gocloak/v11"
 	"github.com/gin-gonic/gin"
 )
@@ -14,7 +14,7 @@ import (
 func GetGroup(c *gin.Context) {
 	arr, err := iamdb.GetGroup()
 	if err != nil {
-		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -25,7 +25,7 @@ func CreateGroup(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	var json models.GroupInfo
 	if err := c.ShouldBindJSON(&json); err != nil {
-		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
+		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
@@ -38,13 +38,13 @@ func CreateGroup(c *gin.Context) {
 		clients.KeycloakConfig().Realm,
 		group)
 	if err != nil {
-		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
 	err = iamdb.GroupCreate(newGroup, c.GetString("username"))
 	if err != nil {
-		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -57,7 +57,7 @@ func DeleteGroup(c *gin.Context) {
 
 	err := clients.KeycloakClient().DeleteGroup(c, token.AccessToken, clients.KeycloakConfig().Realm, groupid)
 	if err != nil {
-		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	c.Status(http.StatusNoContent)
@@ -68,13 +68,13 @@ func UpdateGroup(c *gin.Context) {
 	groupid := c.Param("groupid")
 	var json models.GroupInfo
 	if err := c.ShouldBindJSON(&json); err != nil {
-		logger.ErrorProcess(c, err, http.StatusBadRequest, "")
+		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
 	groupToUpdate, err := clients.KeycloakClient().GetGroup(c, token.AccessToken, clients.KeycloakConfig().Realm, groupid)
 	if err != nil {
-		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -82,13 +82,13 @@ func UpdateGroup(c *gin.Context) {
 
 	err = clients.KeycloakClient().UpdateGroup(c, token.AccessToken, clients.KeycloakConfig().Realm, *groupToUpdate)
 	if err != nil {
-		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
 	err = iamdb.GroupUpdate(groupid, c.GetString("username"))
 	if err != nil {
-		logger.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
