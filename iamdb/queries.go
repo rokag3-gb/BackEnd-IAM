@@ -1179,7 +1179,7 @@ func DeleteSecretGroupTx(tx *sql.Tx, secretGroupPath string) error {
 	return err
 }
 
-func MergeSecret(secretPath string, secretGroupPath string, username string) error {
+func MergeSecret(secretPath string, secretGroupPath string, url *string, username string) error {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
@@ -1190,19 +1190,21 @@ func MergeSecret(secretPath string, secretGroupPath string, username string) err
 	USING (SELECT 
 	? as spath, 
 	(select vSecretGroupId from vSecretGroup where vSecretGroupPath = ? AND REALM_ID = ?) as sgid,
-	(select ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) as userid
+	(select ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) as userid,
+	? as url
 	) B
 	ON A.vSecretPath = B.spath
 	AND A.vSecretGroupId = B.sgid
 	WHEN MATCHED THEN
 		UPDATE SET 
 		modifyDate = GETDATE(),
-		modifyId = B.userid
+		modifyId = B.userid,
+		url = B.url
 	WHEN NOT MATCHED THEN
-		INSERT (vSecretPath, vSecretGroupId, createId, modifyId)
-		VALUES(B.spath, B.sgid, B.userid, B.userid);`
+		INSERT (vSecretPath, vSecretGroupId, url, createId, modifyId)
+		VALUES(B.spath, B.sgid, B.url, B.userid, B.userid);`
 
-	_, err := db.Query(query, secretPath, secretGroupPath, config.GetConfig().Keycloak_realm, username, config.GetConfig().Keycloak_realm)
+	_, err := db.Query(query, secretPath, secretGroupPath, config.GetConfig().Keycloak_realm, username, config.GetConfig().Keycloak_realm, url)
 
 	return err
 }
@@ -1437,7 +1439,7 @@ func GetSecretByName(groupName string, secretName string) (*models.SecretItem, e
 		return nil, dbErr
 	}
 
-	query := `SELECT s.vSecretPath, 
+	query := `SELECT s.vSecretPath, s.url, 
 	FORMAT(s.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
 	u1.USERNAME as Creator, 
 	FORMAT(s.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
@@ -1457,7 +1459,7 @@ func GetSecretByName(groupName string, secretName string) (*models.SecretItem, e
 	m := new(models.SecretItem)
 
 	rows.Next()
-	err = rows.Scan(&m.Name, &m.CreateDate, &m.Creator, &m.ModifyDate, &m.Modifier)
+	err = rows.Scan(&m.Name, &m.Url, &m.CreateDate, &m.Creator, &m.ModifyDate, &m.Modifier)
 	if err != nil {
 		return m, nil
 	}

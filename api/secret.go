@@ -458,6 +458,7 @@ func GetSecret(c *gin.Context) {
 		return
 	}
 
+	data.Data["url"] = secret.Url
 	data.Data["createDate"] = secret.CreateDate
 	data.Data["creator"] = secret.Creator
 	data.Data["modifyDate"] = secret.ModifyDate
@@ -472,6 +473,9 @@ func MargeSecret(c *gin.Context) {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
+
+	var url models.SecretURL
+	json.Unmarshal([]byte(value), &url)
 
 	groupName := c.Param("groupName")
 	secretName := c.Param("secretName")
@@ -488,7 +492,7 @@ func MargeSecret(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.MergeSecret(secretName, groupName, c.GetString("username"))
+	err = iamdb.MergeSecret(secretName, groupName, url.URL, c.GetString("username"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

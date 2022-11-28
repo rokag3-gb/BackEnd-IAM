@@ -105,6 +105,10 @@ type SecretGroupItem struct {
 	Modifier    *string   `json:"modifier"`
 }
 
+type SecretURL struct {
+	URL *string `json:"url"`
+}
+
 type SecretGroupResponse struct {
 	Description string   `json:"description" binding:"required"`
 	Roles       []IdItem `json:"roles" binding:"required"`
@@ -127,6 +131,7 @@ type MetricItem struct {
 
 type SecretItem struct {
 	Name       string  `json:"name" binding:"required"`
+	Url        *string `json:"rul" binding:"required"`
 	CreateDate *string `json:"createDate"`
 	Creator    *string `json:"creator"`
 	ModifyDate *string `json:"modifyDate"`
