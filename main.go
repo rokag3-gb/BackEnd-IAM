@@ -145,9 +145,8 @@ func makeRouter() *gin.Engine {
 
 	secret := route.Group("/secret")
 	{
-		secret.GET("", api.GetSecretGroup)
+		secret.GET("", api.GetAllSecretList)
 		secret.POST("", api.CreateSecretGroup)
-		secret.GET("/list", api.GetAllSecretList)
 		secret.DELETE("/:groupName", api.DeleteSecretGroup)
 		secret.GET("/:groupName", api.GetSecretList)
 		secret.PUT("/:groupName", api.UpdateSecretGroup)

@@ -131,7 +131,7 @@ type MetricItem struct {
 }
 
 type SecretItem struct {
-	SecretGroup string
+	SecretGroup string  `json:"-"`
 	Name        string  `json:"name" binding:"required"`
 	Url         *string `json:"url" binding:"required"`
 	CreateDate  *string `json:"createDate"`

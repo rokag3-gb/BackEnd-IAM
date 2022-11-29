@@ -1303,7 +1303,7 @@ func GetSecret(groupName string) (map[string]models.SecretItem, error) {
 		return nil, dbErr
 	}
 
-	query := `SELECT s.vSecretPath, 
+	query := `SELECT s.vSecretPath, s.url, 
 	FORMAT(s.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
 	u1.USERNAME as Creator, 
 	FORMAT(s.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
@@ -1327,7 +1327,7 @@ func GetSecret(groupName string) (map[string]models.SecretItem, error) {
 	for rows.Next() {
 		var r models.SecretItem
 
-		err := rows.Scan(&r.Name, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
+		err := rows.Scan(&r.Name, &r.Url, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}

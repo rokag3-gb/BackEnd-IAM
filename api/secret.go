@@ -15,46 +15,6 @@ import (
 	"github.com/google/uuid"
 )
 
-func GetSecretGroup(c *gin.Context) {
-	data, err := clients.VaultClient().Logical().Read("sys/mounts")
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
-	}
-
-	arr := make([]models.SecretGroupItem, 0)
-
-	for k, v := range data.Data {
-		group := v.(map[string]interface{})
-
-		if group["type"].(string) != "kv" {
-			continue
-		}
-
-		name := ""
-		if strings.HasSuffix(k, "/") {
-			name = k[:len(k)-1]
-		} else {
-			name = k
-		}
-
-		var m models.SecretGroupItem
-
-		m.Name = name
-		m.Description = group["description"].(string)
-
-		arr = append(arr, m)
-	}
-
-	secretGroup, err := iamdb.GetSecretGroup(arr, c.GetString("username"))
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
-	}
-
-	c.JSON(http.StatusOK, secretGroup)
-}
-
 func CreateSecretGroup(c *gin.Context) {
 	value, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
