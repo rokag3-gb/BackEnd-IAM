@@ -95,14 +95,15 @@ type GroupItem struct {
 }
 
 type SecretGroupItem struct {
-	Name        string    `json:"name" binding:"required"`
-	Description string    `json:"description" binding:"required"`
-	RoleId      *[]string `json:"roleId,omitempty"`
-	UserId      *[]string `json:"userId,omitempty"`
-	CreateDate  *string   `json:"createDate"`
-	Creator     *string   `json:"creator"`
-	ModifyDate  *string   `json:"modifyDate"`
-	Modifier    *string   `json:"modifier"`
+	Name        string        `json:"name" binding:"required"`
+	Description string        `json:"description" binding:"required"`
+	RoleId      *[]string     `json:"roleId,omitempty"`
+	UserId      *[]string     `json:"userId,omitempty"`
+	CreateDate  *string       `json:"createDate"`
+	Creator     *string       `json:"creator"`
+	ModifyDate  *string       `json:"modifyDate"`
+	Modifier    *string       `json:"modifier"`
+	Secrets     *[]SecretItem `json:"secrets,omitempty"`
 }
 
 type SecretURL struct {
@@ -130,12 +131,13 @@ type MetricItem struct {
 }
 
 type SecretItem struct {
-	Name       string  `json:"name" binding:"required"`
-	Url        *string `json:"rul" binding:"required"`
-	CreateDate *string `json:"createDate"`
-	Creator    *string `json:"creator"`
-	ModifyDate *string `json:"modifyDate"`
-	Modifier   *string `json:"modifier"`
+	SecretGroup string
+	Name        string  `json:"name" binding:"required"`
+	Url         *string `json:"url" binding:"required"`
+	CreateDate  *string `json:"createDate"`
+	Creator     *string `json:"creator"`
+	ModifyDate  *string `json:"modifyDate"`
+	Modifier    *string `json:"modifier"`
 }
 
 type AutuhorityUse struct {

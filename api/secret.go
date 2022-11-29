@@ -639,3 +639,67 @@ func CheckGroupName(groupName string) error {
 
 	return nil
 }
+
+func GetAllSecretList(c *gin.Context) {
+	data, err := clients.VaultClient().Logical().Read("sys/mounts")
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	arr := make([]models.SecretGroupItem, 0)
+
+	for k, v := range data.Data {
+		group := v.(map[string]interface{})
+
+		if group["type"].(string) != "kv" {
+			continue
+		}
+
+		name := ""
+		if strings.HasSuffix(k, "/") {
+			name = k[:len(k)-1]
+		} else {
+			name = k
+		}
+
+		var m models.SecretGroupItem
+
+		m.Name = name
+		m.Description = group["description"].(string)
+
+		arr = append(arr, m)
+	}
+
+	secretGroup, err := iamdb.GetSecretGroup(arr, c.GetString("username"))
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+	if len(secretGroup) == 0 {
+		c.JSON(http.StatusOK, secretGroup)
+		return
+	}
+
+	secrets, err := iamdb.GetAllSecret(secretGroup)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	for i := range secretGroup {
+		tmp := make([]models.SecretItem, 0)
+		secretGroup[i].Secrets = &tmp
+	}
+
+	for _, s := range secrets {
+		for _, sg := range secretGroup {
+			if sg.Name == s.SecretGroup {
+				*sg.Secrets = append(*sg.Secrets, s)
+				break
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, secretGroup)
+}
