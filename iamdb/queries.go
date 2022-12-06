@@ -164,11 +164,9 @@ func DeleteRolesTx(tx *sql.Tx, id string) error {
 }
 
 func DeleteRolesNameTx(tx *sql.Tx, name string) error {
-	query := `DELETE roles where rName = ? AND REALM_ID = ?
-	SELECT @@ROWCOUNT`
+	query := `DELETE roles where rName = ? AND REALM_ID = ?`
 
-	rows, err := tx.Query(query, name, config.GetConfig().Keycloak_realm)
-	err = resultErrorCheck(rows)
+	_, err := tx.Query(query, name, config.GetConfig().Keycloak_realm)
 	return err
 }
 
@@ -695,11 +693,9 @@ func DeleteAuth(id string, tx *sql.Tx) error {
 }
 
 func DeleteAuthNameTx(tx *sql.Tx, name string) error {
-	query := `DELETE authority where aName = ? AND REALM_ID = ?
-	SELECT @@ROWCOUNT`
+	query := `DELETE authority where aName = ? AND REALM_ID = ?`
 
-	rows, err := tx.Query(query, name, config.GetConfig().Keycloak_realm)
-	err = resultErrorCheck(rows)
+	_, err := tx.Query(query, name, config.GetConfig().Keycloak_realm)
 	return err
 }
 
@@ -1174,6 +1170,13 @@ func CreateSecretGroupTx(tx *sql.Tx, secretGroupPath string, username string) er
 
 func DeleteSecretGroupTx(tx *sql.Tx, secretGroupPath string) error {
 	query := `DELETE FROM vSecretGroup WHERE vSecretGroupPath = ? AND REALM_ID = ?`
+
+	_, err := tx.Query(query, secretGroupPath, config.GetConfig().Keycloak_realm)
+	return err
+}
+
+func DeleteSecretBySecretGroupTx(tx *sql.Tx, secretGroupPath string) error {
+	query := `DELETE FROM vSecret WHERE vSecretGroupId = (SELECT vSecretGroupId FROM vSecretGroup WHERE vSecretGroupPath = ? AND REALM_ID = ?)`
 
 	_, err := tx.Query(query, secretGroupPath, config.GetConfig().Keycloak_realm)
 	return err

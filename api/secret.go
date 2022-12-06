@@ -170,6 +170,13 @@ func DeleteSecretGroup(c *gin.Context) {
 		return
 	}
 
+	err = iamdb.DeleteSecretBySecretGroupTx(tx, groupName)
+	if err != nil {
+		tx.Rollback()
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
 	err = iamdb.DeleteSecretGroupTx(tx, groupName)
 	if err != nil {
 		tx.Rollback()
