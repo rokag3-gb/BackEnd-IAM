@@ -6,17 +6,41 @@ import (
 	"iam/iamdb"
 	"iam/models"
 	"net/http"
+	"strings"
 
 	"github.com/Nerzal/gocloak/v11"
 	"github.com/gin-gonic/gin"
 )
 
-func Users(c *gin.Context) {
-	search := c.Query("search")
-	groupid := c.Query("groupid")
-	userids := c.QueryArray("ids")
+var SearchUsers = map[string]string{
+	"search":   "U.USERNAME",
+	"username": "U.USERNAME",
+	"groupid":  "UG.GROUP_ID",
+	"groups":   "B.Groups",
+	"roles":    "A.Roles",
+	"enabled":  "U.ENABLED",
+	"email":    "U.EMAIL",
+	"openid":   "C.openid",
+	"accounts": "AC.AccountName",
+	"ids":      "U.ID",
+}
 
-	arr, err := iamdb.GetUsers(search, groupid, userids)
+func Users(c *gin.Context) {
+	paramPairs := c.Request.URL.Query()
+	var params = map[string][]string{}
+
+	for key, values := range paramPairs {
+		col := SearchUsers[key]
+		if col != "" {
+			q := strings.Split(values[0], ",")
+			if len(q) == 0 || q[0] == "" {
+				continue
+			}
+			params[col] = q
+		}
+	}
+
+	arr, err := iamdb.GetUsers(params)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

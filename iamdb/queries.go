@@ -946,7 +946,7 @@ func GroupUpdate(groupId string, username string) error {
 	return err
 }
 
-func GetUsers(search string, groupid string, userids []string) ([]models.GetUserInfo, error) {
+func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
@@ -957,7 +957,7 @@ func GetUsers(search string, groupid string, userids []string) ([]models.GetUser
 	var err error
 
 	query := `select 
-	  U.ID
+		U.ID
 	, U.ENABLED
 	, U.USERNAME
 	, U.FIRST_NAME
@@ -965,6 +965,7 @@ func GetUsers(search string, groupid string, userids []string) ([]models.GetUser
 	, U.EMAIL
 	, ISNULL(A.Roles, '') as Roles 
 	, ISNULL(B.Groups, '') as Groups 
+	, ISNULL(AC.AccountName, '') as Account 
 	, ISNULL(C.openid, '') as openid 
 	, FORMAT(U.createDate, 'yyyy-MM-dd HH:mm') as createDate
 	, u1.USERNAME as Creator
@@ -1004,47 +1005,35 @@ func GetUsers(search string, groupid string, userids []string) ([]models.GetUser
 	LEFT OUTER JOIN USER_ENTITY u1
 	on U.createId = u1.ID
 	LEFT OUTER JOIN USER_ENTITY u2
-	on U.modifyId = u2.ID`
-
-	if groupid != "" {
-		query += ` join USER_GROUP_MEMBERSHIP UG
-		ON U.ID = UG.USER_ID`
-	}
-
-	query += ` WHERE
+	on U.modifyId = u2.ID
+	LEFT OUTER join USER_GROUP_MEMBERSHIP UG
+	ON U.ID = UG.USER_ID
+	LEFT OUTER join [Sale].[dbo].[Account_User] AU
+	ON U.ID = AU.UserId
+	LEFT OUTER join [Sale].[dbo].[Account] AC
+	ON AU.AccountId = AC.AccountId
+	WHERE
 	U.REALM_ID = ?
 	AND U.SERVICE_ACCOUNT_CLIENT_LINK is NULL `
 
-	if search != "" {
-		query += " AND U.USERNAME LIKE ?"
-	}
+	queryParams := []interface{}{config.GetConfig().Keycloak_realm}
 
-	if groupid != "" {
-		query += ` AND UG.GROUP_ID = ?`
-	}
+	for key, values := range params {
+		query += " AND ("
 
-	if len(userids) > 0 {
-		placeholder := strings.Repeat("?,", len(userids))
-		placeholder = placeholder[:len(placeholder)-1]
-		query += " AND U.ID IN (" + placeholder + ")"
+		for i, q := range values {
+			if i != 0 {
+				query += " OR "
+			}
+			query += key
+			query += " LIKE (?) "
+			queryParams = append(queryParams, "%"+q+"%")
+		}
+
+		query += ")"
 	}
 
 	query += " ORDER BY U.USERNAME"
-
-	queryParams := []interface{}{config.GetConfig().Keycloak_realm}
-	if search != "" {
-		queryParams = append(queryParams, "%"+search+"%")
-	}
-
-	if groupid != "" {
-		queryParams = append(queryParams, groupid)
-	}
-
-	if len(userids) > 0 {
-		for item := range userids {
-			queryParams = append(queryParams, userids[item])
-		}
-	}
 
 	rows, err = db.Query(query, queryParams...)
 
@@ -1058,7 +1047,7 @@ func GetUsers(search string, groupid string, userids []string) ([]models.GetUser
 	for rows.Next() {
 		var r models.GetUserInfo
 
-		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.Roles, &r.Groups, &r.OpenId, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
+		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.Roles, &r.Groups, &r.OpenId, &r.Account, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}

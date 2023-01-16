@@ -6,6 +6,7 @@ import (
 	"iam/iamdb"
 	"log"
 	"net/http"
+	"runtime"
 	"time"
 
 	"iam/config"
@@ -20,6 +21,7 @@ import (
 var g errgroup.Group
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	if err := config.InitConfig(); err != nil {
 		panic(err.Error())
