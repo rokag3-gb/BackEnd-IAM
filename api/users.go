@@ -31,12 +31,17 @@ func Users(c *gin.Context) {
 
 	for key, values := range paramPairs {
 		col := SearchUsers[key]
-		if col != "" {
-			q := strings.Split(values[0], ",")
+		if col == "" {
+			continue
+		}
+
+		for _, val := range values {
+			q := strings.Split(val, ",")
 			if len(q) == 0 || q[0] == "" {
 				continue
 			}
-			params[col] = q
+
+			params[col] = append(params[col], q...)
 		}
 	}
 
