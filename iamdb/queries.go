@@ -957,7 +957,7 @@ func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 	var err error
 
 	query := `select 
-		U.ID
+	U.ID
 	, U.ENABLED
 	, U.USERNAME
 	, U.FIRST_NAME
@@ -965,7 +965,7 @@ func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 	, U.EMAIL
 	, ISNULL(A.Roles, '') as Roles 
 	, ISNULL(B.Groups, '') as Groups 
-	, ISNULL(AC.AccountName, '') as Account 
+	, ISNULL(D.Account, '') as Account 
 	, ISNULL(C.openid, '') as openid 
 	, FORMAT(U.createDate, 'yyyy-MM-dd HH:mm') as createDate
 	, u1.USERNAME as Creator
@@ -987,6 +987,7 @@ func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 	(select
 	u.ID, 
 	ISNULL(string_agg(g.NAME, ', '), '') as Groups
+	, ISNULL(string_agg(gu.GROUP_ID, ', '), '') as GROUP_ID
 	from USER_ENTITY u
 	left outer join USER_GROUP_MEMBERSHIP gu
 	on u.id = gu.USER_ID
@@ -1006,12 +1007,15 @@ func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 	on U.createId = u1.ID
 	LEFT OUTER JOIN USER_ENTITY u2
 	on U.modifyId = u2.ID
-	LEFT OUTER join USER_GROUP_MEMBERSHIP UG
-	ON U.ID = UG.USER_ID
-	LEFT OUTER join [Sale].[dbo].[Account_User] AU
-	ON U.ID = AU.UserId
-	LEFT OUTER join [Sale].[dbo].[Account] AC
+	left outer join 
+	(SELECT
+	ISNULL(string_agg(AC.AccountName, ', '), '') as Account, AU.UserId
+	FROM [Sale].[dbo].[Account_User] AU
+	JOIN [Sale].[dbo].[Account] AC
 	ON AU.AccountId = AC.AccountId
+	group by AU.UserId
+	) D
+	ON U.ID = D.UserId
 	WHERE
 	U.REALM_ID = ?
 	AND U.SERVICE_ACCOUNT_CLIENT_LINK is NULL `
@@ -1047,7 +1051,7 @@ func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 	for rows.Next() {
 		var r models.GetUserInfo
 
-		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.Roles, &r.Groups, &r.OpenId, &r.Account, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
+		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.Roles, &r.Groups, &r.Account, &r.OpenId, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}

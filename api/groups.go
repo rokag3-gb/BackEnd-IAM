@@ -11,6 +11,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// token godoc
+// @Summary 그룹 목록
+// @Tags Groups
+// @Produce  json
+// @Router /groups [get]
+// @Success 200 {object} []models.GroupItem
+// @Failure 500
 func GetGroup(c *gin.Context) {
 	arr, err := iamdb.GetGroup()
 	if err != nil {
@@ -21,6 +28,15 @@ func GetGroup(c *gin.Context) {
 	c.JSON(http.StatusOK, arr)
 }
 
+// token godoc
+// @Summary 그룹 생성
+// @Tags Groups
+// @Produce  json
+// @Router /groups [post]
+// @Param Body body models.GroupInfo true "body"
+// @Success 200 {object} models.Id
+// @Failure 400
+// @Failure 500
 func CreateGroup(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	var json models.GroupInfo
@@ -51,6 +67,14 @@ func CreateGroup(c *gin.Context) {
 	c.JSON(http.StatusOK, gocloak.Group{ID: gocloak.StringP(newGroup)})
 }
 
+// token godoc
+// @Summary 그룹 삭제
+// @Tags Groups
+// @Produce  json
+// @Router /groups/{groupId} [delete]
+// @Param groupId path string true "Group Id"
+// @Success 204
+// @Failure 500
 func DeleteGroup(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	groupid := c.Param("groupid")
@@ -63,6 +87,15 @@ func DeleteGroup(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// token godoc
+// @Summary 그룹 정보 변경
+// @Tags Groups
+// @Produce  json
+// @Router /groups/{groupId} [put]
+// @Param Body body models.GroupInfo true "body"
+// @Success 204
+// @Failure 400
+// @Failure 500
 func UpdateGroup(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	groupid := c.Param("groupid")

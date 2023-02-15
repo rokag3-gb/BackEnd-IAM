@@ -16,13 +16,19 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	logger "cloudmt.co.kr/mateLogger"
+
+	docs "iam/docs"
+
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 var g errgroup.Group
 
+// @title IAM.Backend API Document
+// @version 1.0
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
-
 	if err := config.InitConfig(); err != nil {
 		panic(err.Error())
 	}
@@ -30,7 +36,6 @@ func main() {
 	conf := config.GetConfig()
 
 	gin.DefaultWriter = logger.SetupLog("logs", "IAM_Server", conf.LogStdout)
-
 	logger.Info("Initialized config : \n%#v\n", conf)
 
 	clients.InitKeycloakClient(
@@ -86,10 +91,16 @@ func main() {
 }
 
 func makeRouter() *gin.Engine {
+	conf := config.GetConfig()
 	gin.DisableConsoleColor()
 	// Logging to a file.
 
 	route := gin.Default()
+
+	docs.SwaggerInfo.Title = "IAM.Backend API"
+	if conf.UseApiDocument {
+		route.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+	}
 
 	route.Use(middlewares.GetUserMiddleware())
 
@@ -97,24 +108,24 @@ func makeRouter() *gin.Engine {
 	{
 		authority.GET("/roles", api.GetRoles)
 		authority.POST("/roles", api.CreateRoles)
-		authority.DELETE("/roles/:roleid", api.DeleteRoles)
-		authority.PUT("/roles/:roleid", api.UpdateRoles)
-		authority.GET("/roles/:roleid/auth", api.GetRolesAuth)
-		authority.POST("/roles/:roleid/auth", api.AssignRoleAuth)
-		authority.DELETE("/roles/:roleid/auth/:authid", api.DismissRoleAuth)
-		authority.PUT("/roles/:roleid/auth/:authid", api.UpdateRoleAuth)
+		authority.DELETE("/roles/:roleId", api.DeleteRoles)
+		authority.PUT("/roles/:roleId", api.UpdateRoles)
+		authority.GET("/roles/:roleId/auth", api.GetRolesAuth)
+		authority.POST("/roles/:roleId/auth", api.AssignRoleAuth)
+		authority.DELETE("/roles/:roleId/auth/:authId", api.DismissRoleAuth)
+		authority.PUT("/roles/:roleId/auth/:authId", api.UpdateRoleAuth)
 		authority.GET("/user/:userid", api.GetUserRole)
 		authority.POST("/user/:userid/roles", api.AssignUserRole)
-		authority.DELETE("/user/:userid/roles/:roleid", api.DismissUserRole)
-		authority.PUT("/user/:userid/roles/:roleid", api.UpdateUserRole)
+		authority.DELETE("/user/:userid/roles/:roleId", api.DismissUserRole)
+		authority.PUT("/user/:userid/roles/:roleId", api.UpdateUserRole)
 		authority.GET("/user/:userid/auth", api.GetUserAuth)
-		authority.GET("/user/:userid/auth/:authid", api.GetUserAuthActive) //실제로 전달되는것은 username과 role name 입니다. gin 제한사항으로 인하여 이름 변경이 불가능
+		authority.GET("/user/:userid/auth/:authId", api.GetUserAuthActive) //실제로 전달되는것은 username과 role name 입니다. gin 제한사항으로 인하여 이름 변경이 불가능
 		authority.GET("/user/auth", api.GetMyAuth)
 		authority.GET("/auth", api.GetAuth)
 		authority.POST("/auth", api.CreateAuth)
-		authority.DELETE("/auth/:authid", api.DeleteAuth)
-		authority.PUT("/auth/:authid", api.UpdateAuth)
-		authority.GET("/auth/:authid", api.GetAuthInfo)
+		authority.DELETE("/auth/:authId", api.DeleteAuth)
+		authority.PUT("/auth/:authId", api.UpdateAuth)
+		authority.GET("/auth/:authId", api.GetAuthInfo)
 		authority.GET("/auth/menu/:site", api.GetMenuAuth)
 	}
 

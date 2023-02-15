@@ -144,3 +144,106 @@ type SecretItem struct {
 type AutuhorityUse struct {
 	Use bool `json:"useYn" binding:"required"`
 }
+
+/* Swagger 출력용 구조체 */
+type Id struct {
+	Id string `json:"id" binding:"required"`
+}
+
+type Active struct {
+	Active bool `json:"active" binding:"required"`
+}
+
+type CredentialRepresentation struct {
+	Id             string `json:"id" binding:"required"`
+	Type           string `json:"type" binding:"required"`
+	CreatedDate    int    `json:"createdDate" binding:"required"`
+	CredentialData string `json:"credentialData" binding:"required"`
+	UserLabel      string `json:"userLabel"`
+}
+
+type GroupData struct {
+	Id   string `json:"id" binding:"required"`
+	Name string `json:"name" binding:"required"`
+	Path string `json:"path" binding:"required"`
+}
+
+type SesstionData struct {
+	Id         string `json:"id" binding:"required"`
+	Username   string `json:"username" binding:"required"`
+	UserId     string `json:"userId" binding:"required"`
+	IpAddress  string `json:"ipAddress" binding:"required"`
+	Start      int    `json:"start" binding:"required"`
+	LastAccess int    `json:"lastAccess" binding:"required"`
+	Clients    []struct {
+		ClientId_Text string `json:"ClientId_Text" binding:"required"`
+	} `json:"clients" binding:"required"`
+}
+
+type UserIdProviderData struct {
+	IdentityProvider string `json:"identityProvider" binding:"required"`
+	UserId           string `json:"userId" binding:"required"`
+	UserName         string `json:"userName" binding:"required"`
+}
+
+type SecretGroupInput struct {
+	Name        string    `json:"name" binding:"required"`
+	Description string    `json:"description" binding:"required"`
+	RoleId      *[]string `json:"roleId,omitempty"`
+	UserId      *[]string `json:"userId,omitempty"`
+}
+
+type SecretGroupUpdate struct {
+	Description string    `json:"description" binding:"required"`
+	RoleId      *[]string `json:"roleId,omitempty"`
+	UserId      *[]string `json:"userId,omitempty"`
+}
+
+type SecretData struct {
+	Url        string `json:"url" binding:"required"`
+	CreateDate string `json:"createDate" binding:"required"`
+	Creator    string `json:"creator" binding:"required"`
+	ModifyDate string `json:"modifyDate" binding:"required"`
+	Modifier   string `json:"modifier" binding:"required"`
+}
+
+type SecretInput struct {
+	Data struct {
+		Foo  string `json:"foo" binding:"required"`
+		Test string `json:"test" binding:"required"`
+	} `json:"data" binding:"required"`
+	URL string `json:"url" binding:"required"`
+}
+
+type SecretMetadata struct {
+	Created_time    string `json:"created_time" binding:"required"`
+	Current_version string `json:"current_version" binding:"required"`
+	Max_versions    string `json:"max_versions" binding:"required"`
+	Oldest_version  string `json:"oldest_version" binding:"required"`
+	Updated_time    string `json:"updated_time" binding:"required"`
+	Versions        struct {
+		Version_number struct {
+			Created_time  string `json:"created_time" binding:"required"`
+			Deletion_time string `json:"deletion_time" binding:"required"`
+			Destroyed     bool   `json:"destroyed" binding:"required"`
+		} `json:"versversion_numberions" binding:"required"`
+	} `json:"versions" binding:"required"`
+}
+
+type SecretVersion struct {
+	Versions []string `json:"versions" binding:"required"`
+}
+
+type MetricCount struct {
+	Users        int `json:"users" binding:"required"`
+	Groups       int `json:"groups" binding:"required"`
+	Applications int `json:"applications" binding:"required"`
+	Roles        int `json:"roles" binding:"required"`
+	Authorities  int `json:"authorities" binding:"required"`
+}
+
+type MetricAppItem struct {
+	Client1 int    `json:"client1"`
+	Client2 int    `json:"client2"`
+	Date    string `json:"date"`
+}

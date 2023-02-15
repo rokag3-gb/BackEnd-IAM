@@ -15,7 +15,7 @@ import (
 var SearchUsers = map[string]string{
 	"search":   "U.USERNAME",
 	"username": "U.USERNAME",
-	"groupid":  "UG.GROUP_ID",
+	"groupid":  "B.GROUP_ID",
 	"groups":   "B.Groups",
 	"roles":    "A.Roles",
 	"enabled":  "U.ENABLED",
@@ -25,6 +25,13 @@ var SearchUsers = map[string]string{
 	"ids":      "U.ID",
 }
 
+// token godoc
+// @Summary 유저 목록
+// @Tags Users
+// @Produce  json
+// @Router /users [get]
+// @Success 200 {object} []models.GetUserInfo
+// @Failure 500
 func Users(c *gin.Context) {
 	paramPairs := c.Request.URL.Query()
 	var params = map[string][]string{}
@@ -54,6 +61,15 @@ func Users(c *gin.Context) {
 	c.JSON(http.StatusOK, arr)
 }
 
+// token godoc
+// @Summary 유저 생성
+// @Tags Users
+// @Produce  json
+// @Router /users [post]
+// @Param Body body models.CreateUserInfo true "body"
+// @Success 200 {object} models.Id
+// @Failure 400
+// @Failure 500
 func CreateUser(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	var json models.CreateUserInfo
@@ -101,6 +117,16 @@ func CreateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gocloak.User{ID: gocloak.StringP(newUserId)})
 }
 
+// token godoc
+// @Summary 유저 정보 변경
+// @Tags Users
+// @Produce  json
+// @Router /users/{userId} [post]
+// @Param userId path string true "User Id"
+// @Param Body body models.CreateUserInfo true "body"
+// @Success 204
+// @Failure 400
+// @Failure 500
 func UpdateUser(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	userid := c.Param("userid")
@@ -143,6 +169,16 @@ func UpdateUser(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// token godoc
+// @Summary 유저 삭제
+// @Tags Users
+// @Produce  json
+// @Router /users/{userId} [delete]
+// @Param userId path string true "User Id"
+// @Param Body body models.CreateUserInfo true "body"
+// @Success 204
+// @Failure 400
+// @Failure 500
 func DeleteUser(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	userid := c.Param("userid")
@@ -165,6 +201,14 @@ func DeleteUser(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// token godoc
+// @Summary 유저 상세정보 조회
+// @Tags Users
+// @Produce  json
+// @Router /users/{userId} [get]
+// @Param userId path string true "User Id"
+// @Success 200 {object} models.GetUserInfo
+// @Failure 500
 func GetUser(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	userid := c.Param("userid")
@@ -188,6 +232,14 @@ func GetUser(c *gin.Context) {
 	})
 }
 
+// token godoc
+// @Summary 유저 자격증명 조회
+// @Tags Users
+// @Produce  json
+// @Router /users/{userId}/credentials [get]
+// @Param userId path string true "User Id"
+// @Success 200 {object} []models.CredentialRepresentation
+// @Failure 500
 func GetUserCredentials(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	userid := c.Param("userid")
@@ -202,6 +254,14 @@ func GetUserCredentials(c *gin.Context) {
 	c.JSON(http.StatusOK, credentials)
 }
 
+// token godoc
+// @Summary 유저 비밀번호 변경
+// @Tags Users
+// @Produce  json
+// @Router /users/{userId}/reset-password [put]
+// @Param userId path string true "User Id"
+// @Success 200 {object} []models.CredentialRepresentation
+// @Failure 500
 func ResetUserPassword(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	userid := c.Param("userid")
@@ -226,6 +286,16 @@ func ResetUserPassword(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// token godoc
+// @Summary 유저 그룹 조회
+// @Tags Users
+// @Produce  json
+// @Router /users/{userId}/groups [get]
+// @Param userId path string true "User Id"
+// @Param first query int true "data start count"
+// @Param max query int true "data max count"
+// @Success 200 {object} []models.GroupData
+// @Failure 500
 func GetUserGroups(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	userid := c.Param("userid")
@@ -244,6 +314,15 @@ func GetUserGroups(c *gin.Context) {
 	c.JSON(http.StatusOK, groups)
 }
 
+// token godoc
+// @Summary 유저 그룹 가입
+// @Tags Users
+// @Produce  json
+// @Router /users/{userId}/groups [put]
+// @Param userId path string true "User Id"
+// @Param groupId path string true "Group Id"
+// @Success 204
+// @Failure 500
 func AddUserToGroup(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	userid := c.Param("userid")
@@ -262,6 +341,15 @@ func AddUserToGroup(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// token godoc
+// @Summary 유저 그룹 탈퇴
+// @Tags Users
+// @Produce  json
+// @Router /users/{userId}/groups [delete]
+// @Param userId path string true "User Id"
+// @Param groupId path string true "Group Id"
+// @Success 204
+// @Failure 500
 func DeleteUserFromGroup(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	userid := c.Param("userid")
@@ -280,6 +368,14 @@ func DeleteUserFromGroup(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// token godoc
+// @Summary 유저 세션 조회
+// @Tags Users
+// @Produce  json
+// @Router /users/{userId}/sessions [get]
+// @Param userId path string true "User Id"
+// @Success 200 {object} []models.SesstionData
+// @Failure 500
 func GetUserSessions(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	userid := c.Param("userid")
@@ -294,6 +390,15 @@ func GetUserSessions(c *gin.Context) {
 	c.JSON(http.StatusOK, sessions)
 }
 
+// token godoc
+// @Summary 유저 세션 제거
+// @Tags Users
+// @Produce  json
+// @Router /users/{userId}/sessions/{sessionId} [delete]
+// @Param userId path string true "User Id"
+// @Param sessionId path string true "Session Id"
+// @Success 200 {object} []models.SesstionData
+// @Failure 500
 func LogoutUserSession(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	userid := c.Param("userid")
@@ -331,6 +436,14 @@ func LogoutUserSession(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// token godoc
+// @Summary 유저 전체 세션 제거
+// @Tags Users
+// @Produce  json
+// @Router /users/{userId}/logout [post]
+// @Param userId path string true "User Id"
+// @Success 204
+// @Failure 500
 func LogoutAllSessions(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	userid := c.Param("userid")
@@ -347,6 +460,14 @@ func LogoutAllSessions(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// token godoc
+// @Summary 유저 ID 제공자 조회
+// @Tags Users
+// @Produce  json
+// @Router /users/{userId}/federated-identity [get]
+// @Param userId path string true "User Id"
+// @Success 200 {object} models.UserIdProviderData
+// @Failure 500
 func GetUserFederatedIdentities(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	userid := c.Param("userid")
@@ -361,6 +482,15 @@ func GetUserFederatedIdentities(c *gin.Context) {
 	c.JSON(http.StatusOK, identities)
 }
 
+// token godoc
+// @Summary 유저 ID 제공자 제거
+// @Tags Users
+// @Produce  json
+// @Router /users/{userId}/federated-identity/{providerId} [delete]
+// @Param userId path string true "User Id"
+// @Param providerId path string true "Provider Id"
+// @Success 204
+// @Failure 500
 func DeleteUserFederatedIdentity(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	userid := c.Param("userid")

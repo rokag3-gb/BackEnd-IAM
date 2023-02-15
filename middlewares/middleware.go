@@ -16,6 +16,9 @@ import (
 
 func GetUserMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if strings.HasPrefix(c.Request.RequestURI, "/swagger") {
+			return
+		}
 		auth := c.Request.Header.Get("Authorization")
 		if auth == "" && !config.GetConfig().Developer_mode {
 			common.ErrorProcess(c, nil, http.StatusForbidden, "No Authorization header provided")
@@ -44,6 +47,9 @@ func GetUserMiddleware() gin.HandlerFunc {
 func getUsernameJWT(token string) (string, error) {
 	t, _ := jwt.Parse(token, nil)
 	if t == nil {
+		if config.GetConfig().Developer_mode {
+			return "admin", nil
+		}
 		return "", errors.New("invalid authorization")
 	}
 

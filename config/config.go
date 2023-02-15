@@ -38,6 +38,7 @@ type IamConfig struct {
 	Api_host_name                []string
 	Developer_mode               bool
 	LogStdout                    bool
+	UseApiDocument               bool
 }
 
 func InitConfig() error {
@@ -115,6 +116,8 @@ func (conf *IamConfig) initConf() error {
 
 	conf.Developer_mode = cfg.Section("debug").Key("developer_mode").MustBool()
 	conf.LogStdout = cfg.Section("log").Key("stdout").MustBool()
+
+	conf.UseApiDocument = cfg.Section("debug").Key("useApiDocument").MustBool()
 
 	conf.Api_host_list = map[string]string{}
 

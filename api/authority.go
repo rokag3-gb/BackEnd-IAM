@@ -13,6 +13,13 @@ import (
 	"github.com/google/uuid"
 )
 
+// token godoc
+// @Summary 전체 역할 목록 조회
+// @Tags Authority
+// @Produce  json
+// @Router /authority/roles [get]
+// @Success 200 {object} []models.RolesInfo
+// @Failure 500
 func GetRoles(c *gin.Context) {
 	RolesInfos, err := iamdb.GetRoles()
 
@@ -24,6 +31,15 @@ func GetRoles(c *gin.Context) {
 	c.JSON(http.StatusOK, RolesInfos)
 }
 
+// token godoc
+// @Summary 역할 생성
+// @Tags Authority
+// @Produce  json
+// @Param Body body models.RolesInfo true "body"
+// @Router /authority/roles [post]
+// @Success 200 {object} models.Id
+// @Failure 400
+// @Failure 500
 func CreateRoles(c *gin.Context) {
 	roles, err := getRoles(c)
 	if err != nil {
@@ -58,8 +74,8 @@ func CreateRoles(c *gin.Context) {
 	}
 
 	if roles.AuthId != nil {
-		for _, authid := range *roles.AuthId {
-			err = iamdb.AssignRoleAuthTx(tx, roleId.String(), authid, c.GetString("username"))
+		for _, authId := range *roles.AuthId {
+			err = iamdb.AssignRoleAuthTx(tx, roleId.String(), authId, c.GetString("username"))
 			if err != nil {
 				tx.Rollback()
 				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -79,8 +95,16 @@ func CreateRoles(c *gin.Context) {
 	})
 }
 
+// token godoc
+// @Summary 역할 삭제
+// @Tags Authority
+// @Param roleId path string true "Role Id"
+// @Router /authority/roles/{roleId} [delete]
+// @Success 204
+// @Failure 400
+// @Failure 500
 func DeleteRoles(c *gin.Context) {
-	roleid, err := getRoleID(c)
+	roleId, err := getRoleID(c)
 
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
@@ -100,21 +124,21 @@ func DeleteRoles(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.DeleteRolesAuthByRoleIdTx(tx, roleid)
+	err = iamdb.DeleteRolesAuthByRoleIdTx(tx, roleId)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.DeleteUserRoleByRoleIdTx(tx, roleid)
+	err = iamdb.DeleteUserRoleByRoleIdTx(tx, roleId)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.DeleteRolesTx(tx, roleid)
+	err = iamdb.DeleteRolesTx(tx, roleId)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -129,8 +153,18 @@ func DeleteRoles(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// token godoc
+// @Summary 역할 수정
+// @Tags Authority
+// @Produce  json
+// @Param roleId path string true "Role Id"
+// @Param Body body models.RolesInfo true "body"
+// @Router /authority/roles/{roleId} [put]
+// @Success 204
+// @Failure 400
+// @Failure 500
 func UpdateRoles(c *gin.Context) {
-	roleid, err := getRoleID(c)
+	roleId, err := getRoleID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
@@ -160,7 +194,7 @@ func UpdateRoles(c *gin.Context) {
 		return
 	}
 
-	roles.ID = roleid
+	roles.ID = roleId
 
 	err = iamdb.UpdateRolesTx(tx, roles, c.GetString("username"))
 	if err != nil {
@@ -170,15 +204,15 @@ func UpdateRoles(c *gin.Context) {
 	}
 
 	if roles.AuthId != nil {
-		err = iamdb.DeleteRolesAuthByRoleIdTx(tx, roleid)
+		err = iamdb.DeleteRolesAuthByRoleIdTx(tx, roleId)
 		if err != nil {
 			tx.Rollback()
 			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
 		}
 
-		for _, authid := range *roles.AuthId {
-			err = iamdb.AssignRoleAuthTx(tx, roleid, authid, c.GetString("username"))
+		for _, authId := range *roles.AuthId {
+			err = iamdb.AssignRoleAuthTx(tx, roleId, authId, c.GetString("username"))
 			if err != nil {
 				tx.Rollback()
 				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -195,6 +229,13 @@ func UpdateRoles(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// token godoc
+// @Summary 유저 권한 조회
+// @Tags Authority
+// @Produce  json
+// @Router /authority/user/auth [get]
+// @Success 200 {object} []string
+// @Failure 500
 func GetMyAuth(c *gin.Context) {
 	userId := c.GetString("userId")
 
@@ -207,6 +248,15 @@ func GetMyAuth(c *gin.Context) {
 	c.JSON(http.StatusOK, arr)
 }
 
+// token godoc
+// @Summary 메뉴 권한 조회
+// @Tags Authority
+// @Produce  json
+// @Param site path string true "Site"
+// @Router /authority/auth/menu/{site} [get]
+// @Success 200 {object} []models.MenuAutuhorityInfo
+// @Failure 400
+// @Failure 500
 func GetMenuAuth(c *gin.Context) {
 	userId := c.GetString("userId")
 	site := c.Param("site")
@@ -224,14 +274,23 @@ func GetMenuAuth(c *gin.Context) {
 	c.JSON(http.StatusOK, arr)
 }
 
+// token godoc
+// @Summary 역할 할당 권한 목록 조회
+// @Tags Authority
+// @Produce  json
+// @Param roleId path string true "Role Id"
+// @Router /authority/roles/{roleId}/auth [get]
+// @Success 200 {object} []models.RolesInfo
+// @Failure 400
+// @Failure 500
 func GetRolesAuth(c *gin.Context) {
-	roleid, err := getRoleID(c)
+	roleId, err := getRoleID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
-	arr, err := iamdb.GetRolseAuth(roleid)
+	arr, err := iamdb.GetRolseAuth(roleId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -240,8 +299,17 @@ func GetRolesAuth(c *gin.Context) {
 	c.JSON(http.StatusOK, arr)
 }
 
+// token godoc
+// @Summary 역할 권한 할당
+// @Tags Authority
+// @Produce  json
+// @Param roleId path string true "Role Id"
+// @Router /authority/roles/{roleId}/auth [post]
+// @Success 201
+// @Failure 400
+// @Failure 500
 func AssignRoleAuth(c *gin.Context) {
-	roleid, err := getRoleID(c)
+	roleId, err := getRoleID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
@@ -258,13 +326,13 @@ func AssignRoleAuth(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.CheckRoleAuthID(roleid, auth.ID)
+	err = iamdb.CheckRoleAuthID(roleId, auth.ID)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.AssignRoleAuth(roleid, auth.ID, c.GetString("username"))
+	err = iamdb.AssignRoleAuth(roleId, auth.ID, c.GetString("username"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -273,20 +341,30 @@ func AssignRoleAuth(c *gin.Context) {
 	c.Status(http.StatusCreated)
 }
 
+// token godoc
+// @Summary 역할 권한 제외
+// @Tags Authority
+// @Produce  json
+// @Param roleId path string true "Role Id"
+// @Param authId path string true "Auth Id"
+// @Router /authority/roles/{roleId}/auth/{authId} [delete]
+// @Success 204
+// @Failure 400
+// @Failure 500
 func DismissRoleAuth(c *gin.Context) {
-	roleid, err := getRoleID(c)
+	roleId, err := getRoleID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
-	authid, err := getAuthID(c)
+	authId, err := getAuthID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
-	err = iamdb.DismissRoleAuth(roleid, authid)
+	err = iamdb.DismissRoleAuth(roleId, authId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -295,6 +373,16 @@ func DismissRoleAuth(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// token godoc
+// @Summary 역할 권한 수정
+// @Tags Authority
+// @Produce  json
+// @Param roleId path string true "Role Id"
+// @Param authId path string true "Auth Id"
+// @Router /authority/roles/{roleId}/auth/{authId} [put]
+// @Success 204
+// @Failure 400
+// @Failure 500
 func UpdateRoleAuth(c *gin.Context) {
 	use, err := getUse(c)
 	if err != nil {
@@ -302,19 +390,19 @@ func UpdateRoleAuth(c *gin.Context) {
 		return
 	}
 
-	roleid, err := getRoleID(c)
+	roleId, err := getRoleID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
-	authid, err := getAuthID(c)
+	authId, err := getAuthID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
-	err = iamdb.UpdateRoleAuth(roleid, authid, use.Use, c.GetString("username"))
+	err = iamdb.UpdateRoleAuth(roleId, authId, use.Use, c.GetString("username"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -323,6 +411,15 @@ func UpdateRoleAuth(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// token godoc
+// @Summary 유저 할당 역할 목록 조회
+// @Tags Authority
+// @Produce  json
+// @Param userId path string true "User Id"
+// @Router /authority/user/{userId} [get]
+// @Success 200 {object} []models.RolesInfo
+// @Failure 400
+// @Failure 500
 func GetUserRole(c *gin.Context) {
 	userID, err := getUserID(c)
 	if err != nil {
@@ -339,6 +436,16 @@ func GetUserRole(c *gin.Context) {
 	c.JSON(http.StatusOK, arr)
 }
 
+// token godoc
+// @Summary 유저 역할 할당
+// @Tags Authority
+// @Produce  json
+// @Param userId path string true "User Id"
+// @Param roleId body models.Id true "Role Id"
+// @Router /authority/user/{userId}/roles [post]
+// @Success 201
+// @Failure 400
+// @Failure 500
 func AssignUserRole(c *gin.Context) {
 	userid, err := getUserID(c)
 	if err != nil {
@@ -370,19 +477,29 @@ func AssignUserRole(c *gin.Context) {
 	c.Status(http.StatusCreated)
 }
 
+// token godoc
+// @Summary 유저 역할 제외
+// @Tags Authority
+// @Produce  json
+// @Param userId path string true "User Id"
+// @Param roleId path string true "Role Id"
+// @Router /authority/user/{userId}/roles/{roleId} [delete]
+// @Success 204
+// @Failure 400
+// @Failure 500
 func DismissUserRole(c *gin.Context) {
 	userid, err := getUserID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
-	roleid, err := getRoleID(c)
+	roleId, err := getRoleID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
-	err = iamdb.DismissUserRole(userid, roleid)
+	err = iamdb.DismissUserRole(userid, roleId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -391,6 +508,17 @@ func DismissUserRole(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// token godoc
+// @Summary 유저 역할 수정
+// @Tags Authority
+// @Produce  json
+// @Param userId path string true "User Id"
+// @Param roleId path string true "Role Id"
+// @Param autuhorityUse body models.AutuhorityUse true "AutuhorityUse Yn"
+// @Router /authority/user/{userId}/roles/{roleId} [put]
+// @Success 204
+// @Failure 400
+// @Failure 500
 func UpdateUserRole(c *gin.Context) {
 	use, err := getUse(c)
 	if err != nil {
@@ -402,13 +530,13 @@ func UpdateUserRole(c *gin.Context) {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
-	roleid, err := getRoleID(c)
+	roleId, err := getRoleID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
-	err = iamdb.UpdateUserRole(userid, roleid, use.Use, c.GetString("username"))
+	err = iamdb.UpdateUserRole(userid, roleId, use.Use, c.GetString("username"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -417,6 +545,15 @@ func UpdateUserRole(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// token godoc
+// @Summary 유저 활성 권한 목록 조회
+// @Tags Authority
+// @Produce  json
+// @Param userId path string true "User Id"
+// @Router /authority/user/{userId}/auth [get]
+// @Success 200 {object} []models.AutuhorityInfo
+// @Failure 400
+// @Failure 500
 func GetUserAuth(c *gin.Context) {
 	userid, err := getUserID(c)
 	if err != nil {
@@ -433,6 +570,16 @@ func GetUserAuth(c *gin.Context) {
 	c.JSON(http.StatusOK, arr)
 }
 
+// token godoc
+// @Summary 유저 권한 보유 여부 질의
+// @Tags Authority
+// @Produce  json
+// @Param userName path string true "User Name"
+// @Param authName path string true "Auth Name"
+// @Router /authority/user/{userName}/auth/{authName} [get]
+// @Success 200 {object} models.Active
+// @Failure 400
+// @Failure 500
 func GetUserAuthActive(c *gin.Context) {
 	userName, err := getUserID(c)
 	if err != nil {
@@ -455,6 +602,13 @@ func GetUserAuthActive(c *gin.Context) {
 	c.JSON(http.StatusOK, m)
 }
 
+// token godoc
+// @Summary 역전체 권한 목록 조회
+// @Tags Authority
+// @Produce  json
+// @Router /authority/auth [get]
+// @Success 200 {object} []models.AutuhorityInfo
+// @Failure 500
 func GetAuth(c *gin.Context) {
 	arr, err := iamdb.GetAuth()
 	if err != nil {
@@ -465,6 +619,15 @@ func GetAuth(c *gin.Context) {
 	c.JSON(http.StatusOK, arr)
 }
 
+// token godoc
+// @Summary 권한 생성
+// @Tags Authority
+// @Produce  json
+// @Param Body body models.AutuhorityInfo true "body"
+// @Router /authority/auth [post]
+// @Success 200 {object} models.Id
+// @Failure 400
+// @Failure 500
 func CreateAuth(c *gin.Context) {
 	auth, err := getAuth(c)
 	if err != nil {
@@ -491,8 +654,17 @@ func CreateAuth(c *gin.Context) {
 	})
 }
 
+// token godoc
+// @Summary 권한 삭제
+// @Tags Authority
+// @Produce  json
+// @Param authId path string true "Auth Name"
+// @Router /authority/auth/{authId} [delete]
+// @Success 200 {object} models.Id
+// @Failure 400
+// @Failure 500
 func DeleteAuth(c *gin.Context) {
-	authid, err := getAuthID(c)
+	authId, err := getAuthID(c)
 
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
@@ -512,14 +684,14 @@ func DeleteAuth(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.DeleteRolesAuthByAuthIdTx(tx, authid)
+	err = iamdb.DeleteRolesAuthByAuthIdTx(tx, authId)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.DeleteAuth(authid, tx)
+	err = iamdb.DeleteAuth(authId, tx)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -530,8 +702,18 @@ func DeleteAuth(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// token godoc
+// @Summary 권한 수정
+// @Tags Authority
+// @Produce  json
+// @Param authId path string true "Auth Name"
+// @Param Body body models.AutuhorityInfo true "body"
+// @Router /authority/auth/{authId} [put]
+// @Success 204
+// @Failure 400
+// @Failure 500
 func UpdateAuth(c *gin.Context) {
-	authid, err := getAuthID(c)
+	authId, err := getAuthID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
@@ -548,7 +730,7 @@ func UpdateAuth(c *gin.Context) {
 		return
 	}
 
-	auth.ID = authid
+	auth.ID = authId
 
 	err = iamdb.UpdateAuth(auth, c.GetString("username"))
 	if err != nil {
@@ -559,14 +741,23 @@ func UpdateAuth(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// token godoc
+// @Summary 권한 정보 조회
+// @Tags Authority
+// @Produce  json
+// @Param authId path string true "Auth Id"
+// @Router /authority/auth/{authId} [get]
+// @Success 200 {object} models.AutuhorityInfo
+// @Failure 400
+// @Failure 500
 func GetAuthInfo(c *gin.Context) {
-	authid, err := getAuthID(c)
+	authId, err := getAuthID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
-	r, err := iamdb.GetAuthInfo(authid)
+	r, err := iamdb.GetAuthInfo(authId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -610,23 +801,23 @@ func getAuth(c *gin.Context) (*models.AutuhorityInfo, error) {
 }
 
 func getRoleID(c *gin.Context) (string, error) {
-	roleid := c.Param("roleid")
+	roleId := c.Param("roleId")
 
-	if roleid == "" {
+	if roleId == "" {
 		return "", errors.New("required 'Role id'")
 	}
 
-	return roleid, nil
+	return roleId, nil
 }
 
 func getAuthID(c *gin.Context) (string, error) {
-	authid := c.Param("authid")
+	authId := c.Param("authId")
 
-	if authid == "" {
+	if authId == "" {
 		return "", errors.New("required 'Auth id'")
 	}
 
-	return authid, nil
+	return authId, nil
 }
 
 func getUserID(c *gin.Context) (string, error) {

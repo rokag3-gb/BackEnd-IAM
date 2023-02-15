@@ -15,6 +15,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// token godoc
+// @Summary 리소스 수 조회
+// @Tags Metric
+// @Produce  json
+// @Router /metric/count [get]
+// @Success 200 {object} models.MetricCount
+// @Failure 500
 func MetricCount(c *gin.Context) {
 	count, err := iamdb.MetricCount()
 
@@ -26,6 +33,13 @@ func MetricCount(c *gin.Context) {
 	c.JSON(http.StatusOK, count)
 }
 
+// token godoc
+// @Summary 어플리케이션 별 현재 세션 수 조회
+// @Tags Metric
+// @Produce  json
+// @Router /metric/session [get]
+// @Success 200 {object} []models.MetricItem
+// @Failure 500
 func GetMetricSession(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 
@@ -82,6 +96,14 @@ func GetMetricSession(c *gin.Context) {
 	c.JSON(http.StatusOK, ret)
 }
 
+// token godoc
+// @Summary 어플리케이션 별 유저 접속 수 조회
+// @Tags Metric
+// @Produce  json
+// @Router /metric/login/application [get]
+// @Param date query string true "Date count"
+// @Success 200 {object} []models.MetricItem
+// @Failure 500
 func GetLoginApplication(c *gin.Context) {
 	m, err := iamdb.GetLoginApplication(c.MustGet("date").(int) - 1)
 	if err != nil {
@@ -92,6 +114,14 @@ func GetLoginApplication(c *gin.Context) {
 	c.JSON(http.StatusOK, m)
 }
 
+// token godoc
+// @Summary 일자 별 유저 접속 수 조회
+// @Tags Metric
+// @Produce  json
+// @Router /metric/login/application/date [get]
+// @Param date query string true "Date count"
+// @Success 200 {object} []models.MetricAppItem
+// @Failure 500
 func GetLoginApplicationDate(c *gin.Context) {
 	m, err := iamdb.GetLoginApplicationDate(c.MustGet("date").(int) - 1)
 	if err != nil {
@@ -102,6 +132,14 @@ func GetLoginApplicationDate(c *gin.Context) {
 	c.JSON(http.StatusOK, m)
 }
 
+// token godoc
+// @Summary 유형 별 로그인 실패 수 조회
+// @Tags Metric
+// @Produce  json
+// @Router /metric/login/error [get]
+// @Param date query string true "Date count"
+// @Success 200 {object} []models.MetricItem
+// @Failure 500
 func GetLoginError(c *gin.Context) {
 	m, err := iamdb.GetLoginError(c.MustGet("date").(int) - 1)
 	if err != nil {
@@ -112,6 +150,13 @@ func GetLoginError(c *gin.Context) {
 	c.JSON(http.StatusOK, m)
 }
 
+// token godoc
+// @Summary ID 제공자 수 조회
+// @Tags Metric
+// @Produce  json
+// @Router /metric/idp/count [get]
+// @Success 200 {object} []models.MetricItem
+// @Failure 500
 func GetIdpCount(c *gin.Context) {
 	m, err := iamdb.GetIdpCount()
 	if err != nil {

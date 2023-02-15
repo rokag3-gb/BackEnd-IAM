@@ -15,6 +15,15 @@ import (
 	"github.com/google/uuid"
 )
 
+// token godoc
+// @Summary 비밀 그룹 생성
+// @Tags Secret
+// @Produce  json
+// @Router /secret [post]
+// @Param Body body []models.SecretGroupInput true "body"
+// @Success 201
+// @Failure 400
+// @Failure 500
 func CreateSecretGroup(c *gin.Context) {
 	value, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
@@ -123,6 +132,16 @@ func CreateSecretGroup(c *gin.Context) {
 	c.Status(http.StatusCreated)
 }
 
+// token godoc
+// @Summary 비밀 그룹 삭제
+// @Tags Secret
+// @Produce  json
+// @Router /secret/{SecretGroupName} [delete]
+// @Param secretGroupName path string true "Secret Group Name"
+// @Param Body body []models.SecretGroupInput true "body"
+// @Success 204
+// @Failure 400
+// @Failure 500
 func DeleteSecretGroup(c *gin.Context) {
 	groupName := c.Param("groupName")
 
@@ -201,6 +220,14 @@ func DeleteSecretGroup(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// token godoc
+// @Summary 비밀 목록 조회
+// @Tags Secret
+// @Produce  json
+// @Router /secret/{SecretGroupName} [get]
+// @Param secretGroupName path string true "Secret Group Name"
+// @Success 200 {object} []models.SecretItem
+// @Failure 500
 func GetSecretList(c *gin.Context) {
 	groupName := c.Param("groupName")
 
@@ -245,6 +272,16 @@ func GetSecretList(c *gin.Context) {
 	c.JSON(http.StatusOK, arr)
 }
 
+// token godoc
+// @Summary 비밀 그룹 수정
+// @Tags Secret
+// @Produce  json
+// @Router /secret/{SecretGroupName} [put]
+// @Param secretGroupName path string true "Secret Group Name"
+// @Success 200 {object} []models.SecretGroupUpdate
+// @Success 204
+// @Failure 400
+// @Failure 500
 func UpdateSecretGroup(c *gin.Context) {
 	groupName := c.Param("groupName")
 	authorityMessage := ""
@@ -369,6 +406,15 @@ func UpdateSecretGroup(c *gin.Context) {
 	}
 }
 
+// token godoc
+// @Summary 비밀 그룹 상세 정보 조회
+// @Tags Secret
+// @Produce  json
+// @Router /secret/{SecretGroupName}/data [get]
+// @Param secretGroupName path string true "Secret Group Name"
+// @Success 200 {object} models.SecretGroupResponse
+// @Failure 400
+// @Failure 500
 func GetSecretGroupMetadata(c *gin.Context) {
 	groupName := c.Param("groupName")
 
@@ -403,6 +449,16 @@ func GetSecretGroupMetadata(c *gin.Context) {
 	c.JSON(http.StatusOK, secretGroup)
 }
 
+// token godoc
+// @Summary 비밀 내용 조회
+// @Tags Secret
+// @Produce  json
+// @Router /secret/{SecretGroupName}/data/{Secretname} [get]
+// @Param secretGroupName path string true "Secret Group Name"
+// @Param secretName path string true "Secret Name"
+// @Success 200 {object} models.SecretData
+// @Failure 404
+// @Failure 500
 func GetSecret(c *gin.Context) {
 	groupName := c.Param("groupName")
 	secretName := c.Param("secretName")
@@ -434,6 +490,17 @@ func GetSecret(c *gin.Context) {
 	c.JSON(http.StatusOK, data.Data)
 }
 
+// token godoc
+// @Summary 비밀 생성 / 수정
+// @Tags Secret
+// @Produce  json
+// @Router /secret/{SecretGroupName}/data/{Secretname} [post]
+// @Param secretGroupName path string true "Secret Group Name"
+// @Param secretName path string true "Secret Name"
+// @Param Body body models.SecretInput true "body"
+// @Success 201
+// @Failure 400
+// @Failure 500
 func MargeSecret(c *gin.Context) {
 	value, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
@@ -468,6 +535,16 @@ func MargeSecret(c *gin.Context) {
 	c.Status(http.StatusCreated)
 }
 
+// token godoc
+// @Summary 비밀 상세 정보 조회
+// @Tags Secret
+// @Produce  json
+// @Router /secret/{SecretGroupName}/metadata/{Secretname} [get]
+// @Param secretGroupName path string true "Secret Group Name"
+// @Param secretName path string true "Secret Name"
+// @Success 200 {object} models.SecretMetadata
+// @Failure 404
+// @Failure 500
 func GetMetadataSecret(c *gin.Context) {
 	groupName := c.Param("groupName")
 	secretName := c.Param("secretName")
@@ -502,6 +579,17 @@ func GetMetadataSecret(c *gin.Context) {
 	c.JSON(http.StatusOK, data.Data)
 }
 
+// token godoc
+// @Summary 비밀특정버전삭제(복구가능)
+// @Tags Secret
+// @Produce  json
+// @Router /secret/{SecretGroupName}/delete/{Secretname} [POST]
+// @Param secretGroupName path string true "Secret Group Name"
+// @Param secretName path string true "Secret Name"
+// @Param Body body models.SecretVersion true "body"
+// @Success 204
+// @Failure 400
+// @Failure 500
 func DeleteSecret(c *gin.Context) {
 	value, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
@@ -527,6 +615,17 @@ func DeleteSecret(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// token godoc
+// @Summary 비밀 복구
+// @Tags Secret
+// @Produce  json
+// @Router /secret/{SecretGroupName}/undelete/{Secretname} [POST]
+// @Param secretGroupName path string true "Secret Group Name"
+// @Param secretName path string true "Secret Name"
+// @Param Body body models.SecretVersion true "body"
+// @Success 204
+// @Failure 400
+// @Failure 500
 func UndeleteSecret(c *gin.Context) {
 	value, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
@@ -552,6 +651,17 @@ func UndeleteSecret(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// token godoc
+// @Summary 비밀특정버전삭제(복구불가)
+// @Tags Secret
+// @Produce  json
+// @Router /secret/{SecretGroupName}/destroy/{Secretname} [POST]
+// @Param secretGroupName path string true "Secret Group Name"
+// @Param secretName path string true "Secret Name"
+// @Param Body body models.SecretVersion true "body"
+// @Success 204
+// @Failure 400
+// @Failure 500
 func DestroySecret(c *gin.Context) {
 	value, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
@@ -577,6 +687,16 @@ func DestroySecret(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// token godoc
+// @Summary 비밀 삭제
+// @Tags Secret
+// @Produce  json
+// @Router /secret/{SecretGroupName}/metadata/{Secretname} [delete]
+// @Param secretGroupName path string true "Secret Group Name"
+// @Param secretName path string true "Secret Name"
+// @Success 204
+// @Failure 400
+// @Failure 500
 func DeleteSecretMetadata(c *gin.Context) {
 	groupName := c.Param("groupName")
 	secretName := c.Param("secretName")
@@ -607,6 +727,13 @@ func CheckGroupName(groupName string) error {
 	return nil
 }
 
+// token godoc
+// @Summary 비밀 그룹 목록 조회
+// @Tags Secret
+// @Produce  json
+// @Router /secret [get]
+// @Success 200 {object} []models.SecretGroupItem
+// @Failure 500
 func GetAllSecretList(c *gin.Context) {
 	data, err := clients.VaultClient().Logical().Read("sys/mounts")
 	if err != nil {
