@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"iam/common"
 	"iam/config"
+	"iam/iamdb"
 	"net/http"
 	"strconv"
 	"strings"
@@ -116,5 +117,35 @@ func DateQueryMiddleware() gin.HandlerFunc {
 func PageNotFound() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.AbortWithStatus(http.StatusNotFound)
+	}
+}
+
+func CheckAccountRequestUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		result, err := iamdb.CheckAccountUser(c.Param("accountId"), c.GetString("userId"))
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		if !result {
+			common.ErrorProcess(c, nil, http.StatusBadRequest, "bad request")
+			return
+		}
+	}
+}
+
+func CheckAccountUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		result, err := iamdb.CheckAccountUser(c.Param("accountId"), c.Param("userid"))
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		if !result {
+			common.ErrorProcess(c, nil, http.StatusBadRequest, "bad request")
+			return
+		}
 	}
 }

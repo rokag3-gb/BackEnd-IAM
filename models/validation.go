@@ -32,6 +32,7 @@ type GetUserInfo struct {
 	Groups           *string   `json:"groups,omitempty"`
 	Roles            *string   `json:"roles,omitempty"`
 	Account          *string   `json:"Account,omitempty"`
+	AccountId        *string   `json:"AccountId,omitempty"`
 	OpenId           *string   `json:"OpenId,omitempty"`
 	RequiredActions  *[]string `json:"requiredActions,omitempty"`
 	CreateDate       *string   `json:"createDate"`

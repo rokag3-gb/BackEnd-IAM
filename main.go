@@ -156,6 +156,18 @@ func makeRouter() *gin.Engine {
 		users.DELETE("/:userid/federated-identity/:providerId", api.DeleteUserFederatedIdentity)
 	}
 
+	accountUser := route.Group("/account/:accountId/users")
+	{
+		accountUser.GET("", middlewares.CheckAccountRequestUser(), api.Users)
+		accountUser.POST("", middlewares.CheckAccountRequestUser(), api.CreateUser)
+		accountUser.PUT("/:userid", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.UpdateUser)
+		accountUser.GET("/:userid", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.GetUser)
+		accountUser.GET("/:userid/credentials", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.GetUserCredentials)
+		accountUser.PUT("/:userid/reset-password", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.ResetUserPassword)
+		accountUser.GET("/:userid/federated-identity", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.GetUserFederatedIdentities)
+		accountUser.DELETE("/:userid/federated-identity/:providerId", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.DeleteUserFederatedIdentity)
+	}
+
 	secret := route.Group("/secret")
 	{
 		secret.GET("", api.GetAllSecretList)

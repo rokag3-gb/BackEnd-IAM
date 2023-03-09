@@ -966,6 +966,7 @@ func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 	, ISNULL(A.Roles, '') as Roles 
 	, ISNULL(B.Groups, '') as Groups 
 	, ISNULL(D.Account, '') as Account 
+	, ISNULL(D.AccountId, '') as AccountId 
 	, ISNULL(C.openid, '') as openid 
 	, FORMAT(U.createDate, 'yyyy-MM-dd HH:mm') as createDate
 	, u1.USERNAME as Creator
@@ -1009,7 +1010,8 @@ func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 	on U.modifyId = u2.ID
 	left outer join 
 	(SELECT
-	ISNULL(string_agg(AC.AccountName, ', '), '') as Account, AU.UserId
+	ISNULL(string_agg(AC.AccountName, ', '), '') as Account, AU.UserId,
+	ISNULL(string_agg(AC.AccountId, ', '), '') as AccountId
 	FROM [Sale].[dbo].[Account_User] AU
 	JOIN [Sale].[dbo].[Account] AC
 	ON AU.AccountId = AC.AccountId
@@ -1051,7 +1053,7 @@ func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 	for rows.Next() {
 		var r models.GetUserInfo
 
-		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.Roles, &r.Groups, &r.Account, &r.OpenId, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
+		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.Roles, &r.Groups, &r.Account, &r.AccountId, &r.OpenId, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}
@@ -1845,4 +1847,32 @@ AND SG.REALM_ID = ?`
 	}
 
 	return arr, err
+}
+
+func CheckAccountUser(accountId string, userId string) (bool, error) {
+	db, err := DBClient()
+	defer db.Close()
+	if err != nil {
+		return false, err
+	}
+
+	query := `SELECT AU.AccountId
+	FROM [Sale].[dbo].[Account_User] AU
+	JOIN [IAM].[dbo].[USER_ENTITY] U
+	ON AU.UserId = U.ID
+	WHERE AccountId = ? AND UserId = ?
+	AND REALM_ID = ?`
+
+	rows, err := db.Query(query, accountId, userId, config.GetConfig().Keycloak_realm)
+
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		return true, nil
+	}
+
+	return false, nil
 }

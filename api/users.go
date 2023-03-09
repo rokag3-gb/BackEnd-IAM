@@ -13,16 +13,17 @@ import (
 )
 
 var SearchUsers = map[string]string{
-	"search":   "U.USERNAME",
-	"username": "U.USERNAME",
-	"groupid":  "B.GROUP_ID",
-	"groups":   "B.Groups",
-	"roles":    "A.Roles",
-	"enabled":  "U.ENABLED",
-	"email":    "U.EMAIL",
-	"openid":   "C.openid",
-	"accounts": "AC.AccountName",
-	"ids":      "U.ID",
+	"search":    "U.USERNAME",
+	"username":  "U.USERNAME",
+	"groupid":   "B.GROUP_ID",
+	"groups":    "B.Groups",
+	"roles":     "A.Roles",
+	"enabled":   "U.ENABLED",
+	"email":     "U.EMAIL",
+	"openid":    "C.openid",
+	"accounts":  "D.Account",
+	"accountId": "D.AccountId",
+	"ids":       "U.ID",
 }
 
 // token godoc
@@ -35,6 +36,10 @@ var SearchUsers = map[string]string{
 func Users(c *gin.Context) {
 	paramPairs := c.Request.URL.Query()
 	var params = map[string][]string{}
+
+	if c.Param("accountId") != "" {
+		paramPairs.Add("accountId", c.Param("accountId"))
+	}
 
 	for key, values := range paramPairs {
 		col := SearchUsers[key]
