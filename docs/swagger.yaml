@@ -212,6 +212,18 @@ definitions:
       valse:
         type: integer
     type: object
+  models.ResetUserPasswordInfo:
+    properties:
+      password:
+        type: string
+      passwordConfirm:
+        type: string
+      temporary:
+        type: boolean
+    required:
+    - password
+    - passwordConfirm
+    type: object
   models.RolesInfo:
     properties:
       authId:
@@ -541,7 +553,7 @@ paths:
       summary: Account 유저 상세정보 조회
       tags:
       - Account
-    post:
+    put:
       parameters:
       - description: account Id
         in: path
@@ -664,15 +676,17 @@ paths:
         name: userId
         required: true
         type: string
+      - description: ResetUserPasswordInfo
+        in: body
+        name: roleId
+        required: true
+        schema:
+          $ref: '#/definitions/models.ResetUserPasswordInfo'
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.CredentialRepresentation'
-            type: array
+        "204":
+          description: No Content
         "500":
           description: Internal Server Error
       summary: Account 유저 비밀번호 변경

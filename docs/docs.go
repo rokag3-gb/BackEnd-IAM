@@ -111,7 +111,7 @@ const docTemplate = `{
                     }
                 }
             },
-            "post": {
+            "put": {
                 "produces": [
                     "application/json"
                 ],
@@ -301,17 +301,20 @@ const docTemplate = `{
                         "name": "userId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "ResetUserPasswordInfo",
+                        "name": "roleId",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.ResetUserPasswordInfo"
+                        }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.CredentialRepresentation"
-                            }
-                        }
+                    "204": {
+                        "description": "No Content"
                     },
                     "500": {
                         "description": "Internal Server Error"
@@ -2425,6 +2428,24 @@ const docTemplate = `{
                 },
                 "valse": {
                     "type": "integer"
+                }
+            }
+        },
+        "models.ResetUserPasswordInfo": {
+            "type": "object",
+            "required": [
+                "password",
+                "passwordConfirm"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "passwordConfirm": {
+                    "type": "string"
+                },
+                "temporary": {
+                    "type": "boolean"
                 }
             }
         },

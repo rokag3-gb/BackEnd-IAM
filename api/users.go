@@ -159,7 +159,7 @@ func CreateUser(c *gin.Context) {
 // @Summary Account 유저 정보 변경
 // @Tags Account
 // @Produce  json
-// @Router /account/{accountId}/users/{userId} [post]
+// @Router /account/{accountId}/users/{userId} [put]
 // @Param accountId path string true "account Id"
 // @Param userId path string true "User Id"
 // @Param Body body models.CreateUserInfo true "body"
@@ -319,7 +319,8 @@ func GetUserCredentials(c *gin.Context) {
 // @Produce  json
 // @Router /users/{userId}/reset-password [put]
 // @Param userId path string true "User Id"
-// @Success 200 {object} []models.CredentialRepresentation
+// @Param roleId body models.ResetUserPasswordInfo true "ResetUserPasswordInfo"
+// @Success 204
 // @Failure 500
 
 // token godoc
@@ -329,7 +330,8 @@ func GetUserCredentials(c *gin.Context) {
 // @Router /account/{accountId}/users/{userId}/reset-password [put]
 // @Param accountId path string true "account Id"
 // @Param userId path string true "User Id"
-// @Success 200 {object} []models.CredentialRepresentation
+// @Param roleId body models.ResetUserPasswordInfo true "ResetUserPasswordInfo"
+// @Success 204
 // @Failure 500
 func ResetUserPassword(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
