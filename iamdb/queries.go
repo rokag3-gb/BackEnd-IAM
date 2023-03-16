@@ -1032,8 +1032,13 @@ func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 				query += " OR "
 			}
 			query += key
-			query += " LIKE (?) "
-			queryParams = append(queryParams, "%"+q+"%")
+			if key == "D.AccountId" {
+				query += "=? "
+				queryParams = append(queryParams, q)
+			} else {
+				query += " LIKE (?) "
+				queryParams = append(queryParams, "%"+q+"%")
+			}
 		}
 
 		query += ")"
