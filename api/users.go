@@ -33,6 +33,14 @@ var SearchUsers = map[string]string{
 // @Router /users [get]
 // @Success 200 {object} []models.GetUserInfo
 // @Failure 500
+
+// token godoc
+// @Summary Account 유저 목록
+// @Tags Account
+// @Produce  json
+// @Router /account/{accountId}/users [get]
+// @Success 200 {object} []models.GetUserInfo
+// @Failure 500
 func Users(c *gin.Context) {
 	paramPairs := c.Request.URL.Query()
 	var params = map[string][]string{}
@@ -71,6 +79,16 @@ func Users(c *gin.Context) {
 // @Tags Users
 // @Produce  json
 // @Router /users [post]
+// @Param Body body models.CreateUserInfo true "body"
+// @Success 200 {object} models.Id
+// @Failure 400
+// @Failure 500
+
+// token godoc
+// @Summary Account 유저 생성
+// @Tags Account
+// @Produce  json
+// @Router /account/{accountId}/users [post]
 // @Param Body body models.CreateUserInfo true "body"
 // @Success 200 {object} models.Id
 // @Failure 400
@@ -119,6 +137,10 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
+	if c.Param("accountId") != "" {
+		err = iamdb.CreateAccountUser(c.Param("accountId"), newUserId, c.GetString("userId"))
+	}
+
 	c.JSON(http.StatusOK, gocloak.User{ID: gocloak.StringP(newUserId)})
 }
 
@@ -127,6 +149,18 @@ func CreateUser(c *gin.Context) {
 // @Tags Users
 // @Produce  json
 // @Router /users/{userId} [post]
+// @Param userId path string true "User Id"
+// @Param Body body models.CreateUserInfo true "body"
+// @Success 204
+// @Failure 400
+// @Failure 500
+
+// token godoc
+// @Summary Account 유저 정보 변경
+// @Tags Account
+// @Produce  json
+// @Router /account/{accountId}/users/{userId} [post]
+// @Param accountId path string true "account Id"
 // @Param userId path string true "User Id"
 // @Param Body body models.CreateUserInfo true "body"
 // @Success 204
@@ -214,6 +248,16 @@ func DeleteUser(c *gin.Context) {
 // @Param userId path string true "User Id"
 // @Success 200 {object} models.GetUserInfo
 // @Failure 500
+
+// token godoc
+// @Summary Account 유저 상세정보 조회
+// @Tags Account
+// @Produce  json
+// @Router /account/{accountId}/users/{userId} [get]
+// @Param accountId path string true "account Id"
+// @Param userId path string true "User Id"
+// @Success 200 {object} models.GetUserInfo
+// @Failure 500
 func GetUser(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	userid := c.Param("userid")
@@ -245,6 +289,16 @@ func GetUser(c *gin.Context) {
 // @Param userId path string true "User Id"
 // @Success 200 {object} []models.CredentialRepresentation
 // @Failure 500
+
+// token godoc
+// @Summary Account 유저 자격증명 조회
+// @Tags Account
+// @Produce  json
+// @Router /account/{accountId}/users/{userId}/credentials [get]
+// @Param accountId path string true "account Id"
+// @Param userId path string true "User Id"
+// @Success 200 {object} []models.CredentialRepresentation
+// @Failure 500
 func GetUserCredentials(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	userid := c.Param("userid")
@@ -264,6 +318,16 @@ func GetUserCredentials(c *gin.Context) {
 // @Tags Users
 // @Produce  json
 // @Router /users/{userId}/reset-password [put]
+// @Param userId path string true "User Id"
+// @Success 200 {object} []models.CredentialRepresentation
+// @Failure 500
+
+// token godoc
+// @Summary Account 유저 비밀번호 변경
+// @Tags Account
+// @Produce  json
+// @Router /account/{accountId}/users/{userId}/reset-password [put]
+// @Param accountId path string true "account Id"
 // @Param userId path string true "User Id"
 // @Success 200 {object} []models.CredentialRepresentation
 // @Failure 500
@@ -473,6 +537,16 @@ func LogoutAllSessions(c *gin.Context) {
 // @Param userId path string true "User Id"
 // @Success 200 {object} models.UserIdProviderData
 // @Failure 500
+
+// token godoc
+// @Summary Account 유저 ID 제공자 조회
+// @Tags Account
+// @Produce  json
+// @Router /account/{accountId}/users/{userId}/federated-identity [get]
+// @Param accountId path string true "account Id"
+// @Param userId path string true "User Id"
+// @Success 200 {object} models.UserIdProviderData
+// @Failure 500
 func GetUserFederatedIdentities(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c)
 	userid := c.Param("userid")
@@ -492,6 +566,17 @@ func GetUserFederatedIdentities(c *gin.Context) {
 // @Tags Users
 // @Produce  json
 // @Router /users/{userId}/federated-identity/{providerId} [delete]
+// @Param userId path string true "User Id"
+// @Param providerId path string true "Provider Id"
+// @Success 204
+// @Failure 500
+
+// token godoc
+// @Summary Account 유저 ID 제공자 제거
+// @Tags Account
+// @Produce  json
+// @Router /account/{accountId}/users/{userId}/federated-identity/{providerId} [delete]
+// @Param accountId path string true "account Id"
 // @Param userId path string true "User Id"
 // @Param providerId path string true "Provider Id"
 // @Success 204

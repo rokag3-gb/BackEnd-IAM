@@ -76,6 +76,8 @@ definitions:
     properties:
       Account:
         type: string
+      AccountId:
+        type: string
       OpenId:
         type: string
       createDate:
@@ -476,6 +478,206 @@ info:
   title: IAM.Backend API Document
   version: "1.0"
 paths:
+  /account/{accountId}/users:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.GetUserInfo'
+            type: array
+        "500":
+          description: Internal Server Error
+      summary: Account 유저 목록
+      tags:
+      - Account
+    post:
+      parameters:
+      - description: body
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateUserInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Id'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: Account 유저 생성
+      tags:
+      - Account
+  /account/{accountId}/users/{userId}:
+    get:
+      parameters:
+      - description: account Id
+        in: path
+        name: accountId
+        required: true
+        type: string
+      - description: User Id
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.GetUserInfo'
+        "500":
+          description: Internal Server Error
+      summary: Account 유저 상세정보 조회
+      tags:
+      - Account
+    post:
+      parameters:
+      - description: account Id
+        in: path
+        name: accountId
+        required: true
+        type: string
+      - description: User Id
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: body
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateUserInfo'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: Account 유저 정보 변경
+      tags:
+      - Account
+  /account/{accountId}/users/{userId}/credentials:
+    get:
+      parameters:
+      - description: account Id
+        in: path
+        name: accountId
+        required: true
+        type: string
+      - description: User Id
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.CredentialRepresentation'
+            type: array
+        "500":
+          description: Internal Server Error
+      summary: Account 유저 자격증명 조회
+      tags:
+      - Account
+  /account/{accountId}/users/{userId}/federated-identity:
+    get:
+      parameters:
+      - description: account Id
+        in: path
+        name: accountId
+        required: true
+        type: string
+      - description: User Id
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserIdProviderData'
+        "500":
+          description: Internal Server Error
+      summary: Account 유저 ID 제공자 조회
+      tags:
+      - Account
+  /account/{accountId}/users/{userId}/federated-identity/{providerId}:
+    delete:
+      parameters:
+      - description: account Id
+        in: path
+        name: accountId
+        required: true
+        type: string
+      - description: User Id
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Provider Id
+        in: path
+        name: providerId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "500":
+          description: Internal Server Error
+      summary: Account 유저 ID 제공자 제거
+      tags:
+      - Account
+  /account/{accountId}/users/{userId}/reset-password:
+    put:
+      parameters:
+      - description: account Id
+        in: path
+        name: accountId
+        required: true
+        type: string
+      - description: User Id
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.CredentialRepresentation'
+            type: array
+        "500":
+          description: Internal Server Error
+      summary: Account 유저 비밀번호 변경
+      tags:
+      - Account
   /authority/auth:
     get:
       produces:
@@ -488,7 +690,7 @@ paths:
               $ref: '#/definitions/models.AutuhorityInfo'
             type: array
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 역전체 권한 목록 조회
       tags:
       - Authority
@@ -508,9 +710,9 @@ paths:
           schema:
             $ref: '#/definitions/models.Id'
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 권한 생성
       tags:
       - Authority
@@ -530,9 +732,9 @@ paths:
           schema:
             $ref: '#/definitions/models.Id'
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 권한 삭제
       tags:
       - Authority
@@ -551,9 +753,9 @@ paths:
           schema:
             $ref: '#/definitions/models.AutuhorityInfo'
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 권한 정보 조회
       tags:
       - Authority
@@ -574,11 +776,11 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 권한 수정
       tags:
       - Authority
@@ -600,9 +802,9 @@ paths:
               $ref: '#/definitions/models.MenuAutuhorityInfo'
             type: array
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 메뉴 권한 조회
       tags:
       - Authority
@@ -618,7 +820,7 @@ paths:
               $ref: '#/definitions/models.RolesInfo'
             type: array
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 전체 역할 목록 조회
       tags:
       - Authority
@@ -638,9 +840,9 @@ paths:
           schema:
             $ref: '#/definitions/models.Id'
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 역할 생성
       tags:
       - Authority
@@ -654,11 +856,11 @@ paths:
         type: string
       responses:
         "204":
-          description: ""
+          description: No Content
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 역할 삭제
       tags:
       - Authority
@@ -679,11 +881,11 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 역할 수정
       tags:
       - Authority
@@ -705,9 +907,9 @@ paths:
               $ref: '#/definitions/models.RolesInfo'
             type: array
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 역할 할당 권한 목록 조회
       tags:
       - Authority
@@ -722,11 +924,11 @@ paths:
       - application/json
       responses:
         "201":
-          description: ""
+          description: Created
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 역할 권한 할당
       tags:
       - Authority
@@ -747,11 +949,11 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 역할 권한 제외
       tags:
       - Authority
@@ -771,11 +973,11 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 역할 권한 수정
       tags:
       - Authority
@@ -797,9 +999,9 @@ paths:
               $ref: '#/definitions/models.RolesInfo'
             type: array
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 유저 할당 역할 목록 조회
       tags:
       - Authority
@@ -821,9 +1023,9 @@ paths:
               $ref: '#/definitions/models.AutuhorityInfo'
             type: array
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 유저 활성 권한 목록 조회
       tags:
       - Authority
@@ -845,11 +1047,11 @@ paths:
       - application/json
       responses:
         "201":
-          description: ""
+          description: Created
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 유저 역할 할당
       tags:
       - Authority
@@ -870,11 +1072,11 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 유저 역할 제외
       tags:
       - Authority
@@ -900,11 +1102,11 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 유저 역할 수정
       tags:
       - Authority
@@ -929,9 +1131,9 @@ paths:
           schema:
             $ref: '#/definitions/models.Active'
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 유저 권한 보유 여부 질의
       tags:
       - Authority
@@ -947,7 +1149,7 @@ paths:
               type: string
             type: array
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 유저 권한 조회
       tags:
       - Authority
@@ -963,7 +1165,7 @@ paths:
               $ref: '#/definitions/models.GroupItem'
             type: array
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 그룹 목록
       tags:
       - Groups
@@ -983,9 +1185,9 @@ paths:
           schema:
             $ref: '#/definitions/models.Id'
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 그룹 생성
       tags:
       - Groups
@@ -1001,9 +1203,9 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 그룹 삭제
       tags:
       - Groups
@@ -1019,11 +1221,11 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 그룹 정보 변경
       tags:
       - Groups
@@ -1037,7 +1239,7 @@ paths:
           schema:
             $ref: '#/definitions/models.MetricCount'
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 리소스 수 조회
       tags:
       - Metric
@@ -1053,7 +1255,7 @@ paths:
               $ref: '#/definitions/models.MetricItem'
             type: array
         "500":
-          description: ""
+          description: Internal Server Error
       summary: ID 제공자 수 조회
       tags:
       - Metric
@@ -1075,7 +1277,7 @@ paths:
               $ref: '#/definitions/models.MetricItem'
             type: array
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 어플리케이션 별 유저 접속 수 조회
       tags:
       - Metric
@@ -1097,7 +1299,7 @@ paths:
               $ref: '#/definitions/models.MetricAppItem'
             type: array
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 일자 별 유저 접속 수 조회
       tags:
       - Metric
@@ -1119,7 +1321,7 @@ paths:
               $ref: '#/definitions/models.MetricItem'
             type: array
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 유형 별 로그인 실패 수 조회
       tags:
       - Metric
@@ -1135,7 +1337,7 @@ paths:
               $ref: '#/definitions/models.MetricItem'
             type: array
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 어플리케이션 별 현재 세션 수 조회
       tags:
       - Metric
@@ -1151,7 +1353,7 @@ paths:
               $ref: '#/definitions/models.SecretGroupItem'
             type: array
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 비밀 그룹 목록 조회
       tags:
       - Secret
@@ -1169,11 +1371,11 @@ paths:
       - application/json
       responses:
         "201":
-          description: ""
+          description: Created
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 비밀 그룹 생성
       tags:
       - Secret
@@ -1197,11 +1399,11 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 비밀 그룹 삭제
       tags:
       - Secret
@@ -1222,7 +1424,7 @@ paths:
               $ref: '#/definitions/models.SecretItem'
             type: array
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 비밀 목록 조회
       tags:
       - Secret
@@ -1243,11 +1445,11 @@ paths:
               $ref: '#/definitions/models.SecretGroupUpdate'
             type: array
         "204":
-          description: ""
+          description: No Content
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 비밀 그룹 수정
       tags:
       - Secret
@@ -1267,9 +1469,9 @@ paths:
           schema:
             $ref: '#/definitions/models.SecretGroupResponse'
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 비밀 그룹 상세 정보 조회
       tags:
       - Secret
@@ -1294,9 +1496,9 @@ paths:
           schema:
             $ref: '#/definitions/models.SecretData'
         "404":
-          description: ""
+          description: Not Found
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 비밀 내용 조회
       tags:
       - Secret
@@ -1322,11 +1524,11 @@ paths:
       - application/json
       responses:
         "201":
-          description: ""
+          description: Created
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 비밀 생성 / 수정
       tags:
       - Secret
@@ -1353,11 +1555,11 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 비밀특정버전삭제(복구가능)
       tags:
       - Secret
@@ -1384,11 +1586,11 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 비밀특정버전삭제(복구불가)
       tags:
       - Secret
@@ -1409,11 +1611,11 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 비밀 삭제
       tags:
       - Secret
@@ -1437,9 +1639,9 @@ paths:
           schema:
             $ref: '#/definitions/models.SecretMetadata'
         "404":
-          description: ""
+          description: Not Found
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 비밀 상세 정보 조회
       tags:
       - Secret
@@ -1466,52 +1668,14 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 비밀 복구
       tags:
       - Secret
-  /users:
-    get:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.GetUserInfo'
-            type: array
-        "500":
-          description: ""
-      summary: 유저 목록
-      tags:
-      - Users
-    post:
-      parameters:
-      - description: body
-        in: body
-        name: Body
-        required: true
-        schema:
-          $ref: '#/definitions/models.CreateUserInfo'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Id'
-        "400":
-          description: ""
-        "500":
-          description: ""
-      summary: 유저 생성
-      tags:
-      - Users
   /users/{userId}:
     delete:
       parameters:
@@ -1530,121 +1694,12 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "400":
-          description: ""
+          description: Bad Request
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 유저 삭제
-      tags:
-      - Users
-    get:
-      parameters:
-      - description: User Id
-        in: path
-        name: userId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.GetUserInfo'
-        "500":
-          description: ""
-      summary: 유저 상세정보 조회
-      tags:
-      - Users
-    post:
-      parameters:
-      - description: User Id
-        in: path
-        name: userId
-        required: true
-        type: string
-      - description: body
-        in: body
-        name: Body
-        required: true
-        schema:
-          $ref: '#/definitions/models.CreateUserInfo'
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: ""
-        "400":
-          description: ""
-        "500":
-          description: ""
-      summary: 유저 정보 변경
-      tags:
-      - Users
-  /users/{userId}/credentials:
-    get:
-      parameters:
-      - description: User Id
-        in: path
-        name: userId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.CredentialRepresentation'
-            type: array
-        "500":
-          description: ""
-      summary: 유저 자격증명 조회
-      tags:
-      - Users
-  /users/{userId}/federated-identity:
-    get:
-      parameters:
-      - description: User Id
-        in: path
-        name: userId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.UserIdProviderData'
-        "500":
-          description: ""
-      summary: 유저 ID 제공자 조회
-      tags:
-      - Users
-  /users/{userId}/federated-identity/{providerId}:
-    delete:
-      parameters:
-      - description: User Id
-        in: path
-        name: userId
-        required: true
-        type: string
-      - description: Provider Id
-        in: path
-        name: providerId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: ""
-        "500":
-          description: ""
-      summary: 유저 ID 제공자 제거
       tags:
       - Users
   /users/{userId}/groups:
@@ -1664,9 +1719,9 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 유저 그룹 탈퇴
       tags:
       - Users
@@ -1697,7 +1752,7 @@ paths:
               $ref: '#/definitions/models.GroupData'
             type: array
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 유저 그룹 조회
       tags:
       - Users
@@ -1717,9 +1772,9 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 유저 그룹 가입
       tags:
       - Users
@@ -1735,32 +1790,10 @@ paths:
       - application/json
       responses:
         "204":
-          description: ""
+          description: No Content
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 유저 전체 세션 제거
-      tags:
-      - Users
-  /users/{userId}/reset-password:
-    put:
-      parameters:
-      - description: User Id
-        in: path
-        name: userId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.CredentialRepresentation'
-            type: array
-        "500":
-          description: ""
-      summary: 유저 비밀번호 변경
       tags:
       - Users
   /users/{userId}/sessions:
@@ -1781,7 +1814,7 @@ paths:
               $ref: '#/definitions/models.SesstionData'
             type: array
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 유저 세션 조회
       tags:
       - Users
@@ -1808,7 +1841,7 @@ paths:
               $ref: '#/definitions/models.SesstionData'
             type: array
         "500":
-          description: ""
+          description: Internal Server Error
       summary: 유저 세션 제거
       tags:
       - Users

@@ -1758,6 +1758,24 @@ func CreateUserAddRole(uid string, username string) error {
 	return nil
 }
 
+func CreateAccountUser(accountId string, userId string, saveId string) error {
+	db, dbErr := DBClient()
+	defer db.Close()
+	if dbErr != nil {
+		return dbErr
+	}
+
+	query := `INSERT INTO Sale.dbo.Account_User(AccountId, UserId, SaveId)
+	VALUES(?, ?, ?)`
+
+	_, err := db.Query(query, accountId, userId, saveId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func GetIdpCount() ([]models.MetricItem, error) {
 	db, dbErr := DBClient()
 	defer db.Close()
