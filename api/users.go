@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Roles, Groups, Account, AccountId, openid 는 하나의 유저가 여러개의 값을 가질 수 있어 콤마로 구분
 var SearchUsers = map[string]string{
 	"search":    "U.USERNAME",
 	"username":  "U.USERNAME",
@@ -22,7 +23,7 @@ var SearchUsers = map[string]string{
 	"email":     "U.EMAIL",
 	"openid":    "C.openid",
 	"accounts":  "D.Account",
-	"accountId": "D.AccountId",
+	"accountid": "D.AccountId",
 	"ids":       "U.ID",
 }
 
@@ -50,7 +51,7 @@ func Users(c *gin.Context) {
 	}
 
 	for key, values := range paramPairs {
-		col := SearchUsers[key]
+		col := SearchUsers[strings.ToLower(key)]
 		if col == "" {
 			continue
 		}

@@ -129,7 +129,7 @@ func CheckAccountRequestUser() gin.HandlerFunc {
 		}
 
 		if !result {
-			common.ErrorProcess(c, nil, http.StatusBadRequest, "bad request")
+			common.ErrorProcess(c, nil, http.StatusForbidden, "invalid authorization")
 			return
 		}
 	}

@@ -963,11 +963,11 @@ func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 	, U.FIRST_NAME
 	, U.LAST_NAME
 	, U.EMAIL
-	, ISNULL(A.Roles, '') as Roles 
-	, ISNULL(B.Groups, '') as Groups 
-	, ISNULL(D.Account, '') as Account 
-	, ISNULL(D.AccountId, '') as AccountId 
-	, ISNULL(C.openid, '') as openid 
+	, ISNULL(TRIM(', ' FROM A.Roles), '') as Roles 
+	, ISNULL(TRIM(', ' FROM B.Groups), '') as Groups 
+	, ISNULL(TRIM(', ' FROM D.Account), '') as Account 
+	, ISNULL(TRIM(', ' FROM D.AccountId), '') as AccountId 
+	, ISNULL(TRIM(', ' FROM C.openid), '') as openid 
 	, FORMAT(U.createDate, 'yyyy-MM-dd HH:mm') as createDate
 	, u1.USERNAME as Creator
 	, FORMAT(U.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate
@@ -976,7 +976,7 @@ func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 	USER_ENTITY U
 	left outer join 
 	(select u.ID, 
-	string_agg(r.rName, ', ') as Roles
+	', '+string_agg(r.rName, ', ')+', ' as Roles
 	from roles r 
 	join user_roles_mapping ur 
 	on r.rId = ur.rId
@@ -987,8 +987,8 @@ func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 	left outer join 
 	(select
 	u.ID, 
-	ISNULL(string_agg(g.NAME, ', '), '') as Groups
-	, ISNULL(string_agg(gu.GROUP_ID, ', '), '') as GROUP_ID
+	ISNULL(', '+string_agg(g.NAME, ', ')+', ', '') as Groups
+	, ISNULL(', '+string_agg(gu.GROUP_ID, ', ')+', ', '') as GROUP_ID
 	from USER_ENTITY u
 	left outer join USER_GROUP_MEMBERSHIP gu
 	on u.id = gu.USER_ID
@@ -998,7 +998,7 @@ func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 	On U.ID = B.ID
 	left outer join 
 	(select 
-	USER_ID, ISNULL(string_agg(IDENTITY_PROVIDER, ', '), '') as openid
+	USER_ID, ISNULL(', '+string_agg(IDENTITY_PROVIDER, ', ')+', ', '') as openid
 	from
 	FEDERATED_IDENTITY
 	group by USER_ID
@@ -1010,8 +1010,8 @@ func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 	on U.modifyId = u2.ID
 	left outer join 
 	(SELECT
-	ISNULL(string_agg(AC.AccountName, ', '), '') as Account, AU.UserId,
-	ISNULL(string_agg(AC.AccountId, ', '), '') as AccountId
+	ISNULL(', '+string_agg(AC.AccountName, ', ')+', ', '') as Account, AU.UserId,
+	ISNULL(', '+string_agg(AC.AccountId, ', ')+', ', '') as AccountId
 	FROM [Sale].[dbo].[Account_User] AU
 	JOIN [Sale].[dbo].[Account] AC
 	ON AU.AccountId = AC.AccountId
@@ -1032,9 +1032,11 @@ func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 				query += " OR "
 			}
 			query += key
-			if key == "D.AccountId" {
-				query += "=? "
-				queryParams = append(queryParams, q)
+			//정확히 일치해야 검색이 되는 종류의 검색 파라미터
+			if key == "D.AccountId" || key == "A.Roles" || key == "B.Groups" || key == "D.Account" || key == "C.openid" {
+				query += " LIKE (?) "
+				queryParams = append(queryParams, "%, "+q+",%")
+				//정확히 일치하지 않아도 검색이 되는 종류의 검색 파라미터
 			} else {
 				query += " LIKE (?) "
 				queryParams = append(queryParams, "%"+q+"%")
