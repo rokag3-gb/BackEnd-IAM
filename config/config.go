@@ -26,6 +26,7 @@ type IamConfig struct {
 	Vault_token                  string
 	Vault_endpoint               string
 	Db_connect_string            string
+	Sales_Reqeuest_Url           string
 	Http_port                    string
 	Https_port                   string
 	Https_certfile               string
@@ -92,6 +93,8 @@ func (conf *IamConfig) initConf() error {
 
 	conf.Db_connect_string = fmt.Sprintf("server=%s;database=%s;user id=%s;password=%s;port=%s", db_server, db_name, db_user_id, db_password, db_port)
 
+	conf.Sales_Reqeuest_Url = cfg.Section("sales").Key("reqeuest_Url").String()
+
 	conf.Http_port = cfg.Section("network").Key("http_port").String()
 	conf.Https_port = cfg.Section("network").Key("https_port").String()
 	conf.Https_certfile = cfg.Section("network").Key("ssl_certfile").String()
@@ -152,6 +155,8 @@ func (conf *IamConfig) initEnvConfig() error {
 	}
 
 	conf.Db_connect_string = fmt.Sprintf("server=%s;database=%s;user id=%s;password=%s;port=%s", db_server, db_name, db_user_id, db_password, db_port)
+
+	conf.Sales_Reqeuest_Url = os.Getenv("SALES_REQUEST_URL")
 
 	conf.Http_port = os.Getenv("HTTP_PORT")
 	conf.Https_port = os.Getenv("HTTPS_PORT")

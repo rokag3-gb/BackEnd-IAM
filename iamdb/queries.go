@@ -791,6 +791,40 @@ func DeleteUserRoleByUserId(id string) error {
 	return err
 }
 
+func GetAccountUserId(id string) ([]string, error) {
+	db, dbErr := DBClient()
+	defer db.Close()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
+	query := `SELECT Seq 
+	FROM Sale.dbo.Account_User AU
+	JOIN IAM.dbo.USER_ENTITY U
+	ON AU.UserId = U.ID AND U.REALM_ID = ?
+	WHERE UserId = ?`
+
+	rows, err := db.Query(query, config.GetConfig().Keycloak_realm, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var arr = make([]string, 0)
+
+	if rows.Next() {
+		str := ""
+		err := rows.Scan(&str)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, str)
+	}
+
+	return arr, nil
+}
+
 func CheckRoleAuthID(roleID string, authID string) error {
 	db, dbErr := DBClient()
 	defer db.Close()

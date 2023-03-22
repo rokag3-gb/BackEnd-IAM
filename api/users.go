@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"iam/clients"
 	"iam/common"
 	"iam/iamdb"
@@ -10,6 +11,8 @@ import (
 
 	"github.com/Nerzal/gocloak/v11"
 	"github.com/gin-gonic/gin"
+
+	logger "cloudmt.co.kr/mateLogger"
 )
 
 // Roles, Groups, Account, AccountId, openid 는 하나의 유저가 여러개의 값을 가질 수 있어 콤마로 구분
@@ -220,10 +223,28 @@ func UpdateUser(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func DeleteUser(c *gin.Context) {
+
 	token, _ := clients.KeycloakToken(c)
 	userid := c.Param("userid")
 
-	err := clients.KeycloakClient().DeleteUser(c,
+	arr, err := iamdb.GetAccountUserId(userid)
+	if err != nil {
+		logger.Error(err.Error())
+	} else {
+		for _, seq := range arr {
+			if seq == "" {
+				continue
+			}
+
+			str, err := clients.SalesDeleteAccountUser(seq, c.GetString("accessToken"))
+			fmt.Println(str)
+			if err != nil {
+				logger.Error("%s", err.Error())
+			}
+		}
+	}
+
+	err = clients.KeycloakClient().DeleteUser(c,
 		token.AccessToken,
 		clients.KeycloakConfig().Realm,
 		userid)
@@ -234,8 +255,7 @@ func DeleteUser(c *gin.Context) {
 
 	err = iamdb.DeleteUserRoleByUserId(userid)
 	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
+		logger.Error(err.Error())
 	}
 
 	c.Status(http.StatusNoContent)
