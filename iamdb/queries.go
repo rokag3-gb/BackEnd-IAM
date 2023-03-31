@@ -1919,10 +1919,11 @@ func CheckAccountUser(accountId string, userId string) (bool, error) {
 	FROM [Sale].[dbo].[Account_User] AU
 	JOIN [IAM].[dbo].[USER_ENTITY] U
 	ON AU.UserId = U.ID
-	WHERE AccountId = ? AND UserId = ?
+	WHERE ((AccountId = ? AND UserId = ?)
+	OR (AccountId = '1' AND UserId = ?))
 	AND REALM_ID = ?`
 
-	rows, err := db.Query(query, accountId, userId, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, accountId, userId, userId, config.GetConfig().Keycloak_realm)
 
 	if err != nil {
 		return false, err
