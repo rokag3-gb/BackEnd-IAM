@@ -193,6 +193,7 @@ func UpdateUser(c *gin.Context) {
 	user.Email = gocloak.StringP(json.Email)
 	user.Enabled = gocloak.BoolP(json.Enabled)
 	user.RequiredActions = &json.RequiredActions
+	user.Attributes = json.Attributes
 
 	err = clients.KeycloakClient().UpdateUser(c,
 		token.AccessToken,
@@ -299,6 +300,7 @@ func GetUser(c *gin.Context) {
 		LastName:         user.LastName,
 		Email:            user.Email,
 		RequiredActions:  user.RequiredActions,
+		Attributes:       user.Attributes,
 	})
 }
 

@@ -13,32 +13,34 @@ type CreateUserInfo struct {
 }
 
 type UpdateUserInfo struct {
-	Username        string   `json:"username"`
-	FirstName       string   `json:"firstName"`
-	LastName        string   `json:"lastName,omitempty"`
-	Email           string   `json:"email"`
-	RequiredActions []string `json:"requiredActions"`
-	Enabled         bool     `json:"enabled"`
+	Username        string               `json:"username"`
+	FirstName       string               `json:"firstName"`
+	LastName        string               `json:"lastName,omitempty"`
+	Email           string               `json:"email"`
+	Attributes      *map[string][]string `json:"attributes,omitempty"`
+	RequiredActions []string             `json:"requiredActions"`
+	Enabled         bool                 `json:"enabled"`
 }
 
 type GetUserInfo struct {
-	ID               *string   `json:"id,omitempty"`
-	CreatedTimestamp *int64    `json:"createdTimestamp,omitempty"`
-	Username         *string   `json:"username,omitempty"`
-	Enabled          *bool     `json:"enabled"`
-	FirstName        *string   `json:"firstName"`
-	LastName         *string   `json:"lastName"`
-	Email            *string   `json:"email"`
-	Groups           *string   `json:"groups,omitempty"`
-	Roles            *string   `json:"roles,omitempty"`
-	Account          *string   `json:"Account,omitempty"`
-	AccountId        *string   `json:"AccountId,omitempty"`
-	OpenId           *string   `json:"OpenId,omitempty"`
-	RequiredActions  *[]string `json:"requiredActions,omitempty"`
-	CreateDate       *string   `json:"createDate"`
-	Creator          *string   `json:"creator"`
-	ModifyDate       *string   `json:"modifyDate"`
-	Modifier         *string   `json:"modifier"`
+	ID               *string              `json:"id,omitempty"`
+	CreatedTimestamp *int64               `json:"createdTimestamp,omitempty"`
+	Username         *string              `json:"username,omitempty"`
+	Enabled          *bool                `json:"enabled"`
+	FirstName        *string              `json:"firstName"`
+	LastName         *string              `json:"lastName"`
+	Email            *string              `json:"email"`
+	Groups           *string              `json:"groups,omitempty"`
+	Roles            *string              `json:"roles,omitempty"`
+	Attributes       *map[string][]string `json:"attributes,omitempty"`
+	Account          *string              `json:"Account,omitempty"`
+	AccountId        *string              `json:"AccountId,omitempty"`
+	OpenId           *string              `json:"OpenId,omitempty"`
+	RequiredActions  *[]string            `json:"requiredActions,omitempty"`
+	CreateDate       *string              `json:"createDate"`
+	Creator          *string              `json:"creator"`
+	ModifyDate       *string              `json:"modifyDate"`
+	Modifier         *string              `json:"modifier"`
 }
 
 type ResetUserPasswordInfo struct {
