@@ -13,13 +13,14 @@ type CreateUserInfo struct {
 }
 
 type UpdateUserInfo struct {
-	Username        string               `json:"username"`
-	FirstName       string               `json:"firstName"`
-	LastName        string               `json:"lastName,omitempty"`
-	Email           string               `json:"email"`
+	Username        *string              `json:"username"`
+	FirstName       *string              `json:"firstName"`
+	LastName        *string              `json:"lastName,omitempty"`
+	Email           *string              `json:"email"`
+	PhoneNumber     *string              `json:"phoneNumber"`
 	Attributes      *map[string][]string `json:"attributes,omitempty"`
-	RequiredActions []string             `json:"requiredActions"`
-	Enabled         bool                 `json:"enabled"`
+	RequiredActions *[]string            `json:"requiredActions"`
+	Enabled         *bool                `json:"enabled"`
 }
 
 type GetUserInfo struct {
@@ -30,6 +31,7 @@ type GetUserInfo struct {
 	FirstName        *string              `json:"firstName"`
 	LastName         *string              `json:"lastName"`
 	Email            *string              `json:"email"`
+	PhoneNumber      *string              `json:"phoneNumber"`
 	Groups           *string              `json:"groups,omitempty"`
 	Roles            *string              `json:"roles,omitempty"`
 	Attributes       *map[string][]string `json:"attributes,omitempty"`

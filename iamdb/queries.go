@@ -997,6 +997,7 @@ func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 	, U.FIRST_NAME
 	, U.LAST_NAME
 	, U.EMAIL
+	, U.PhoneNumber
 	, ISNULL(TRIM(', ' FROM A.Roles), '') as Roles 
 	, ISNULL(TRIM(', ' FROM B.Groups), '') as Groups 
 	, ISNULL(TRIM(', ' FROM D.Account), '') as Account 
@@ -1094,7 +1095,7 @@ func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 	for rows.Next() {
 		var r models.GetUserInfo
 
-		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.Roles, &r.Groups, &r.Account, &r.AccountId, &r.OpenId, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
+		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.PhoneNumber, &r.Roles, &r.Groups, &r.Account, &r.AccountId, &r.OpenId, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}
@@ -1111,7 +1112,7 @@ func GetUserDetail(userId string) ([]models.GetUserInfo, error) {
 		return nil, dbErr
 	}
 
-	query := `SELECT U.ID, U.ENABLED, U.USERNAME, U.FIRST_NAME, U.LAST_NAME, U.EMAIL, 
+	query := `SELECT U.ID, U.ENABLED, U.USERNAME, U.FIRST_NAME, U.LAST_NAME, U.EMAIL, U.PhoneNumber, 
 	(SELECT STRING_AGG(REQUIRED_ACTION, ',') FROM USER_REQUIRED_ACTION WHERE USER_ID=U.ID) as REQUIRED_ACTION,
 	FORMAT(U.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
 	u1.USERNAME as Creator, 
@@ -1137,7 +1138,7 @@ func GetUserDetail(userId string) ([]models.GetUserInfo, error) {
 		var r models.GetUserInfo
 
 		RequiredActions := ""
-		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &RequiredActions, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
+		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.PhoneNumber, &RequiredActions, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}
@@ -1176,24 +1177,45 @@ func UsersCreate(userId string, username string) error {
 	return err
 }
 
-func UsersUpdate(userId string, username string) error {
+func UsersUpdate(userId string, username string, phoneNumber string) error {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
 
-	query := `UPDATE USER_ENTITY SET 
-	modifyId=B.ID,
-	modifyDate=GETDATE()
-	FROM USER_ENTITY A,
-	(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) B
-	where A.ID = ?
-	SELECT @@ROWCOUNT`
+	if phoneNumber != "" {
+		query := `UPDATE USER_ENTITY SET 
+		PhoneNumber=?,
+		modifyId=B.ID,
+		modifyDate=GETDATE()
+		FROM USER_ENTITY A,
+		(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) B
+		where A.ID = ?
+		SELECT @@ROWCOUNT`
 
-	rows, err := db.Query(query, username, config.GetConfig().Keycloak_realm, userId)
-	err = resultErrorCheck(rows)
-	return err
+		rows, err := db.Query(query, phoneNumber, username, config.GetConfig().Keycloak_realm, userId)
+		if err != nil {
+			return err
+		}
+		err = resultErrorCheck(rows)
+		return err
+	} else {
+		query := `UPDATE USER_ENTITY SET 
+		modifyId=B.ID,
+		modifyDate=GETDATE()
+		FROM USER_ENTITY A,
+		(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) B
+		where A.ID = ?
+		SELECT @@ROWCOUNT`
+
+		rows, err := db.Query(query, username, config.GetConfig().Keycloak_realm, userId)
+		if err != nil {
+			return err
+		}
+		err = resultErrorCheck(rows)
+		return err
+	}
 }
 
 func CreateSecretGroupTx(tx *sql.Tx, secretGroupPath string, username string) error {

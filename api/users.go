@@ -187,13 +187,38 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	user.Username = gocloak.StringP(json.Username)
-	user.FirstName = gocloak.StringP(json.FirstName)
-	user.LastName = gocloak.StringP(json.LastName)
-	user.Email = gocloak.StringP(json.Email)
-	user.Enabled = gocloak.BoolP(json.Enabled)
-	user.RequiredActions = &json.RequiredActions
-	user.Attributes = json.Attributes
+	if json.Username != nil {
+		user.Username = gocloak.StringP(*json.Username)
+	}
+
+	if json.FirstName != nil {
+		user.FirstName = gocloak.StringP(*json.FirstName)
+	}
+
+	if json.LastName != nil {
+		user.LastName = gocloak.StringP(*json.LastName)
+	}
+
+	if json.Email != nil {
+		user.Email = gocloak.StringP(*json.Email)
+	}
+
+	if json.Enabled != nil {
+		user.Enabled = gocloak.BoolP(*json.Enabled)
+	}
+
+	if json.RequiredActions != nil {
+		user.RequiredActions = json.RequiredActions
+	}
+
+	if json.Attributes != nil {
+		user.Attributes = json.Attributes
+	}
+
+	phoneNumber := ""
+	if json.PhoneNumber != nil {
+		phoneNumber = *gocloak.StringP(*json.PhoneNumber)
+	}
 
 	err = clients.KeycloakClient().UpdateUser(c,
 		token.AccessToken,
@@ -204,7 +229,7 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.UsersUpdate(userid, c.GetString("username"))
+	err = iamdb.UsersUpdate(userid, c.GetString("username"), phoneNumber)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -291,6 +316,14 @@ func GetUser(c *gin.Context) {
 		return
 	}
 
+	var params = map[string][]string{}
+	params["U.ID"] = append(params["U.ID"], *user.ID)
+	arr, err := iamdb.GetUsers(params)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
 	c.JSON(http.StatusOK, models.GetUserInfo{
 		ID:               user.ID,
 		CreatedTimestamp: user.CreatedTimestamp,
@@ -299,6 +332,7 @@ func GetUser(c *gin.Context) {
 		FirstName:        user.FirstName,
 		LastName:         user.LastName,
 		Email:            user.Email,
+		PhoneNumber:      arr[0].PhoneNumber,
 		RequiredActions:  user.RequiredActions,
 		Attributes:       user.Attributes,
 	})
