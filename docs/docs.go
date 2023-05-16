@@ -74,6 +74,46 @@ const docTemplate = `{
                 }
             }
         },
+        "/account/{accountId}/users/me": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account"
+                ],
+                "summary": "Account 자신의 계정 정보 변경",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "account Id",
+                        "name": "accountId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "body",
+                        "name": "Body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateUserInfo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/account/{accountId}/users/{userId}": {
             "get": {
                 "produces": [
@@ -2232,6 +2272,15 @@ const docTemplate = `{
                 "OpenId": {
                     "type": "string"
                 },
+                "attributes": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
                 "createDate": {
                     "type": "string"
                 },
@@ -2263,6 +2312,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "modifyDate": {
+                    "type": "string"
+                },
+                "phoneNumber": {
                     "type": "string"
                 },
                 "requiredActions": {

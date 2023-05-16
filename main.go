@@ -142,6 +142,7 @@ func makeRouter() *gin.Engine {
 		users.GET("", api.Users)
 		users.POST("", api.CreateUser)
 		users.PUT("/:userid", api.UpdateUser)
+		users.PUT("/me", api.UpdateMe)
 		users.DELETE("/:userid", api.DeleteUser)
 		users.GET("/:userid", api.GetUser)
 		users.GET("/:userid/credentials", api.GetUserCredentials)

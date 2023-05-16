@@ -239,6 +239,94 @@ func UpdateUser(c *gin.Context) {
 }
 
 // token godoc
+// @Summary 자신의 계정 정보 변경
+// @Tags Users
+// @Produce  json
+// @Router /users/me [post]
+// @Param Body body models.CreateUserInfo true "body"
+// @Success 204
+// @Failure 400
+// @Failure 500
+
+// token godoc
+// @Summary Account 자신의 계정 정보 변경
+// @Tags Account
+// @Produce  json
+// @Router /account/{accountId}/users/me [put]
+// @Param accountId path string true "account Id"
+// @Param Body body models.CreateUserInfo true "body"
+// @Success 204
+// @Failure 400
+// @Failure 500
+func UpdateMe(c *gin.Context) {
+	token, _ := clients.KeycloakToken(c)
+	userid := c.GetString("userId")
+
+	user, err := clients.KeycloakClient().GetUserByID(c,
+		token.AccessToken, clients.KeycloakConfig().Realm, userid)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	var json models.UpdateUserInfo
+	if err := c.ShouldBindJSON(&json); err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	if json.Username != nil {
+		user.Username = gocloak.StringP(*json.Username)
+	}
+
+	if json.FirstName != nil {
+		user.FirstName = gocloak.StringP(*json.FirstName)
+	}
+
+	if json.LastName != nil {
+		user.LastName = gocloak.StringP(*json.LastName)
+	}
+
+	if json.Email != nil {
+		user.Email = gocloak.StringP(*json.Email)
+	}
+
+	if json.Enabled != nil {
+		user.Enabled = gocloak.BoolP(*json.Enabled)
+	}
+
+	if json.RequiredActions != nil {
+		user.RequiredActions = json.RequiredActions
+	}
+
+	if json.Attributes != nil {
+		user.Attributes = json.Attributes
+	}
+
+	phoneNumber := ""
+	if json.PhoneNumber != nil {
+		phoneNumber = *gocloak.StringP(*json.PhoneNumber)
+	}
+
+	err = clients.KeycloakClient().UpdateUser(c,
+		token.AccessToken,
+		clients.KeycloakConfig().Realm,
+		*user)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	err = iamdb.UsersUpdate(userid, c.GetString("username"), phoneNumber)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// token godoc
 // @Summary 유저 삭제
 // @Tags Users
 // @Produce  json

@@ -80,6 +80,12 @@ definitions:
         type: string
       OpenId:
         type: string
+      attributes:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
       createDate:
         type: string
       createdTimestamp:
@@ -101,6 +107,8 @@ definitions:
       modifier:
         type: string
       modifyDate:
+        type: string
+      phoneNumber:
         type: string
       requiredActions:
         items:
@@ -690,6 +698,32 @@ paths:
         "500":
           description: Internal Server Error
       summary: Account 유저 비밀번호 변경
+      tags:
+      - Account
+  /account/{accountId}/users/me:
+    put:
+      parameters:
+      - description: account Id
+        in: path
+        name: accountId
+        required: true
+        type: string
+      - description: body
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateUserInfo'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: Account 자신의 계정 정보 변경
       tags:
       - Account
   /authority/auth:
