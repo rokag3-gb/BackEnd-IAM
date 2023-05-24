@@ -1314,6 +1314,40 @@
                 }
             }
         },
+        "/metric/login/application/log": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Metric"
+                ],
+                "summary": "유저 접속 로그 출력",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Date",
+                        "name": "date",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.MetricAppItem"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/metric/login/error": {
             "get": {
                 "produces": [

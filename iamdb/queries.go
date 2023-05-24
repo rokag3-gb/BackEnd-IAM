@@ -1740,6 +1740,48 @@ func GetLoginApplicationDate(date int) ([]map[string]interface{}, error) {
 	return arr, nil
 }
 
+func GetLoginApplicationLog(date string) ([]models.MetricLogItem, error) {
+	db, dbErr := DBClient()
+	defer db.Close()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
+	query := `SELECT 
+	E.CLIENT_ID,
+	U.USERNAME,
+	CONVERT(NVARCHAR, DATEADD(SECOND, EVENT_TIME/1000, '01/01/1970 09:00:00'), 23) as EVENT_DATE
+	FROM EVENT_ENTITY E
+	JOIN USER_ENTITY U
+	ON E.USER_ID = U.ID
+	WHERE E.REALM_ID = ?
+	AND TYPE = 'LOGIN'
+	AND JSON_VALUE(DETAILS_JSON, '$.response_mode') IS NULL
+	AND EVENT_TIME > CAST(DATEDIFF(SECOND,{d '1970-01-01'}, ?) AS BIGINT) * 1000
+	ORDER BY EVENT_TIME`
+
+	rows, err := db.Query(query, config.GetConfig().Keycloak_realm, date)
+
+	if err != nil {
+		return nil, err
+	}
+
+	arr := make([]models.MetricLogItem, 0)
+
+	for rows.Next() {
+		tmp := models.MetricLogItem{}
+
+		err = rows.Scan(&tmp.ClientId, &tmp.Username, &tmp.EventDate)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, tmp)
+	}
+
+	return arr, nil
+}
+
 func GetLoginError(date int) ([]models.MetricItem, error) {
 	db, dbErr := DBClient()
 	defer db.Close()

@@ -252,3 +252,9 @@ type MetricAppItem struct {
 	Client2 int    `json:"client2"`
 	Date    string `json:"date"`
 }
+
+type MetricLogItem struct {
+	ClientId  string `json:"clientId"`
+	Username  string `json:"username"`
+	EventDate string `json:"eventDate"`
+}

@@ -1351,6 +1351,28 @@ paths:
       summary: 일자 별 유저 접속 수 조회
       tags:
       - Metric
+  /metric/login/application/log:
+    get:
+      parameters:
+      - description: Date
+        in: query
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.MetricAppItem'
+            type: array
+        "500":
+          description: Internal Server Error
+      summary: 유저 접속 로그 출력
+      tags:
+      - Metric
   /metric/login/error:
     get:
       parameters:

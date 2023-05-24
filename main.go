@@ -192,6 +192,7 @@ func makeRouter() *gin.Engine {
 		metric.GET("/session", api.GetMetricSession)
 		metric.GET("/login/application", middlewares.DateQueryMiddleware(), api.GetLoginApplication)
 		metric.GET("/login/application/date", middlewares.DateQueryMiddleware(), api.GetLoginApplicationDate)
+		metric.GET("/login/application/log", api.GetLoginApplicationLog)
 		metric.GET("/login/error", middlewares.DateQueryMiddleware(), api.GetLoginError)
 		metric.GET("/idp/count", api.GetIdpCount)
 	}

@@ -115,6 +115,29 @@ func GetLoginApplication(c *gin.Context) {
 }
 
 // token godoc
+// @Summary 유저 접속 로그 출력
+// @Tags Metric
+// @Produce  json
+// @Router /metric/login/application/log [get]
+// @Param date query string true "Date"
+// @Success 200 {object} []models.MetricAppItem
+// @Failure 500
+func GetLoginApplicationLog(c *gin.Context) {
+	date := c.Query("date")
+	if date == "" {
+		common.ErrorProcess(c, nil, http.StatusBadRequest, "required 'date'")
+		return
+	}
+	m, err := iamdb.GetLoginApplicationLog(date)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	c.JSON(http.StatusOK, m)
+}
+
+// token godoc
 // @Summary 일자 별 유저 접속 수 조회
 // @Tags Metric
 // @Produce  json
