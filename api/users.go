@@ -5,6 +5,7 @@ import (
 	"iam/clients"
 	"iam/common"
 	"iam/iamdb"
+	"iam/middlewares"
 	"iam/models"
 	"net/http"
 	"strings"
@@ -737,6 +738,45 @@ func DeleteUserFederatedIdentity(c *gin.Context) {
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// token godoc
+// @Summary Account 유저 초기 설정 작업
+// @Tags Account
+// @Produce  json
+// @Router /users/initialize [post]
+// @Success 204
+// @Failure 400
+// @Failure 500
+func UserInitialize(c *gin.Context) {
+	token := c.GetString("accessToken")
+	email, client_id, err := middlewares.GetInitInfo(token)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusBadRequest, "")
+		return
+	}
+	result, err := iamdb.SelectAccount(email, c.GetString("userId"))
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+	if result {
+		roleIdList, err := iamdb.SelectNotExsistRole(client_id, c.GetString("userId"))
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			return
+		}
+
+		for _, roleId := range roleIdList {
+			err = iamdb.AssignUserRole(c.GetString("userId"), roleId, c.GetString("username"))
+			if err != nil {
+				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+				return
+			}
+		}
 	}
 
 	c.Status(http.StatusNoContent)

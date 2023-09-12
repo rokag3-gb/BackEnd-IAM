@@ -1050,6 +1050,7 @@ func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 	FROM [Sale].[dbo].[Account_User] AU
 	JOIN [Sale].[dbo].[Account] AC
 	ON AU.AccountId = AC.AccountId
+	WHERE AU.IsUse = 1
 	group by AU.UserId
 	) D
 	ON U.ID = D.UserId
@@ -1999,4 +2000,95 @@ func CheckAccountUser(accountId string, userId string) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func SelectAccount(email string, user_id string) (bool, error) {
+	ret := false
+	db, err := DBClient()
+	defer db.Close()
+	if err != nil {
+		return ret, err
+	}
+
+	query := `DECLARE @AccId BIGINT
+	DECLARE @UserId varchar(36)
+	
+	SET @UserId = ?
+	SET @AccId = (SELECT AccountId FROM 
+		  SALE.dbo.Account
+		  WHERE ? LIKE '%' + EmailDomain)
+	
+	IF @AccId IS NULL
+		BEGIN
+			-- 계정에 대응되는 Account가 없다는 것을 알려줌
+			SELECT 0
+		END
+	ELSE
+		BEGIN
+			IF NOT EXISTS (SELECT au.seq FROM SALE.dbo.Account_User au
+					WHERE au.AccountId = @AccId
+					AND au.UserId = @UserId)
+				BEGIN
+					INSERT INTO SALE.dbo.Account_User (AccountId, UserId) VALUES (@AccId, @UserId)
+				END
+			-- 계정에 대응되는 Account가 존재한다는 것을 알려줌
+			SELECT 1
+		END`
+
+	rows, err := db.Query(query, user_id, email)
+	if err != nil {
+		return ret, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var result int
+
+		err := rows.Scan(&result)
+		if err != nil {
+			return ret, err
+		}
+
+		if result == 1 {
+			ret = true
+		}
+	}
+
+	return ret, err
+}
+
+func SelectNotExsistRole(client_id string, user_id string) ([]string, error) {
+	var arr = make([]string, 0)
+
+	db, err := DBClient()
+	defer db.Close()
+	if err != nil {
+		return arr, err
+	}
+
+	query := `SELECT roleId FROM IAM.dbo.clientDefaultRole
+	WHERE clientId = ?
+	AND isEnable = 1
+	AND roleId NOT IN
+	(SELECT rId FROM IAM.dbo.user_roles_mapping
+	WHERE userId = ?)`
+
+	rows, err := db.Query(query, client_id, user_id)
+	if err != nil {
+		return arr, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var rId string
+
+		err := rows.Scan(&rId)
+		if err != nil {
+			return arr, err
+		}
+
+		arr = append(arr, rId)
+	}
+
+	return arr, err
 }

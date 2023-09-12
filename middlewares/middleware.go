@@ -149,3 +149,27 @@ func CheckAccountUser() gin.HandlerFunc {
 		}
 	}
 }
+
+func GetInitInfo(token string) (string, string, error) {
+	t, _ := jwt.Parse(token, nil)
+	if t == nil {
+		return "", "", errors.New("invalid authorization")
+	}
+
+	claims, _ := t.Claims.(jwt.MapClaims)
+	if claims == nil {
+		return "", "", errors.New("invalid token")
+	}
+
+	email := fmt.Sprintf("%v", claims["email"])
+	if email == "" {
+		return "", "", errors.New("invalid email")
+	}
+
+	client_id := fmt.Sprintf("%v", claims["azp"])
+	if email == "" {
+		return "", "", errors.New("invalid client_id")
+	}
+
+	return email, client_id, nil
+}

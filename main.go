@@ -155,6 +155,7 @@ func makeRouter() *gin.Engine {
 		users.POST("/:userid/logout", api.LogoutAllSessions)
 		users.GET("/:userid/federated-identity", api.GetUserFederatedIdentities)
 		users.DELETE("/:userid/federated-identity/:providerId", api.DeleteUserFederatedIdentity)
+		users.POST("/initialize", api.UserInitialize)
 	}
 
 	accountUser := route.Group("/account/:accountId/users")
