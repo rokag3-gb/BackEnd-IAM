@@ -744,8 +744,8 @@ func DeleteUserFederatedIdentity(c *gin.Context) {
 }
 
 // token godoc
-// @Summary Account 유저 초기 설정 작업
-// @Tags Account
+// @Summary Users 유저 초기 설정 작업
+// @Tags Users
 // @Produce  json
 // @Router /users/initialize [post]
 // @Success 204

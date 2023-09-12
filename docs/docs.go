@@ -1926,6 +1926,28 @@ const docTemplate = `{
                 }
             }
         },
+        "/users/initialize": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Users 유저 초기 설정 작업",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/users/{userId}": {
             "delete": {
                 "produces": [

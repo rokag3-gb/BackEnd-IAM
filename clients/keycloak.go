@@ -2,7 +2,6 @@ package clients
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 
 	"github.com/Nerzal/gocloak/v11"
