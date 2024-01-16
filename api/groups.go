@@ -38,7 +38,8 @@ func GetGroup(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func CreateGroup(c *gin.Context) {
-	token, _ := clients.KeycloakToken(c)
+	realm := c.GetString("realm")
+	token, _ := clients.KeycloakToken(c, realm)
 	var json models.GroupInfo
 	if err := c.ShouldBindJSON(&json); err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
@@ -51,7 +52,7 @@ func CreateGroup(c *gin.Context) {
 
 	newGroup, err := clients.KeycloakClient().CreateGroup(c,
 		token.AccessToken,
-		clients.KeycloakConfig().Realm,
+		realm,
 		group)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -76,10 +77,11 @@ func CreateGroup(c *gin.Context) {
 // @Success 204
 // @Failure 500
 func DeleteGroup(c *gin.Context) {
-	token, _ := clients.KeycloakToken(c)
+	realm := c.GetString("realm")
+	token, _ := clients.KeycloakToken(c, realm)
 	groupid := c.Param("groupid")
 
-	err := clients.KeycloakClient().DeleteGroup(c, token.AccessToken, clients.KeycloakConfig().Realm, groupid)
+	err := clients.KeycloakClient().DeleteGroup(c, token.AccessToken, realm, groupid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -97,7 +99,8 @@ func DeleteGroup(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func UpdateGroup(c *gin.Context) {
-	token, _ := clients.KeycloakToken(c)
+	realm := c.GetString("realm")
+	token, _ := clients.KeycloakToken(c, realm)
 	groupid := c.Param("groupid")
 	var json models.GroupInfo
 	if err := c.ShouldBindJSON(&json); err != nil {
@@ -105,7 +108,7 @@ func UpdateGroup(c *gin.Context) {
 		return
 	}
 
-	groupToUpdate, err := clients.KeycloakClient().GetGroup(c, token.AccessToken, clients.KeycloakConfig().Realm, groupid)
+	groupToUpdate, err := clients.KeycloakClient().GetGroup(c, token.AccessToken, realm, groupid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -113,7 +116,7 @@ func UpdateGroup(c *gin.Context) {
 
 	groupToUpdate.Name = gocloak.StringP(json.Name)
 
-	err = clients.KeycloakClient().UpdateGroup(c, token.AccessToken, clients.KeycloakConfig().Realm, *groupToUpdate)
+	err = clients.KeycloakClient().UpdateGroup(c, token.AccessToken, realm, *groupToUpdate)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

@@ -21,7 +21,6 @@ func GetConfig() *IamConfig {
 type IamConfig struct {
 	Keycloak_client_id           string
 	Keycloak_client_secret       string
-	Keycloak_realm               string
 	Keycloak_endpoint            string
 	Vault_token                  string
 	Vault_endpoint               string
@@ -67,10 +66,9 @@ func (conf *IamConfig) initConf() error {
 
 	conf.Keycloak_client_id = cfg.Section("keycloak").Key("client_id").String()
 	conf.Keycloak_client_secret = cfg.Section("keycloak").Key("client_secret").String()
-	conf.Keycloak_realm = cfg.Section("keycloak").Key("realm").String()
 	conf.Keycloak_endpoint = cfg.Section("keycloak").Key("endpoint").String()
 
-	if conf.Keycloak_client_id == "" || conf.Keycloak_client_secret == "" || conf.Keycloak_realm == "" || conf.Keycloak_endpoint == "" {
+	if conf.Keycloak_client_id == "" || conf.Keycloak_client_secret == "" || conf.Keycloak_endpoint == "" {
 		return errors.New("check config")
 	}
 
@@ -130,10 +128,9 @@ func (conf *IamConfig) initConf() error {
 func (conf *IamConfig) initEnvConfig() error {
 	conf.Keycloak_client_id = os.Getenv("KEYCLOAK_CLIENT_ID")
 	conf.Keycloak_client_secret = os.Getenv("KEYCLOAK_CLIENT_SECRET")
-	conf.Keycloak_realm = os.Getenv("KEYCLOAK_REALM")
 	conf.Keycloak_endpoint = os.Getenv("KEYCLOAK_ENDPOINT")
 
-	if conf.Keycloak_client_id == "" || conf.Keycloak_client_secret == "" || conf.Keycloak_realm == "" || conf.Keycloak_endpoint == "" {
+	if conf.Keycloak_client_id == "" || conf.Keycloak_client_secret == "" || conf.Keycloak_endpoint == "" {
 		return errors.New("check [KEYCLOAK] config")
 	}
 

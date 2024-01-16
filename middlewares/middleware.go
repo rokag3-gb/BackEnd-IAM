@@ -27,13 +27,7 @@ func GetUserMiddleware() gin.HandlerFunc {
 		}
 		token := strings.TrimPrefix(auth, "Bearer ")
 
-		username, err := getUsernameJWT(token)
-		if err != nil {
-			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-			return
-		}
-
-		userid, err := getUserIdJWT(token)
+		username, userid, realm, err := getDataJWT(token)
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
@@ -41,49 +35,42 @@ func GetUserMiddleware() gin.HandlerFunc {
 
 		c.Set("userId", userid)
 		c.Set("username", username)
+		c.Set("realm", realm)
 		c.Set("accessToken", token)
 	}
 }
 
-func getUsernameJWT(token string) (string, error) {
+func getDataJWT(token string) (string, string, string, error) {
+	var username, userId, realm string
+
 	t, _ := jwt.Parse(token, nil)
 	if t == nil {
-		if config.GetConfig().Developer_mode {
-			return "admin", nil
-		}
-		return "", errors.New("invalid authorization")
+		return username, userId, realm, errors.New("invalid authorization")
 	}
 
 	claims, _ := t.Claims.(jwt.MapClaims)
 	if claims == nil {
-		return "", errors.New("invalid token")
+		return username, userId, realm, errors.New("invalid token")
 	}
 
-	username := fmt.Sprintf("%v", claims["preferred_username"])
+	username = fmt.Sprintf("%v", claims["preferred_username"])
 	if username == "" {
-		return "", errors.New("invalid token")
+		return username, userId, realm, errors.New("invalid token")
 	}
 
-	return username, nil
-}
-
-func getUserIdJWT(token string) (string, error) {
-	t, _ := jwt.Parse(token, nil)
-	if t == nil {
-		return "", errors.New("invalid authorization")
+	userId = fmt.Sprintf("%v", claims["sub"])
+	if userId == "" {
+		return username, userId, realm, errors.New("invalid token")
 	}
 
-	claims, _ := t.Claims.(jwt.MapClaims)
-	if claims == nil {
-		return "", errors.New("invalid token")
+	realm = fmt.Sprintf("%v", claims["iss"])
+	if realm == "" {
+		return username, userId, realm, errors.New("invalid token")
 	}
+	tmp := strings.Split(realm, "/")
+	realm = tmp[len(tmp)]
 
-	username := fmt.Sprintf("%v", claims["sub"])
-	if username == "" {
-		return "", errors.New("invalid token")
-	}
-
-	return username, nil
+	return username, userId, realm, nil
 }
 
 func ListQueryRangeMiddleware() gin.HandlerFunc {
