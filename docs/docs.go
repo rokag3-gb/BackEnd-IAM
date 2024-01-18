@@ -1936,8 +1936,14 @@ const docTemplate = `{
                 ],
                 "summary": "Users 유저 초기 설정 작업",
                 "responses": {
-                    "204": {
-                        "description": "No Content"
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        }
                     },
                     "400": {
                         "description": "Bad Request"

@@ -748,7 +748,7 @@ func DeleteUserFederatedIdentity(c *gin.Context) {
 // @Tags Users
 // @Produce  json
 // @Router /users/initialize [post]
-// @Success 204
+// @Success 200 {object} []int
 // @Failure 400
 // @Failure 500
 func UserInitialize(c *gin.Context) {
@@ -779,5 +779,11 @@ func UserInitialize(c *gin.Context) {
 		}
 	}
 
-	c.Status(http.StatusNoContent)
+	arr, err := iamdb.SelectAccountList(c.GetString("userId"))
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	c.JSON(http.StatusOK, arr)
 }

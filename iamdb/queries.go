@@ -2021,7 +2021,7 @@ func SelectAccount(email string, user_id string) (bool, error) {
 	IF @AccId IS NULL
 		BEGIN
 			-- 계정에 대응되는 Account가 없다는 것을 알려줌
-			SELECT 0
+			SELECT -1
 		END
 	ELSE
 		BEGIN
@@ -2032,7 +2032,7 @@ func SelectAccount(email string, user_id string) (bool, error) {
 					INSERT INTO SALE.dbo.Account_User (AccountId, UserId) VALUES (@AccId, @UserId)
 				END
 			-- 계정에 대응되는 Account가 존재한다는 것을 알려줌
-			SELECT 1
+			SELECT @AccId
 		END`
 
 	rows, err := db.Query(query, user_id, email)
@@ -2088,6 +2088,37 @@ func SelectNotExsistRole(client_id string, user_id string) ([]string, error) {
 		}
 
 		arr = append(arr, rId)
+	}
+
+	return arr, err
+}
+
+func SelectAccountList(user_id string) ([]int64, error) {
+	var arr = make([]int64, 0)
+
+	db, err := DBClient()
+	defer db.Close()
+	if err != nil {
+		return arr, err
+	}
+
+	query := `SELECT AccountId FROM SALE.dbo.Account_User WHERE userId = ?`
+
+	rows, err := db.Query(query, user_id)
+	if err != nil {
+		return arr, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var aId int64
+
+		err := rows.Scan(&aId)
+		if err != nil {
+			return arr, err
+		}
+
+		arr = append(arr, aId)
 	}
 
 	return arr, err
