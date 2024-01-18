@@ -161,6 +161,7 @@ func makeRouter() *gin.Engine {
 	serviceAccount := route.Group("/serviceAccount")
 	{
 		serviceAccount.GET("", api.GetServiceAccount)
+		serviceAccount.GET("/:clientId/secret", api.GetServiceAccountSecret)
 	}
 
 	accountUser := route.Group("/account/:accountId/users")

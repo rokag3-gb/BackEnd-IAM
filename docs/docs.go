@@ -1951,6 +1951,37 @@ const docTemplate = `{
                 }
             }
         },
+        "/serviceAccount/{clientId}/secret": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ServiceAccount"
+                ],
+                "summary": "서비스 어카운트 시크릿 조회",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client ID",
+                        "name": "clientId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/users/initialize": {
             "post": {
                 "produces": [

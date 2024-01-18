@@ -3,6 +3,8 @@ package clients
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"iam/models"
 
 	"github.com/Nerzal/gocloak/v11"
 )
@@ -114,4 +116,28 @@ func TokenGetToken(ctx context.Context, data []byte, secret *string) (*gocloak.J
 		return nil, err
 	}
 	return token, nil
+}
+
+func GetServiceAccountSecret(ctx context.Context, token, realm, clientid string) (models.ClientSecret, error) {
+	result := models.ClientSecret{}
+	clients, err := keycloakClient.GetClients(ctx, token, realm, gocloak.GetClientsParams{ClientID: &clientid})
+	if err != nil {
+		return models.ClientSecret{}, err
+	}
+
+	for _, client := range clients {
+		if client.ID != nil && *client.ClientID == clientid {
+			credential, err := keycloakClient.GetClientSecret(ctx, token, realm, *client.ID)
+			if err != nil {
+				return models.ClientSecret{}, err
+			}
+
+			result.Type = credential.Type
+			result.Value = credential.Value
+
+			return result, nil
+		}
+	}
+
+	return result, errors.New("ServiceAccount not found")
 }

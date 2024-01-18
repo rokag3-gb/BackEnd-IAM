@@ -268,3 +268,8 @@ type MetricLogItem struct {
 	Username  string `json:"username"`
 	EventDate string `json:"eventDate"`
 }
+
+type ClientSecret struct {
+	Type  *string `json:"type"`
+	Value *string `json:"value"`
+}
