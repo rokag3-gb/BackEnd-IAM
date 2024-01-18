@@ -2107,12 +2107,15 @@ func SelectServiceAccount(params map[string][]string) ([]models.GetServiceAccoun
 	U.ID
 	, U.ENABLED
 	, U.USERNAME
+	, E.CLIENT_ID
 	, ISNULL(TRIM(', ' FROM A.Roles), '') as Roles 
 	, ISNULL(TRIM(', ' FROM D.Account), '') as Account 
 	, ISNULL(TRIM(', ' FROM D.AccountId), '') as AccountId 
 	, FORMAT(U.createDate, 'yyyy-MM-dd HH:mm') as createDate
 	from
 	USER_ENTITY U
+    JOIN CLIENT E
+    ON U.SERVICE_ACCOUNT_CLIENT_LINK = E.ID
 	left outer join 
 	(select u.ID, 
 	', '+string_agg(r.rName, ', ')+', ' as Roles
@@ -2188,7 +2191,7 @@ func SelectServiceAccount(params map[string][]string) ([]models.GetServiceAccoun
 	for rows.Next() {
 		var r models.GetServiceAccountInfo
 
-		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.Roles, &r.Account, &r.AccountId, &r.CreateDate)
+		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.ClientId, &r.Roles, &r.Account, &r.AccountId, &r.CreateDate)
 		if err != nil {
 			return nil, err
 		}

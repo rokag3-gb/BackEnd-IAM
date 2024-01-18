@@ -183,3 +183,23 @@ func CreateServiceAccount(ctx context.Context, token, realm, clientid string) er
 
 	return nil
 }
+
+func DeleteServiceAccount(ctx context.Context, token, realm, clientid string) error {
+	clients, err := keycloakClient.GetClients(ctx, token, realm, gocloak.GetClientsParams{ClientID: &clientid})
+	if err != nil {
+		return err
+	}
+
+	for _, client := range clients {
+		if client.ID != nil && *client.ClientID == clientid {
+			err := keycloakClient.DeleteClient(ctx, token, realm, *client.ID)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		}
+	}
+
+	return errors.New("ServiceAccount not found")
+}

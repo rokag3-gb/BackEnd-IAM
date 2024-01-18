@@ -72,6 +72,25 @@ definitions:
     - id
     - type
     type: object
+  models.GetServiceAccountInfo:
+    properties:
+      Account:
+        type: string
+      AccountId:
+        type: string
+      clientId:
+        type: string
+      createDate:
+        type: string
+      enabled:
+        type: boolean
+      id:
+        type: string
+      roles:
+        type: string
+      username:
+        type: string
+    type: object
   models.GetUserInfo:
     properties:
       Account:
@@ -1755,7 +1774,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.RolesInfo'
+              $ref: '#/definitions/models.GetServiceAccountInfo'
             type: array
         "500":
           description: Internal Server Error
@@ -1763,6 +1782,18 @@ paths:
       tags:
       - ServiceAccount
     post:
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+        "500":
+          description: Internal Server Error
+      summary: 서비스 어카운트 생성
+      tags:
+      - ServiceAccount
+  /serviceAccount/{clientId}:
+    delete:
       parameters:
       - description: client ID
         in: path
@@ -1772,11 +1803,11 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "204":
+          description: No Content
         "500":
           description: Internal Server Error
-      summary: 서비스 어카운트 생성
+      summary: 서비스 어카운트 제거
       tags:
       - ServiceAccount
   /serviceAccount/{clientId}/secret:

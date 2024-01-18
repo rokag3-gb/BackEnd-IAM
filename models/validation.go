@@ -45,16 +45,6 @@ type GetUserInfo struct {
 	Modifier         *string              `json:"modifier"`
 }
 
-type GetServiceAccountInfo struct {
-	ID         *string `json:"id,omitempty"`
-	Username   *string `json:"username,omitempty"`
-	Enabled    *bool   `json:"enabled"`
-	Roles      *string `json:"roles,omitempty"`
-	Account    *string `json:"Account,omitempty"`
-	AccountId  *string `json:"AccountId,omitempty"`
-	CreateDate *string `json:"createDate"`
-}
-
 type ResetUserPasswordInfo struct {
 	Password        string `json:"password" binding:"required,eqfield=PasswordConfirm"`
 	PasswordConfirm string `json:"passwordConfirm" binding:"required"`
@@ -267,6 +257,17 @@ type MetricLogItem struct {
 	ClientId  string `json:"clientId"`
 	Username  string `json:"username"`
 	EventDate string `json:"eventDate"`
+}
+
+type GetServiceAccountInfo struct {
+	ID         *string `json:"id,omitempty"`
+	Username   *string `json:"username,omitempty"`
+	ClientId   *string `json:"clientId,omitempty"`
+	Enabled    *bool   `json:"enabled"`
+	Roles      *string `json:"roles,omitempty"`
+	Account    *string `json:"Account,omitempty"`
+	AccountId  *string `json:"AccountId,omitempty"`
+	CreateDate *string `json:"createDate"`
 }
 
 type ClientSecret struct {

@@ -1941,7 +1941,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.RolesInfo"
+                                "$ref": "#/definitions/models.GetServiceAccountInfo"
                             }
                         }
                     },
@@ -1958,6 +1958,25 @@ const docTemplate = `{
                     "ServiceAccount"
                 ],
                 "summary": "서비스 어카운트 생성",
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/serviceAccount/{clientId}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ServiceAccount"
+                ],
+                "summary": "서비스 어카운트 제거",
                 "parameters": [
                     {
                         "type": "string",
@@ -1968,8 +1987,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Created"
+                    "204": {
+                        "description": "No Content"
                     },
                     "500": {
                         "description": "Internal Server Error"
@@ -2425,6 +2444,35 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "userLabel": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.GetServiceAccountInfo": {
+            "type": "object",
+            "properties": {
+                "Account": {
+                    "type": "string"
+                },
+                "AccountId": {
+                    "type": "string"
+                },
+                "clientId": {
+                    "type": "string"
+                },
+                "createDate": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "roles": {
+                    "type": "string"
+                },
+                "username": {
                     "type": "string"
                 }
             }
