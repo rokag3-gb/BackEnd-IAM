@@ -1782,6 +1782,26 @@ paths:
       summary: 서비스 어카운트 시크릿 조회
       tags:
       - ServiceAccount
+  /serviceAccount/{clientId}/secret/regenerate:
+    get:
+      parameters:
+      - description: client ID
+        in: path
+        name: clientId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+      summary: 서비스 어카운트 시크릿 재생성
+      tags:
+      - ServiceAccount
   /users/{userId}:
     delete:
       parameters:

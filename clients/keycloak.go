@@ -141,3 +141,27 @@ func GetServiceAccountSecret(ctx context.Context, token, realm, clientid string)
 
 	return result, errors.New("ServiceAccount not found")
 }
+
+func RegenerateServiceAccountSecret(ctx context.Context, token, realm, clientid string) (models.ClientSecret, error) {
+	result := models.ClientSecret{}
+	clients, err := keycloakClient.GetClients(ctx, token, realm, gocloak.GetClientsParams{ClientID: &clientid})
+	if err != nil {
+		return models.ClientSecret{}, err
+	}
+
+	for _, client := range clients {
+		if client.ID != nil && *client.ClientID == clientid {
+			credential, err := keycloakClient.RegenerateClientSecret(ctx, token, realm, *client.ID)
+			if err != nil {
+				return models.ClientSecret{}, err
+			}
+
+			result.Type = credential.Type
+			result.Value = credential.Value
+
+			return result, nil
+		}
+	}
+
+	return result, errors.New("ServiceAccount not found")
+}
