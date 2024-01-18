@@ -1746,6 +1746,22 @@ paths:
       summary: 비밀 복구
       tags:
       - Secret
+  /serviceAccount:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.RolesInfo'
+            type: array
+        "500":
+          description: Internal Server Error
+      summary: 서비스 어카운트 계정 조회
+      tags:
+      - ServiceAccount
   /users/{userId}:
     delete:
       parameters:

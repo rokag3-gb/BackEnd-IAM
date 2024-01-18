@@ -1926,6 +1926,31 @@ const docTemplate = `{
                 }
             }
         },
+        "/serviceAccount": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ServiceAccount"
+                ],
+                "summary": "서비스 어카운트 계정 조회",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.RolesInfo"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/users/initialize": {
             "post": {
                 "produces": [

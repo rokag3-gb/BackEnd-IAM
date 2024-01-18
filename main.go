@@ -158,6 +158,11 @@ func makeRouter() *gin.Engine {
 		users.POST("/initialize", api.UserInitialize)
 	}
 
+	serviceAccount := route.Group("/serviceAccount")
+	{
+		serviceAccount.GET("", api.GetServiceAccount)
+	}
+
 	accountUser := route.Group("/account/:accountId/users")
 	{
 		accountUser.GET("", middlewares.CheckAccountRequestUser(), api.Users)
