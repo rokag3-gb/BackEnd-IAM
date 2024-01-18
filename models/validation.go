@@ -273,3 +273,7 @@ type ClientSecret struct {
 	Type  *string `json:"type"`
 	Value *string `json:"value"`
 }
+
+type CreateServiceAccount struct {
+	ClientId string `json:"clientId"`
+}

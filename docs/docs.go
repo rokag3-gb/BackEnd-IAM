@@ -1949,6 +1949,32 @@ const docTemplate = `{
                         "description": "Internal Server Error"
                     }
                 }
+            },
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ServiceAccount"
+                ],
+                "summary": "서비스 어카운트 생성",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "client ID",
+                        "name": "clientId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
             }
         },
         "/serviceAccount/{clientId}/secret": {
@@ -1983,7 +2009,7 @@ const docTemplate = `{
             }
         },
         "/serviceAccount/{clientId}/secret/regenerate": {
-            "get": {
+            "post": {
                 "produces": [
                     "application/json"
                 ],

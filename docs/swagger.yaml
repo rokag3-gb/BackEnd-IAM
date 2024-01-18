@@ -1762,6 +1762,23 @@ paths:
       summary: 서비스 어카운트 계정 조회
       tags:
       - ServiceAccount
+    post:
+      parameters:
+      - description: client ID
+        in: path
+        name: clientId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+        "500":
+          description: Internal Server Error
+      summary: 서비스 어카운트 생성
+      tags:
+      - ServiceAccount
   /serviceAccount/{clientId}/secret:
     get:
       parameters:
@@ -1783,7 +1800,7 @@ paths:
       tags:
       - ServiceAccount
   /serviceAccount/{clientId}/secret/regenerate:
-    get:
+    post:
       parameters:
       - description: client ID
         in: path
