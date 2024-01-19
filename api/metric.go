@@ -8,7 +8,7 @@ import (
 	"iam/config"
 	"iam/iamdb"
 	"iam/models"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -23,7 +23,8 @@ import (
 // @Success 200 {object} models.MetricCount
 // @Failure 500
 func MetricCount(c *gin.Context) {
-	count, err := iamdb.MetricCount()
+	realm := c.GetString("realm")
+	count, err := iamdb.MetricCount(realm)
 
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -62,13 +63,13 @@ func GetMetricSession(c *gin.Context) {
 	}
 	defer resp.Body.Close()
 
-	bytes, _ := ioutil.ReadAll(resp.Body)
+	bytes, _ := io.ReadAll(resp.Body)
 
 	arr := make([]map[string]interface{}, 0)
 
 	json.Unmarshal(bytes, &arr)
 
-	apps, err := iamdb.GetApplications()
+	apps, err := iamdb.GetApplications(realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -106,7 +107,8 @@ func GetMetricSession(c *gin.Context) {
 // @Success 200 {object} []models.MetricItem
 // @Failure 500
 func GetLoginApplication(c *gin.Context) {
-	m, err := iamdb.GetLoginApplication(c.MustGet("date").(int) - 1)
+	realm := c.GetString("realm")
+	m, err := iamdb.GetLoginApplication(c.MustGet("date").(int)-1, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -124,12 +126,13 @@ func GetLoginApplication(c *gin.Context) {
 // @Success 200 {object} []models.MetricAppItem
 // @Failure 500
 func GetLoginApplicationLog(c *gin.Context) {
+	realm := c.GetString("realm")
 	date := c.Query("date")
 	if date == "" {
 		common.ErrorProcess(c, nil, http.StatusBadRequest, "required 'date'")
 		return
 	}
-	m, err := iamdb.GetLoginApplicationLog(date)
+	m, err := iamdb.GetLoginApplicationLog(date, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -147,7 +150,8 @@ func GetLoginApplicationLog(c *gin.Context) {
 // @Success 200 {object} []models.MetricAppItem
 // @Failure 500
 func GetLoginApplicationDate(c *gin.Context) {
-	m, err := iamdb.GetLoginApplicationDate(c.MustGet("date").(int) - 1)
+	realm := c.GetString("realm")
+	m, err := iamdb.GetLoginApplicationDate(c.MustGet("date").(int)-1, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -165,7 +169,8 @@ func GetLoginApplicationDate(c *gin.Context) {
 // @Success 200 {object} []models.MetricItem
 // @Failure 500
 func GetLoginError(c *gin.Context) {
-	m, err := iamdb.GetLoginError(c.MustGet("date").(int) - 1)
+	realm := c.GetString("realm")
+	m, err := iamdb.GetLoginError(c.MustGet("date").(int)-1, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -182,7 +187,8 @@ func GetLoginError(c *gin.Context) {
 // @Success 200 {object} []models.MetricItem
 // @Failure 500
 func GetIdpCount(c *gin.Context) {
-	m, err := iamdb.GetIdpCount()
+	realm := c.GetString("realm")
+	m, err := iamdb.GetIdpCount(realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

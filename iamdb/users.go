@@ -1,0 +1,246 @@
+package iamdb
+
+import (
+	"database/sql"
+	"iam/models"
+	"strings"
+)
+
+func GetUsers(params map[string][]string, realm string) ([]models.GetUserInfo, error) {
+	db, dbErr := DBClient()
+	defer db.Close()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
+	var rows *sql.Rows
+	var err error
+
+	query := `select 
+	U.ID
+	, U.ENABLED
+	, U.USERNAME
+	, U.FIRST_NAME
+	, U.LAST_NAME
+	, U.EMAIL
+	, U.PhoneNumber
+	, ISNULL(TRIM(', ' FROM A.Roles), '') as Roles 
+	, ISNULL(TRIM(', ' FROM B.Groups), '') as Groups 
+	, ISNULL(TRIM(', ' FROM D.Account), '') as Account 
+	, ISNULL(TRIM(', ' FROM D.AccountId), '') as AccountId 
+	, ISNULL(TRIM(', ' FROM C.openid), '') as openid 
+	, FORMAT(U.createDate, 'yyyy-MM-dd HH:mm') as createDate
+	, u1.USERNAME as Creator
+	, FORMAT(U.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate
+	, u2.USERNAME as Modifier
+	from
+	USER_ENTITY U
+	left outer join 
+	(select u.ID, 
+	', '+string_agg(r.rName, ', ')+', ' as Roles
+	from roles r 
+	join user_roles_mapping ur 
+	on r.rId = ur.rId
+	join USER_ENTITY u
+	on ur.userId = u.ID
+	GROUP BY u.ID) A
+	ON U.ID = A.ID
+	left outer join 
+	(select
+	u.ID, 
+	ISNULL(', '+string_agg(g.NAME, ', ')+', ', '') as Groups
+	, ISNULL(', '+string_agg(gu.GROUP_ID, ', ')+', ', '') as GROUP_ID
+	from USER_ENTITY u
+	left outer join USER_GROUP_MEMBERSHIP gu
+	on u.id = gu.USER_ID
+	join KEYCLOAK_GROUP g
+	on g.ID = gu.GROUP_ID
+	GROUP BY u.ID) B
+	On U.ID = B.ID
+	left outer join 
+	(select 
+	USER_ID, ISNULL(', '+string_agg(IDENTITY_PROVIDER, ', ')+', ', '') as openid
+	from
+	FEDERATED_IDENTITY
+	group by USER_ID
+	) C
+	ON U.ID = C.USER_ID
+	LEFT OUTER JOIN USER_ENTITY u1
+	on U.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2
+	on U.modifyId = u2.ID
+	left outer join 
+	(SELECT
+	ISNULL(', '+string_agg(AC.AccountName, ', ')+', ', '') as Account, AU.UserId,
+	ISNULL(', '+string_agg(AC.AccountId, ', ')+', ', '') as AccountId
+	FROM [Sale].[dbo].[Account_User] AU
+	JOIN [Sale].[dbo].[Account] AC
+	ON AU.AccountId = AC.AccountId
+	WHERE AU.IsUse = 1
+	group by AU.UserId
+	) D
+	ON U.ID = D.UserId
+	WHERE
+	U.REALM_ID = ?
+	AND U.SERVICE_ACCOUNT_CLIENT_LINK is NULL `
+
+	queryParams := []interface{}{realm}
+
+	for key, values := range params {
+		query += " AND ("
+
+		for i, q := range values {
+			if i != 0 {
+				query += " OR "
+			}
+			query += key
+			//정확히 일치해야 검색이 되는 종류의 검색 파라미터
+			if key == "D.AccountId" || key == "A.Roles" || key == "B.Groups" || key == "D.Account" || key == "C.openid" {
+				query += " LIKE (?) "
+				queryParams = append(queryParams, "%, "+q+",%")
+				//정확히 일치하지 않아도 검색이 되는 종류의 검색 파라미터
+			} else {
+				query += " LIKE (?) "
+				queryParams = append(queryParams, "%"+q+"%")
+			}
+		}
+
+		query += ")"
+	}
+
+	query += " ORDER BY U.USERNAME"
+
+	rows, err = db.Query(query, queryParams...)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var arr = make([]models.GetUserInfo, 0)
+
+	for rows.Next() {
+		var r models.GetUserInfo
+
+		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.PhoneNumber, &r.Roles, &r.Groups, &r.Account, &r.AccountId, &r.OpenId, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, r)
+	}
+	return arr, err
+}
+
+func GetUserDetail(userId, realm string) ([]models.GetUserInfo, error) {
+	db, dbErr := DBClient()
+	defer db.Close()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
+	query := `SELECT U.ID, U.ENABLED, U.USERNAME, U.FIRST_NAME, U.LAST_NAME, U.EMAIL, U.PhoneNumber, 
+	(SELECT STRING_AGG(REQUIRED_ACTION, ',') FROM USER_REQUIRED_ACTION WHERE USER_ID=U.ID) as REQUIRED_ACTION,
+	FORMAT(U.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
+	u1.USERNAME as Creator, 
+	FORMAT(U.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
+	u2.USERNAME as Modifier
+	FROM USER_ENTITY U
+	LEFT OUTER JOIN USER_ENTITY u1
+	on U.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2
+	on U.modifyId = u2.ID
+	WHERE U.ID = ? AND U.REALM_ID = ?`
+
+	rows, err := db.Query(query, userId, realm)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var arr = make([]models.GetUserInfo, 0)
+	blank := make([]string, 0)
+
+	for rows.Next() {
+		var r models.GetUserInfo
+
+		RequiredActions := ""
+		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.PhoneNumber, &RequiredActions, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
+		if err != nil {
+			return nil, err
+		}
+
+		if RequiredActions == "" {
+			r.RequiredActions = &blank
+		} else {
+			tmp := strings.Split(RequiredActions, ",")
+			r.RequiredActions = &tmp
+		}
+
+		arr = append(arr, r)
+	}
+	return arr, err
+}
+
+func UsersCreate(userId, username, realm string) error {
+	db, dbErr := DBClient()
+	defer db.Close()
+	if dbErr != nil {
+		return dbErr
+	}
+
+	query := `UPDATE USER_ENTITY SET 
+	createId=B.ID,
+	createDate=GETDATE(),
+	modifyId=B.ID,
+	modifyDate=GETDATE()
+	FROM USER_ENTITY A,
+	(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) B
+	where A.ID = ?
+	SELECT @@ROWCOUNT`
+
+	rows, err := db.Query(query, username, realm, userId)
+	err = resultErrorCheck(rows)
+	return err
+}
+
+func UsersUpdate(userId, username, phoneNumber, realm string) error {
+	db, dbErr := DBClient()
+	defer db.Close()
+	if dbErr != nil {
+		return dbErr
+	}
+
+	if phoneNumber != "" {
+		query := `UPDATE USER_ENTITY SET 
+		PhoneNumber=?,
+		modifyId=B.ID,
+		modifyDate=GETDATE()
+		FROM USER_ENTITY A,
+		(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) B
+		where A.ID = ?
+		SELECT @@ROWCOUNT`
+
+		rows, err := db.Query(query, phoneNumber, username, realm, userId)
+		if err != nil {
+			return err
+		}
+		err = resultErrorCheck(rows)
+		return err
+	} else {
+		query := `UPDATE USER_ENTITY SET 
+		modifyId=B.ID,
+		modifyDate=GETDATE()
+		FROM USER_ENTITY A,
+		(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) B
+		where A.ID = ?
+		SELECT @@ROWCOUNT`
+
+		rows, err := db.Query(query, username, realm, userId)
+		if err != nil {
+			return err
+		}
+		err = resultErrorCheck(rows)
+		return err
+	}
+}

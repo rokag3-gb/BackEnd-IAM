@@ -47,6 +47,7 @@ var SearchUsers = map[string]string{
 // @Success 200 {object} []models.GetUserInfo
 // @Failure 500
 func Users(c *gin.Context) {
+	realm := c.GetString("realm")
 	paramPairs := c.Request.URL.Query()
 	var params = map[string][]string{}
 
@@ -70,7 +71,7 @@ func Users(c *gin.Context) {
 		}
 	}
 
-	arr, err := iamdb.GetUsers(params)
+	arr, err := iamdb.GetUsers(params, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -131,13 +132,13 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.UsersCreate(newUserId, c.GetString("username"))
+	err = iamdb.UsersCreate(newUserId, c.GetString("username"), realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.CreateUserAddRole(newUserId, c.GetString("username"))
+	err = iamdb.CreateUserAddRole(newUserId, c.GetString("username"), realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -232,7 +233,7 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.UsersUpdate(userid, c.GetString("username"), phoneNumber)
+	err = iamdb.UsersUpdate(userid, c.GetString("username"), phoneNumber, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -321,7 +322,7 @@ func UpdateMe(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.UsersUpdate(userid, c.GetString("username"), phoneNumber)
+	err = iamdb.UsersUpdate(userid, c.GetString("username"), phoneNumber, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -345,7 +346,7 @@ func DeleteUser(c *gin.Context) {
 	token, _ := clients.KeycloakToken(c, realm)
 	userid := c.Param("userid")
 
-	arr, err := iamdb.GetAccountUserId(userid)
+	arr, err := iamdb.GetAccountUserId(userid, realm)
 	if err != nil {
 		logger.Error(err.Error())
 	} else {
@@ -411,7 +412,7 @@ func GetUser(c *gin.Context) {
 
 	var params = map[string][]string{}
 	params["U.ID"] = append(params["U.ID"], *user.ID)
-	arr, err := iamdb.GetUsers(params)
+	arr, err := iamdb.GetUsers(params, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -767,25 +768,26 @@ func DeleteUserFederatedIdentity(c *gin.Context) {
 // @Failure 500
 func UserInitialize(c *gin.Context) {
 	token := c.GetString("accessToken")
+	realm := c.GetString("realm")
 	email, client_id, err := middlewares.GetInitInfo(token)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
-	result, err := iamdb.SelectAccount(email, c.GetString("userId"))
+	result, err := iamdb.SelectAccount(email, c.GetString("userId"), realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	if result {
-		roleIdList, err := iamdb.SelectNotExsistRole(client_id, c.GetString("userId"))
+		roleIdList, err := iamdb.SelectNotExsistRole(client_id, c.GetString("userId"), realm)
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
 		}
 
 		for _, roleId := range roleIdList {
-			err = iamdb.AssignUserRole(c.GetString("userId"), roleId, c.GetString("username"))
+			err = iamdb.AssignUserRole(c.GetString("userId"), roleId, c.GetString("username"), realm)
 			if err != nil {
 				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 				return

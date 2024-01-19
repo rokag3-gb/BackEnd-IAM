@@ -7,7 +7,7 @@ import (
 	"iam/common"
 	"iam/iamdb"
 	"iam/models"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -25,7 +25,8 @@ import (
 // @Failure 400
 // @Failure 500
 func CreateSecretGroup(c *gin.Context) {
-	value, err := ioutil.ReadAll(c.Request.Body)
+	realm := c.GetString("realm")
+	value, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
@@ -52,7 +53,7 @@ func CreateSecretGroup(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.CreateSecretGroupTx(tx, sg.Name, c.GetString("username"))
+	err = iamdb.CreateSecretGroupTx(tx, sg.Name, c.GetString("username"), realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -65,21 +66,21 @@ func CreateSecretGroup(c *gin.Context) {
 	rolename := sg.Name + "_Manager"
 	roleId := uuid.New()
 
-	err = iamdb.CreateAuthIdTx(tx, authId.String(), authname, "/iam/secret/"+sg.Name+"/*", "ALL", c.GetString("username"))
+	err = iamdb.CreateAuthIdTx(tx, authId.String(), authname, "/iam/secret/"+sg.Name+"/*", "ALL", c.GetString("username"), realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.CreateRolesIdTx(tx, roleId.String(), rolename, false, c.GetString("username"))
+	err = iamdb.CreateRolesIdTx(tx, roleId.String(), rolename, false, c.GetString("username"), realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.AssignRoleAuthTx(tx, roleId.String(), authId.String(), c.GetString("username"))
+	err = iamdb.AssignRoleAuthTx(tx, roleId.String(), authId.String(), c.GetString("username"), realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -88,7 +89,7 @@ func CreateSecretGroup(c *gin.Context) {
 
 	if sg.RoleId != nil {
 		for _, role := range *sg.RoleId {
-			err = iamdb.AssignRoleAuthTx(tx, role, authId.String(), c.GetString("username"))
+			err = iamdb.AssignRoleAuthTx(tx, role, authId.String(), c.GetString("username"), realm)
 			if err != nil {
 				tx.Rollback()
 				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -99,7 +100,7 @@ func CreateSecretGroup(c *gin.Context) {
 
 	if sg.UserId != nil {
 		for _, user := range *sg.UserId {
-			err = iamdb.AssignUserRoleTx(tx, user, roleId.String(), c.GetString("username"))
+			err = iamdb.AssignUserRoleTx(tx, user, roleId.String(), c.GetString("username"), realm)
 			if err != nil {
 				tx.Rollback()
 				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -144,6 +145,7 @@ func CreateSecretGroup(c *gin.Context) {
 // @Failure 500
 func DeleteSecretGroup(c *gin.Context) {
 	groupName := c.Param("groupName")
+	realm := c.GetString("realm")
 
 	db, err := iamdb.DBClient()
 	defer db.Close()
@@ -161,42 +163,42 @@ func DeleteSecretGroup(c *gin.Context) {
 	authname := groupName + "_MANAGER"
 	rolename := groupName + "_Manager"
 
-	err = iamdb.DeleteUserRoleByRoleNameTx(tx, rolename)
+	err = iamdb.DeleteUserRoleByRoleNameTx(tx, rolename, realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.DeleteRolesAuthByAuthNameTx(tx, authname)
+	err = iamdb.DeleteRolesAuthByAuthNameTx(tx, authname, realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.DeleteAuthNameTx(tx, authname)
+	err = iamdb.DeleteAuthNameTx(tx, authname, realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.DeleteRolesNameTx(tx, rolename)
+	err = iamdb.DeleteRolesNameTx(tx, rolename, realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.DeleteSecretBySecretGroupTx(tx, groupName)
+	err = iamdb.DeleteSecretBySecretGroupTx(tx, groupName, realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.DeleteSecretGroupTx(tx, groupName)
+	err = iamdb.DeleteSecretGroupTx(tx, groupName, realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -230,6 +232,7 @@ func DeleteSecretGroup(c *gin.Context) {
 // @Failure 500
 func GetSecretList(c *gin.Context) {
 	groupName := c.Param("groupName")
+	realm := c.GetString("realm")
 
 	if err := CheckGroupName(groupName); err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
@@ -251,7 +254,7 @@ func GetSecretList(c *gin.Context) {
 		return
 	}
 
-	secrets, err := iamdb.GetSecret(groupName)
+	secrets, err := iamdb.GetSecret(groupName, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -284,10 +287,11 @@ func GetSecretList(c *gin.Context) {
 // @Failure 500
 func UpdateSecretGroup(c *gin.Context) {
 	groupName := c.Param("groupName")
+	realm := c.GetString("realm")
 	authorityMessage := ""
 	roleMessage := ""
 
-	value, err := ioutil.ReadAll(c.Request.Body)
+	value, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
@@ -317,14 +321,14 @@ func UpdateSecretGroup(c *gin.Context) {
 	authName := groupName + "_MANAGER"
 	roleName := groupName + "_Manager"
 
-	authId, err := iamdb.GetAuthIdByName(authName)
+	authId, err := iamdb.GetAuthIdByName(authName, realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	roleId, err := iamdb.GetRoleIdByName(roleName)
+	roleId, err := iamdb.GetRoleIdByName(roleName, realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -341,7 +345,7 @@ func UpdateSecretGroup(c *gin.Context) {
 			}
 
 			for _, role := range *sg.RoleId {
-				err = iamdb.AssignRoleAuthTx(tx, role, authId, c.GetString("username"))
+				err = iamdb.AssignRoleAuthTx(tx, role, authId, c.GetString("username"), realm)
 				if err != nil {
 					tx.Rollback()
 					common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -363,7 +367,7 @@ func UpdateSecretGroup(c *gin.Context) {
 			}
 
 			for _, user := range *sg.UserId {
-				err = iamdb.AssignUserRoleTx(tx, user, roleId, c.GetString("username"))
+				err = iamdb.AssignUserRoleTx(tx, user, roleId, c.GetString("username"), realm)
 				if err != nil {
 					tx.Rollback()
 					common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -417,6 +421,7 @@ func UpdateSecretGroup(c *gin.Context) {
 // @Failure 500
 func GetSecretGroupMetadata(c *gin.Context) {
 	groupName := c.Param("groupName")
+	realm := c.GetString("realm")
 
 	if err := CheckGroupName(groupName); err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
@@ -438,7 +443,7 @@ func GetSecretGroupMetadata(c *gin.Context) {
 		return
 	}
 
-	secretGroup, err := iamdb.GetSecretGroupMetadata(groupName)
+	secretGroup, err := iamdb.GetSecretGroupMetadata(groupName, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -462,6 +467,7 @@ func GetSecretGroupMetadata(c *gin.Context) {
 func GetSecret(c *gin.Context) {
 	groupName := c.Param("groupName")
 	secretName := c.Param("secretName")
+	realm := c.GetString("realm")
 	path := fmt.Sprintf("%s/data/%s", groupName, secretName)
 
 	data, err := clients.VaultClient().Logical().Read(path)
@@ -475,7 +481,7 @@ func GetSecret(c *gin.Context) {
 		return
 	}
 
-	secret, err := iamdb.GetSecretByName(groupName, secretName)
+	secret, err := iamdb.GetSecretByName(groupName, secretName, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -502,7 +508,8 @@ func GetSecret(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func MargeSecret(c *gin.Context) {
-	value, err := ioutil.ReadAll(c.Request.Body)
+	realm := c.GetString("realm")
+	value, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
@@ -526,7 +533,7 @@ func MargeSecret(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.MergeSecret(secretName, groupName, url.URL, c.GetString("username"))
+	err = iamdb.MergeSecret(secretName, groupName, c.GetString("username"), realm, url.URL)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -591,7 +598,7 @@ func GetMetadataSecret(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func DeleteSecret(c *gin.Context) {
-	value, err := ioutil.ReadAll(c.Request.Body)
+	value, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
@@ -627,7 +634,7 @@ func DeleteSecret(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func UndeleteSecret(c *gin.Context) {
-	value, err := ioutil.ReadAll(c.Request.Body)
+	value, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
@@ -663,7 +670,7 @@ func UndeleteSecret(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func DestroySecret(c *gin.Context) {
-	value, err := ioutil.ReadAll(c.Request.Body)
+	value, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
@@ -735,6 +742,7 @@ func CheckGroupName(groupName string) error {
 // @Success 200 {object} []models.SecretGroupItem
 // @Failure 500
 func GetAllSecretList(c *gin.Context) {
+	realm := c.GetString("realm")
 	data, err := clients.VaultClient().Logical().Read("sys/mounts")
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -765,7 +773,7 @@ func GetAllSecretList(c *gin.Context) {
 		arr = append(arr, m)
 	}
 
-	secretGroup, err := iamdb.GetSecretGroup(arr, c.GetString("username"))
+	secretGroup, err := iamdb.GetSecretGroup(arr, c.GetString("username"), realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -775,7 +783,7 @@ func GetAllSecretList(c *gin.Context) {
 		return
 	}
 
-	secrets, err := iamdb.GetAllSecret(secretGroup)
+	secrets, err := iamdb.GetAllSecret(secretGroup, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

@@ -6,7 +6,7 @@ import (
 	"iam/common"
 	"iam/iamdb"
 	"iam/models"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -21,7 +21,8 @@ import (
 // @Success 200 {object} []models.RolesInfo
 // @Failure 500
 func GetRoles(c *gin.Context) {
-	RolesInfos, err := iamdb.GetRoles()
+	realm := c.GetString("realm")
+	RolesInfos, err := iamdb.GetRoles(realm)
 
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -41,6 +42,7 @@ func GetRoles(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func CreateRoles(c *gin.Context) {
+	realm := c.GetString("realm")
 	roles, err := getRoles(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
@@ -66,7 +68,7 @@ func CreateRoles(c *gin.Context) {
 	}
 	roleId := uuid.New()
 
-	err = iamdb.CreateRolesIdTx(tx, roleId.String(), *roles.Name, roles.DefaultRole, c.GetString("username"))
+	err = iamdb.CreateRolesIdTx(tx, roleId.String(), *roles.Name, roles.DefaultRole, c.GetString("username"), realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -75,7 +77,7 @@ func CreateRoles(c *gin.Context) {
 
 	if roles.AuthId != nil {
 		for _, authId := range *roles.AuthId {
-			err = iamdb.AssignRoleAuthTx(tx, roleId.String(), authId, c.GetString("username"))
+			err = iamdb.AssignRoleAuthTx(tx, roleId.String(), authId, c.GetString("username"), realm)
 			if err != nil {
 				tx.Rollback()
 				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -104,6 +106,7 @@ func CreateRoles(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func DeleteRoles(c *gin.Context) {
+	realm := c.GetString("realm")
 	roleId, err := getRoleID(c)
 
 	if err != nil {
@@ -138,7 +141,7 @@ func DeleteRoles(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.DeleteRolesTx(tx, roleId)
+	err = iamdb.DeleteRolesTx(tx, roleId, realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -164,6 +167,7 @@ func DeleteRoles(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func UpdateRoles(c *gin.Context) {
+	realm := c.GetString("realm")
 	roleId, err := getRoleID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
@@ -196,7 +200,7 @@ func UpdateRoles(c *gin.Context) {
 
 	roles.ID = roleId
 
-	err = iamdb.UpdateRolesTx(tx, roles, c.GetString("username"))
+	err = iamdb.UpdateRolesTx(tx, roles, c.GetString("username"), realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -212,7 +216,7 @@ func UpdateRoles(c *gin.Context) {
 		}
 
 		for _, authId := range *roles.AuthId {
-			err = iamdb.AssignRoleAuthTx(tx, roleId, authId, c.GetString("username"))
+			err = iamdb.AssignRoleAuthTx(tx, roleId, authId, c.GetString("username"), realm)
 			if err != nil {
 				tx.Rollback()
 				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -237,9 +241,10 @@ func UpdateRoles(c *gin.Context) {
 // @Success 200 {object} []string
 // @Failure 500
 func GetMyAuth(c *gin.Context) {
+	realm := c.GetString("realm")
 	userId := c.GetString("userId")
 
-	arr, err := iamdb.GetMyAuth(userId)
+	arr, err := iamdb.GetMyAuth(userId, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -258,6 +263,7 @@ func GetMyAuth(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func GetMenuAuth(c *gin.Context) {
+	realm := c.GetString("realm")
 	userId := c.GetString("userId")
 	site := c.Param("site")
 
@@ -265,7 +271,7 @@ func GetMenuAuth(c *gin.Context) {
 		common.ErrorProcess(c, nil, http.StatusBadRequest, "")
 	}
 
-	arr, err := iamdb.GetMenuAuth(userId, site)
+	arr, err := iamdb.GetMenuAuth(userId, site, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -284,13 +290,14 @@ func GetMenuAuth(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func GetRolesAuth(c *gin.Context) {
+	realm := c.GetString("realm")
 	roleId, err := getRoleID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
-	arr, err := iamdb.GetRolseAuth(roleId)
+	arr, err := iamdb.GetRolseAuth(roleId, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -309,6 +316,7 @@ func GetRolesAuth(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func AssignRoleAuth(c *gin.Context) {
+	realm := c.GetString("realm")
 	roleId, err := getRoleID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
@@ -326,13 +334,13 @@ func AssignRoleAuth(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.CheckRoleAuthID(roleId, auth.ID)
+	err = iamdb.CheckRoleAuthID(roleId, auth.ID, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.AssignRoleAuth(roleId, auth.ID, c.GetString("username"))
+	err = iamdb.AssignRoleAuth(roleId, auth.ID, c.GetString("username"), realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -384,6 +392,7 @@ func DismissRoleAuth(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func UpdateRoleAuth(c *gin.Context) {
+	realm := c.GetString("realm")
 	use, err := getUse(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
@@ -402,7 +411,7 @@ func UpdateRoleAuth(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.UpdateRoleAuth(roleId, authId, use.Use, c.GetString("username"))
+	err = iamdb.UpdateRoleAuth(roleId, authId, use.Use, c.GetString("username"), realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -421,13 +430,14 @@ func UpdateRoleAuth(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func GetUserRole(c *gin.Context) {
+	realm := c.GetString("realm")
 	userID, err := getUserID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
-	arr, err := iamdb.GetUserRole(userID)
+	arr, err := iamdb.GetUserRole(userID, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -447,6 +457,7 @@ func GetUserRole(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func AssignUserRole(c *gin.Context) {
+	realm := c.GetString("realm")
 	userid, err := getUserID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
@@ -462,13 +473,13 @@ func AssignUserRole(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.CheckUserRoleID(userid, roles.ID)
+	err = iamdb.CheckUserRoleID(userid, roles.ID, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.AssignUserRole(userid, roles.ID, c.GetString("username"))
+	err = iamdb.AssignUserRole(userid, roles.ID, c.GetString("username"), realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -520,6 +531,7 @@ func DismissUserRole(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func UpdateUserRole(c *gin.Context) {
+	realm := c.GetString("realm")
 	use, err := getUse(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
@@ -536,7 +548,7 @@ func UpdateUserRole(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.UpdateUserRole(userid, roleId, use.Use, c.GetString("username"))
+	err = iamdb.UpdateUserRole(userid, roleId, c.GetString("username"), realm, use.Use)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -555,13 +567,14 @@ func UpdateUserRole(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func GetUserAuth(c *gin.Context) {
+	realm := c.GetString("realm")
 	userid, err := getUserID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
-	arr, err := iamdb.GetUserAuth(userid)
+	arr, err := iamdb.GetUserAuth(userid, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -581,6 +594,7 @@ func GetUserAuth(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func GetUserAuthActive(c *gin.Context) {
+	realm := c.GetString("realm")
 	userName, err := getUserID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
@@ -593,7 +607,7 @@ func GetUserAuthActive(c *gin.Context) {
 		return
 	}
 
-	m, err := iamdb.GetUserAuthActive(userName, authName)
+	m, err := iamdb.GetUserAuthActive(userName, authName, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -610,7 +624,8 @@ func GetUserAuthActive(c *gin.Context) {
 // @Success 200 {object} []models.AutuhorityInfo
 // @Failure 500
 func GetAuth(c *gin.Context) {
-	arr, err := iamdb.GetAuth()
+	realm := c.GetString("realm")
+	arr, err := iamdb.GetAuth(realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -629,6 +644,7 @@ func GetAuth(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func CreateAuth(c *gin.Context) {
+	realm := c.GetString("realm")
 	auth, err := getAuth(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
@@ -643,7 +659,7 @@ func CreateAuth(c *gin.Context) {
 	authId := uuid.New()
 	auth.ID = authId.String()
 
-	err = iamdb.CreateAuth(auth, c.GetString("username"))
+	err = iamdb.CreateAuth(auth, c.GetString("username"), realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -664,6 +680,7 @@ func CreateAuth(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func DeleteAuth(c *gin.Context) {
+	realm := c.GetString("realm")
 	authId, err := getAuthID(c)
 
 	if err != nil {
@@ -691,7 +708,7 @@ func DeleteAuth(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.DeleteAuth(authId, tx)
+	err = iamdb.DeleteAuth(tx, authId, realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -713,6 +730,7 @@ func DeleteAuth(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func UpdateAuth(c *gin.Context) {
+	realm := c.GetString("realm")
 	authId, err := getAuthID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
@@ -732,7 +750,7 @@ func UpdateAuth(c *gin.Context) {
 
 	auth.ID = authId
 
-	err = iamdb.UpdateAuth(auth, c.GetString("username"))
+	err = iamdb.UpdateAuth(auth, c.GetString("username"), realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -751,13 +769,14 @@ func UpdateAuth(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func GetAuthInfo(c *gin.Context) {
+	realm := c.GetString("realm")
 	authId, err := getAuthID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
-	r, err := iamdb.GetAuthInfo(authId)
+	r, err := iamdb.GetAuthInfo(authId, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -769,7 +788,7 @@ func GetAuthInfo(c *gin.Context) {
 ////////////////////////////////////////////
 
 func getRoles(c *gin.Context) (*models.RolesInfo, error) {
-	value, err := ioutil.ReadAll(c.Request.Body)
+	value, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		return nil, errors.New("required 'body'")
 	}
@@ -785,7 +804,7 @@ func getRoles(c *gin.Context) (*models.RolesInfo, error) {
 }
 
 func getAuth(c *gin.Context) (*models.AutuhorityInfo, error) {
-	value, err := ioutil.ReadAll(c.Request.Body)
+	value, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		return nil, errors.New("required 'body'")
 	}
@@ -831,7 +850,7 @@ func getUserID(c *gin.Context) (string, error) {
 }
 
 func getUse(c *gin.Context) (*models.AutuhorityUse, error) {
-	value, err := ioutil.ReadAll(c.Request.Body)
+	value, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		return nil, errors.New("required 'body'")
 	}

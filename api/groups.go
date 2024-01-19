@@ -19,7 +19,8 @@ import (
 // @Success 200 {object} []models.GroupItem
 // @Failure 500
 func GetGroup(c *gin.Context) {
-	arr, err := iamdb.GetGroup()
+	realm := c.GetString("realm")
+	arr, err := iamdb.GetGroup(realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -59,7 +60,7 @@ func CreateGroup(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.GroupCreate(newGroup, c.GetString("username"))
+	err = iamdb.GroupCreate(newGroup, c.GetString("username"), realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -122,7 +123,7 @@ func UpdateGroup(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.GroupUpdate(groupid, c.GetString("username"))
+	err = iamdb.GroupUpdate(groupid, c.GetString("username"), realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

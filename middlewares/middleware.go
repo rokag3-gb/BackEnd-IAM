@@ -109,7 +109,7 @@ func PageNotFound() gin.HandlerFunc {
 
 func CheckAccountRequestUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		result, err := iamdb.CheckAccountUser(c.Param("accountId"), c.GetString("userId"))
+		result, err := iamdb.CheckAccountUser(c.Param("accountId"), c.GetString("userId"), c.GetString("realm"))
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
 			return
@@ -124,7 +124,7 @@ func CheckAccountRequestUser() gin.HandlerFunc {
 
 func CheckAccountUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		result, err := iamdb.CheckAccountUser(c.Param("accountId"), c.Param("userid"))
+		result, err := iamdb.CheckAccountUser(c.Param("accountId"), c.Param("userid"), c.GetString("realm"))
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
 			return
