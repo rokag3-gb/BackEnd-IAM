@@ -1294,12 +1294,14 @@ func GetSecretGroup(data []models.SecretGroupItem, username string) ([]models.Se
 		return nil, dbErr
 	}
 
+	queryParams := []interface{}{}
 	query := `declare @values table
 	(
 		sg varchar(310)
 	)`
 	for _, d := range data {
-		query += "insert into @values values ('/iam/secret/" + d.Name + "/')"
+		queryParams = append(queryParams, "/iam/secret/"+d.Name+"/")
+		query += `insert into @values values (?)`
 	}
 	query += `select C.secretGroup, 
 	FORMAT(D.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
@@ -1330,7 +1332,10 @@ func GetSecretGroup(data []models.SecretGroupItem, username string) ([]models.Se
 	ON C.secretGroup = D.vSecretGroupPath
 	ORDER BY C.secretGroup`
 
-	rows, err := db.Query(query, username, config.GetConfig().Keycloak_realm)
+	queryParams = append(queryParams, username)
+	queryParams = append(queryParams, config.GetConfig().Keycloak_realm)
+
+	rows, err := db.Query(query, queryParams...)
 	if err != nil {
 		return nil, err
 	}
