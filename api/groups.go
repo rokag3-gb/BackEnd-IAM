@@ -40,7 +40,11 @@ func GetGroup(c *gin.Context) {
 // @Failure 500
 func CreateGroup(c *gin.Context) {
 	realm := c.GetString("realm")
-	token, _ := clients.KeycloakToken(c, realm)
+	token, err := clients.KeycloakToken(c, realm)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
 	var json models.GroupInfo
 	if err := c.ShouldBindJSON(&json); err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
@@ -79,10 +83,14 @@ func CreateGroup(c *gin.Context) {
 // @Failure 500
 func DeleteGroup(c *gin.Context) {
 	realm := c.GetString("realm")
-	token, _ := clients.KeycloakToken(c, realm)
+	token, err := clients.KeycloakToken(c, realm)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
 	groupid := c.Param("groupid")
 
-	err := clients.KeycloakClient().DeleteGroup(c, token.AccessToken, realm, groupid)
+	err = clients.KeycloakClient().DeleteGroup(c, token.AccessToken, realm, groupid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -101,7 +109,11 @@ func DeleteGroup(c *gin.Context) {
 // @Failure 500
 func UpdateGroup(c *gin.Context) {
 	realm := c.GetString("realm")
-	token, _ := clients.KeycloakToken(c, realm)
+	token, err := clients.KeycloakToken(c, realm)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
 	groupid := c.Param("groupid")
 	var json models.GroupInfo
 	if err := c.ShouldBindJSON(&json); err != nil {

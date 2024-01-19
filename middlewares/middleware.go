@@ -68,7 +68,7 @@ func getDataJWT(token string) (string, string, string, error) {
 		return username, userId, realm, errors.New("invalid token")
 	}
 	tmp := strings.Split(realm, "/")
-	realm = tmp[len(tmp)]
+	realm = tmp[len(tmp)-1]
 
 	return username, userId, realm, nil
 }

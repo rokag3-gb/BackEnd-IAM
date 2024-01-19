@@ -46,7 +46,7 @@ func KeycloakToken(ctx context.Context, realm string) (*gocloak.JWT, error) {
 	token, err := keycloakClient.LoginClient(ctx,
 		keycloakConfig.ClientID,
 		keycloakConfig.ClientSecret,
-		realm)
+		"master")
 	if err != nil {
 		return nil, err
 	}

@@ -43,7 +43,11 @@ func MetricCount(c *gin.Context) {
 // @Failure 500
 func GetMetricSession(c *gin.Context) {
 	realm := c.GetString("realm")
-	token, _ := clients.KeycloakToken(c, realm)
+	token, err := clients.KeycloakToken(c, realm)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
 
 	url := fmt.Sprintf("%s/admin/realms/%s/client-session-stats", config.GetConfig().Keycloak_endpoint, realm)
 
