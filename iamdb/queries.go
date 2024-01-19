@@ -62,7 +62,7 @@ func GetRoles() ([]models.RolesInfo, error) {
 	where r.REALM_ID = ?
 	order by r.rName`
 
-	rows, err := db.Query(query, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, realm)
 
 	if err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func GetRoleIdByName(rolename string) (string, error) {
 	where rName = ?
 	AND REALM_ID = ?`
 
-	rows, err := db.Query(query, rolename, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, rolename, realm)
 
 	if err != nil {
 		return "", err
@@ -126,7 +126,7 @@ func GetAuthIdByName(authname string) (string, error) {
 	where aName = ?
 	AND REALM_ID = ?`
 
-	rows, err := db.Query(query, authname, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, authname, realm)
 
 	if err != nil {
 		return "", err
@@ -149,7 +149,7 @@ func CreateRolesIdTx(tx *sql.Tx, id string, name string, defaultRole bool, usern
 	query := `INSERT INTO roles(rId, rName, defaultRole, REALM_ID, createId, modifyId) 
 	select ?, ?, ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
-	_, err := tx.Query(query, id, name, defaultRole, config.GetConfig().Keycloak_realm, username, config.GetConfig().Keycloak_realm)
+	_, err := tx.Query(query, id, name, defaultRole, realm, username, realm)
 	return err
 }
 
@@ -157,7 +157,7 @@ func DeleteRolesTx(tx *sql.Tx, id string) error {
 	query := `DELETE roles where rId = ? AND REALM_ID = ?
 	SELECT @@ROWCOUNT`
 
-	rows, err := tx.Query(query, id, config.GetConfig().Keycloak_realm)
+	rows, err := tx.Query(query, id, realm)
 
 	err = resultErrorCheck(rows)
 	return err
@@ -166,7 +166,7 @@ func DeleteRolesTx(tx *sql.Tx, id string) error {
 func DeleteRolesNameTx(tx *sql.Tx, name string) error {
 	query := `DELETE roles where rName = ? AND REALM_ID = ?`
 
-	_, err := tx.Query(query, name, config.GetConfig().Keycloak_realm)
+	_, err := tx.Query(query, name, realm)
 	return err
 }
 
@@ -184,7 +184,7 @@ func UpdateRolesTx(tx *sql.Tx, role *models.RolesInfo, username string) error {
 		modifyId=(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) 
 		where rId = ? AND REALM_ID = ?
 		SELECT @@ROWCOUNT`
-		rows, err = tx.Query(query, role.Name, role.DefaultRole, username, config.GetConfig().Keycloak_realm, role.ID, config.GetConfig().Keycloak_realm)
+		rows, err = tx.Query(query, role.Name, role.DefaultRole, username, realm, role.ID, realm)
 	} else {
 		query := `UPDATE roles SET 
 		defaultRole = ?, 
@@ -192,7 +192,7 @@ func UpdateRolesTx(tx *sql.Tx, role *models.RolesInfo, username string) error {
 		modifyId=(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) 
 		where rId = ? AND REALM_ID = ?
 		SELECT @@ROWCOUNT`
-		rows, err = tx.Query(query, role.DefaultRole, username, config.GetConfig().Keycloak_realm, role.ID, config.GetConfig().Keycloak_realm)
+		rows, err = tx.Query(query, role.DefaultRole, username, realm, role.ID, realm)
 	}
 
 	err = resultErrorCheck(rows)
@@ -218,7 +218,7 @@ func GetMyAuth(id string) ([]string, error) {
 	AND a.REALM_ID = ?
 	order by a.aName`
 
-	rows, err := db.Query(query, id, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, id, realm)
 	if err != nil {
 		return nil, err
 	}
@@ -289,7 +289,7 @@ func GetMenuAuth(id string, site string) ([]models.MenuAutuhorityInfo, error) {
 	SELECT aName, url, method FROM @values
 	ORDER BY aName`
 
-	rows, err := db.Query(query, id, config.GetConfig().Keycloak_realm, site, id, config.GetConfig().Keycloak_realm, site)
+	rows, err := db.Query(query, id, realm, site, id, realm, site)
 	if err != nil {
 		return nil, err
 	}
@@ -337,7 +337,7 @@ func GetRolseAuth(id string) ([]models.RolesInfo, error) {
 	AND	a.REALM_ID = ?
 	order by a.aName`
 
-	rows, err := db.Query(query, id, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, id, realm)
 	if err != nil {
 		return nil, err
 	}
@@ -369,7 +369,7 @@ func AssignRoleAuth(roleID string, authID string, username string) error {
 	query := `INSERT INTO roles_authority_mapping(rId, aId, createId, modifyId)
 	select ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
-	_, err := db.Query(query, roleID, authID, username, config.GetConfig().Keycloak_realm)
+	_, err := db.Query(query, roleID, authID, username, realm)
 	return err
 }
 
@@ -377,7 +377,7 @@ func AssignRoleAuthTx(tx *sql.Tx, roleID string, authID string, username string)
 	query := `INSERT INTO roles_authority_mapping(rId, aId, createId, modifyId)
 	select ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
-	_, err := tx.Query(query, roleID, authID, username, config.GetConfig().Keycloak_realm)
+	_, err := tx.Query(query, roleID, authID, username, realm)
 	return err
 }
 
@@ -411,7 +411,7 @@ func UpdateRoleAuth(roleID string, authID string, use bool, username string) err
 	AND aId = ?
 	SELECT @@ROWCOUNT`
 
-	rows, err := db.Query(query, use, username, config.GetConfig().Keycloak_realm, roleID, authID)
+	rows, err := db.Query(query, use, username, realm, roleID, authID)
 	err = resultErrorCheck(rows)
 	return err
 }
@@ -440,7 +440,7 @@ func GetUserRole(userID string) ([]models.RolesInfo, error) {
 	AND r.REALM_ID = ?
 	order by r.rName`
 
-	rows, err := db.Query(query, userID, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, userID, realm)
 	if err != nil {
 		return nil, err
 	}
@@ -471,7 +471,7 @@ func AssignUserRole(userID string, roleID string, username string) error {
 	query := `INSERT INTO user_roles_mapping(userId, rId, createId, modifyId)
 	select ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
-	_, err := db.Query(query, userID, roleID, username, config.GetConfig().Keycloak_realm)
+	_, err := db.Query(query, userID, roleID, username, realm)
 	return err
 }
 
@@ -479,7 +479,7 @@ func AssignUserRoleTx(tx *sql.Tx, userID string, roleID string, username string)
 	query := `INSERT INTO user_roles_mapping(userId, rId, createId, modifyId)
 	select ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
-	_, err := tx.Query(query, userID, roleID, username, config.GetConfig().Keycloak_realm)
+	_, err := tx.Query(query, userID, roleID, username, realm)
 	return err
 }
 
@@ -502,7 +502,7 @@ func DeleteUserRoleByRoleNameTx(tx *sql.Tx, roleName string) error {
 	query := `DELETE FROM user_roles_mapping where 
 	rId = (select rId from roles where rName = ? AND REALM_ID = ?)`
 
-	_, err := tx.Query(query, roleName, config.GetConfig().Keycloak_realm)
+	_, err := tx.Query(query, roleName, realm)
 	return err
 }
 
@@ -527,7 +527,7 @@ func UpdateUserRole(userID string, roleID string, use bool, username string) err
 	where userId = ? AND rId = ?
 	SELECT @@ROWCOUNT`
 
-	rows, err := db.Query(query, use, username, config.GetConfig().Keycloak_realm, userID, roleID)
+	rows, err := db.Query(query, use, username, realm, userID, roleID)
 	err = resultErrorCheck(rows)
 	return err
 }
@@ -559,7 +559,7 @@ func GetUserAuth(userID string) ([]models.AutuhorityInfo, error) {
 	AND a.REALM_ID = ?
 	order by a.aName`
 
-	rows, err := db.Query(query, userID, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, userID, realm)
 
 	if err != nil {
 		return nil, err
@@ -603,7 +603,7 @@ func GetUserAuthActive(userName string, authName string) (map[string]interface{}
 	and	ra.useYn = 'true'
 	AND u.REALM_ID = ?`
 
-	rows, err := db.Query(query, userName, authName, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, userName, authName, realm)
 
 	if err != nil {
 		return nil, err
@@ -640,7 +640,7 @@ func GetAuth() ([]models.AutuhorityInfo, error) {
 	where a.REALM_ID = ?
 	order by a.aName`
 
-	rows, err := db.Query(query, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, realm)
 	if err != nil {
 		return nil, err
 	}
@@ -671,7 +671,7 @@ func CreateAuth(auth *models.AutuhorityInfo, username string) error {
 	query := `INSERT INTO authority(aId, aName, url, method, REALM_ID, createId, modifyId)
 	select ?, ?, ?, ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
-	_, err := db.Query(query, auth.ID, auth.Name, auth.URL, auth.Method, config.GetConfig().Keycloak_realm, username, config.GetConfig().Keycloak_realm)
+	_, err := db.Query(query, auth.ID, auth.Name, auth.URL, auth.Method, realm, username, realm)
 	return err
 }
 
@@ -679,7 +679,7 @@ func CreateAuthIdTx(tx *sql.Tx, id string, name string, url string, method strin
 	query := `INSERT INTO authority(aId, aName, url, method, REALM_ID, createId, modifyId)
 	select ?, ?, ?, ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
-	_, err := tx.Query(query, id, name, url, method, config.GetConfig().Keycloak_realm, username, config.GetConfig().Keycloak_realm)
+	_, err := tx.Query(query, id, name, url, method, realm, username, realm)
 	return err
 }
 
@@ -687,7 +687,7 @@ func DeleteAuth(id string, tx *sql.Tx) error {
 	query := `DELETE authority where aId = ? AND REALM_ID = ?
 	SELECT @@ROWCOUNT`
 
-	rows, err := tx.Query(query, id, config.GetConfig().Keycloak_realm)
+	rows, err := tx.Query(query, id, realm)
 	err = resultErrorCheck(rows)
 	return err
 }
@@ -695,7 +695,7 @@ func DeleteAuth(id string, tx *sql.Tx) error {
 func DeleteAuthNameTx(tx *sql.Tx, name string) error {
 	query := `DELETE authority where aName = ? AND REALM_ID = ?`
 
-	_, err := tx.Query(query, name, config.GetConfig().Keycloak_realm)
+	_, err := tx.Query(query, name, realm)
 	return err
 }
 
@@ -715,7 +715,7 @@ func UpdateAuth(auth *models.AutuhorityInfo, username string) error {
 	where aId = ?
 	SELECT @@ROWCOUNT`
 
-	rows, err := db.Query(query, auth.Name, auth.URL, auth.Method, username, config.GetConfig().Keycloak_realm, auth.ID)
+	rows, err := db.Query(query, auth.Name, auth.URL, auth.Method, username, realm, auth.ID)
 	err = resultErrorCheck(rows)
 	return err
 }
@@ -739,7 +739,7 @@ func GetAuthInfo(authID string) (*models.AutuhorityInfo, error) {
 	on a.modifyId = u2.ID
 	where a.aId = ? AND a.REALM_ID = ?`
 
-	rows, err := db.Query(query, authID, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, authID, realm)
 	if err != nil {
 		return nil, err
 	}
@@ -774,7 +774,7 @@ func DeleteRolesAuthByAuthNameTx(tx *sql.Tx, roleName string) error {
 	query := `DELETE roles_authority_mapping where aId =
 	(select aId from authority where aName = ? AND REALM_ID = ?)`
 
-	_, err := tx.Query(query, roleName, config.GetConfig().Keycloak_realm)
+	_, err := tx.Query(query, roleName, realm)
 	return err
 }
 
@@ -804,7 +804,7 @@ func GetAccountUserId(id string) ([]string, error) {
 	ON AU.UserId = U.ID AND U.REALM_ID = ?
 	WHERE UserId = ?`
 
-	rows, err := db.Query(query, config.GetConfig().Keycloak_realm, id)
+	rows, err := db.Query(query, realm, id)
 	if err != nil {
 		return nil, err
 	}
@@ -840,7 +840,7 @@ func CheckRoleAuthID(roleID string, authID string) error {
 	select aid as id from authority where aId = ? AND REALM_ID = ?
 	) a`
 
-	rows, err := db.Query(query, roleID, config.GetConfig().Keycloak_realm, authID, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, roleID, realm, authID, realm)
 	if err != nil {
 		return err
 	}
@@ -875,7 +875,7 @@ func CheckUserRoleID(userID string, roleID string) error {
 	select rId as id from roles where rId = ? AND REALM_ID = ?
 	) a`
 
-	rows, err := db.Query(query, userID, config.GetConfig().Keycloak_realm, roleID, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, userID, realm, roleID, realm)
 	if err != nil {
 		return err
 	}
@@ -917,7 +917,7 @@ func GetGroup() ([]models.GroupItem, error) {
 	g.REALM_ID = ?
 	order by NAME`
 
-	rows, err := db.Query(query, config.GetConfig().Keycloak_realm, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, realm, realm)
 	if err != nil {
 		return nil, err
 	}
@@ -955,7 +955,7 @@ func GroupCreate(groupId string, username string) error {
 	where A.ID = ?
 	SELECT @@ROWCOUNT`
 
-	rows, err := db.Query(query, username, config.GetConfig().Keycloak_realm, groupId)
+	rows, err := db.Query(query, username, realm, groupId)
 	err = resultErrorCheck(rows)
 	return err
 }
@@ -975,7 +975,7 @@ func GroupUpdate(groupId string, username string) error {
 	where A.ID = ?
 	SELECT @@ROWCOUNT`
 
-	rows, err := db.Query(query, username, config.GetConfig().Keycloak_realm, groupId)
+	rows, err := db.Query(query, username, realm, groupId)
 	err = resultErrorCheck(rows)
 	return err
 }
@@ -1058,7 +1058,7 @@ func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 	U.REALM_ID = ?
 	AND U.SERVICE_ACCOUNT_CLIENT_LINK is NULL `
 
-	queryParams := []interface{}{config.GetConfig().Keycloak_realm}
+	queryParams := []interface{}{realm}
 
 	for key, values := range params {
 		query += " AND ("
@@ -1126,7 +1126,7 @@ func GetUserDetail(userId string) ([]models.GetUserInfo, error) {
 	on U.modifyId = u2.ID
 	WHERE U.ID = ? AND U.REALM_ID = ?`
 
-	rows, err := db.Query(query, userId, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, userId, realm)
 	if err != nil {
 		return nil, err
 	}
@@ -1173,7 +1173,7 @@ func UsersCreate(userId string, username string) error {
 	where A.ID = ?
 	SELECT @@ROWCOUNT`
 
-	rows, err := db.Query(query, username, config.GetConfig().Keycloak_realm, userId)
+	rows, err := db.Query(query, username, realm, userId)
 	err = resultErrorCheck(rows)
 	return err
 }
@@ -1195,7 +1195,7 @@ func UsersUpdate(userId string, username string, phoneNumber string) error {
 		where A.ID = ?
 		SELECT @@ROWCOUNT`
 
-		rows, err := db.Query(query, phoneNumber, username, config.GetConfig().Keycloak_realm, userId)
+		rows, err := db.Query(query, phoneNumber, username, realm, userId)
 		if err != nil {
 			return err
 		}
@@ -1210,7 +1210,7 @@ func UsersUpdate(userId string, username string, phoneNumber string) error {
 		where A.ID = ?
 		SELECT @@ROWCOUNT`
 
-		rows, err := db.Query(query, username, config.GetConfig().Keycloak_realm, userId)
+		rows, err := db.Query(query, username, realm, userId)
 		if err != nil {
 			return err
 		}
@@ -1223,21 +1223,21 @@ func CreateSecretGroupTx(tx *sql.Tx, secretGroupPath string, username string) er
 	query := `INSERT INTO vSecretGroup(vSecretGroupPath, REALM_ID, createId, modifyId)
 	select ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
-	_, err := tx.Query(query, secretGroupPath, config.GetConfig().Keycloak_realm, username, config.GetConfig().Keycloak_realm)
+	_, err := tx.Query(query, secretGroupPath, realm, username, realm)
 	return err
 }
 
 func DeleteSecretGroupTx(tx *sql.Tx, secretGroupPath string) error {
 	query := `DELETE FROM vSecretGroup WHERE vSecretGroupPath = ? AND REALM_ID = ?`
 
-	_, err := tx.Query(query, secretGroupPath, config.GetConfig().Keycloak_realm)
+	_, err := tx.Query(query, secretGroupPath, realm)
 	return err
 }
 
 func DeleteSecretBySecretGroupTx(tx *sql.Tx, secretGroupPath string) error {
 	query := `DELETE FROM vSecret WHERE vSecretGroupId = (SELECT vSecretGroupId FROM vSecretGroup WHERE vSecretGroupPath = ? AND REALM_ID = ?)`
 
-	_, err := tx.Query(query, secretGroupPath, config.GetConfig().Keycloak_realm)
+	_, err := tx.Query(query, secretGroupPath, realm)
 	return err
 }
 
@@ -1266,7 +1266,7 @@ func MergeSecret(secretPath string, secretGroupPath string, url *string, usernam
 		INSERT (vSecretPath, vSecretGroupId, url, createId, modifyId)
 		VALUES(B.spath, B.sgid, B.url, B.userid, B.userid);`
 
-	_, err := db.Query(query, secretPath, secretGroupPath, config.GetConfig().Keycloak_realm, username, config.GetConfig().Keycloak_realm, url)
+	_, err := db.Query(query, secretPath, secretGroupPath, realm, username, realm, url)
 
 	return err
 }
@@ -1330,7 +1330,7 @@ func GetSecretGroup(data []models.SecretGroupItem, username string) ([]models.Se
 	ON C.secretGroup = D.vSecretGroupPath
 	ORDER BY C.secretGroup`
 
-	rows, err := db.Query(query, username, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, username, realm)
 	if err != nil {
 		return nil, err
 	}
@@ -1378,7 +1378,7 @@ func GetSecret(groupName string) (map[string]models.SecretItem, error) {
 	WHERE s.vSecretGroupId = (SELECT vSecretGroupId FROM vSecretGroup WHERE vSecretGroupPath = ? AND REALM_ID = ?)
 	ORDER BY s.vSecretPath`
 
-	rows, err := db.Query(query, groupName, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, groupName, realm)
 	if err != nil {
 		return nil, err
 	}
@@ -1421,7 +1421,7 @@ func GetSecretGroupMetadata(groupName string) (models.SecretGroupResponse, error
 	where a.aName = ?
 	AND r.REALM_ID = ?`
 
-	rows, err := db.Query(query, groupName+"_MANAGER", config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, groupName+"_MANAGER", realm)
 	if err != nil {
 		return result, err
 	}
@@ -1448,7 +1448,7 @@ func GetSecretGroupMetadata(groupName string) (models.SecretGroupResponse, error
 	where r.rName = ?
 	AND r.REALM_ID = ?`
 
-	rows, err = db.Query(query, groupName+"_Manager", config.GetConfig().Keycloak_realm)
+	rows, err = db.Query(query, groupName+"_Manager", realm)
 	if err != nil {
 		return result, err
 	}
@@ -1478,7 +1478,7 @@ func GetSecretGroupMetadata(groupName string) (models.SecretGroupResponse, error
 	where vSecretGroupPath = ?
 	AND g.REALM_ID = ?`
 
-	rows, err = db.Query(query, groupName, config.GetConfig().Keycloak_realm)
+	rows, err = db.Query(query, groupName, realm)
 	if err != nil {
 		return result, err
 	}
@@ -1513,7 +1513,7 @@ func GetSecretByName(groupName string, secretName string) (*models.SecretItem, e
 	on s.modifyId = u2.ID
 	WHERE s.vSecretGroupId = (SELECT vSecretGroupId FROM vSecretGroup WHERE vSecretGroupPath = ? AND REALM_ID = ?) AND vSecretPath = ?`
 
-	rows, err := db.Query(query, groupName, config.GetConfig().Keycloak_realm, secretName)
+	rows, err := db.Query(query, groupName, realm, secretName)
 	if err != nil {
 		return nil, err
 	}
@@ -1545,11 +1545,11 @@ func MetricCount() (map[string]int, error) {
 	(select count(*) from authority where REALM_ID = ?) AS authorities`
 
 	rows, err := db.Query(query,
-		config.GetConfig().Keycloak_realm,
-		config.GetConfig().Keycloak_realm,
-		config.GetConfig().Keycloak_realm,
-		config.GetConfig().Keycloak_realm,
-		config.GetConfig().Keycloak_realm)
+		realm,
+		realm,
+		realm,
+		realm,
+		realm)
 	if err != nil {
 		return nil, err
 	}
@@ -1584,7 +1584,7 @@ func GetApplications() ([]string, error) {
 
 	query := `select CLIENT_ID from CLIENT where REALM_ID = ? AND (NAME IS NULL OR LEN(NAME) = 0)`
 
-	rows, err := db.Query(query, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, realm)
 	if err != nil {
 		return nil, err
 	}
@@ -1634,9 +1634,9 @@ func GetLoginApplication(date int) ([]models.MetricItem, error) {
 
 	rows, err := db.Query(query,
 		config.GetConfig().Keycloak_client_id,
-		config.GetConfig().Keycloak_realm,
+		realm,
 		date,
-		config.GetConfig().Keycloak_realm)
+		realm)
 
 	if err != nil {
 		return nil, err
@@ -1706,7 +1706,7 @@ func GetLoginApplicationDate(date int) ([]map[string]interface{}, error) {
 	ORDER BY E.SYSTEM_DATE, E.CLIENT_ID`
 
 	rows, err := db.Query(query,
-		config.GetConfig().Keycloak_realm,
+		realm,
 		date,
 		date)
 
@@ -1761,7 +1761,7 @@ func GetLoginApplicationLog(date string) ([]models.MetricLogItem, error) {
 	AND EVENT_TIME > CAST(DATEDIFF(SECOND,{d '1970-01-01'}, ?) AS BIGINT) * 1000
 	ORDER BY EVENT_TIME`
 
-	rows, err := db.Query(query, config.GetConfig().Keycloak_realm, date)
+	rows, err := db.Query(query, realm, date)
 
 	if err != nil {
 		return nil, err
@@ -1817,7 +1817,7 @@ func GetLoginError(date int) ([]models.MetricItem, error) {
 	ON A.ERROR = B.error
 	GROUP BY B.errorMessage`
 
-	rows, err := db.Query(query, config.GetConfig().Keycloak_realm, date)
+	rows, err := db.Query(query, realm, date)
 	if err != nil {
 		return nil, err
 	}
@@ -1856,7 +1856,7 @@ func CreateUserAddRole(uid string, username string) error {
 	from roles A
 	where defaultRole = 1)`
 
-	_, err := db.Query(query, username, config.GetConfig().Keycloak_realm, uid)
+	_, err := db.Query(query, username, realm, uid)
 	if err != nil {
 		return err
 	}
@@ -1898,7 +1898,7 @@ func GetIdpCount() ([]models.MetricItem, error) {
 	WHERE A.REALM_ID = ?
 	GROUP BY A.PROVIDER_ALIAS`
 
-	rows, err := db.Query(query, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, realm)
 	if err != nil {
 		return nil, err
 	}
@@ -1932,7 +1932,7 @@ func GetAllSecret(data []models.SecretGroupItem) ([]models.SecretItem, error) {
 		groups = append(groups, group.Name)
 		args = append(args, group.Name)
 	}
-	args = append(args, config.GetConfig().Keycloak_realm)
+	args = append(args, realm)
 
 	query := `SELECT SG.vSecretGroupPath, 
 	S.vSecretPath, 
@@ -1988,7 +1988,7 @@ func CheckAccountUser(accountId string, userId string) (bool, error) {
 	OR (AccountId = '1' AND UserId = ?))
 	AND REALM_ID = ?`
 
-	rows, err := db.Query(query, accountId, userId, userId, config.GetConfig().Keycloak_realm)
+	rows, err := db.Query(query, accountId, userId, userId, realm)
 
 	if err != nil {
 		return false, err

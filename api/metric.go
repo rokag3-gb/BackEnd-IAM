@@ -44,7 +44,7 @@ func GetMetricSession(c *gin.Context) {
 	realm := c.GetString("realm")
 	token, _ := clients.KeycloakToken(c, realm)
 
-	url := fmt.Sprintf("%s/admin/realms/%s/client-session-stats", config.GetConfig().Keycloak_endpoint, config.GetConfig().Keycloak_realm)
+	url := fmt.Sprintf("%s/admin/realms/%s/client-session-stats", config.GetConfig().Keycloak_endpoint, realm)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
