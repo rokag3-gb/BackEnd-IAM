@@ -1,0 +1,317 @@
+package iamdb
+
+import (
+	"database/sql"
+	"iam/models"
+)
+
+func CreateSecretGroupTx(tx *sql.Tx, secretGroupPath, username, realm string) error {
+	query := `INSERT INTO vSecretGroup(vSecretGroupPath, REALM_ID, createId, modifyId)
+	select ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
+
+	_, err := tx.Query(query, secretGroupPath, realm, username, realm)
+	return err
+}
+
+func DeleteSecretGroupTx(tx *sql.Tx, secretGroupPath, realm string) error {
+	query := `DELETE FROM vSecretGroup WHERE vSecretGroupPath = ? AND REALM_ID = ?`
+
+	_, err := tx.Query(query, secretGroupPath, realm)
+	return err
+}
+
+func DeleteSecretBySecretGroupTx(tx *sql.Tx, secretGroupPath, realm string) error {
+	query := `DELETE FROM vSecret WHERE vSecretGroupId = (SELECT vSecretGroupId FROM vSecretGroup WHERE vSecretGroupPath = ? AND REALM_ID = ?)`
+
+	_, err := tx.Query(query, secretGroupPath, realm)
+	return err
+}
+
+func MergeSecret(secretPath, secretGroupPath, username, realm string, url *string) error {
+	db, dbErr := DBClient()
+	defer db.Close()
+	if dbErr != nil {
+		return dbErr
+	}
+
+	query := `MERGE INTO vSecret A
+	USING (SELECT 
+	? as spath, 
+	(select vSecretGroupId from vSecretGroup where vSecretGroupPath = ? AND REALM_ID = ?) as sgid,
+	(select ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) as userid,
+	? as url
+	) B
+	ON A.vSecretPath = B.spath
+	AND A.vSecretGroupId = B.sgid
+	WHEN MATCHED THEN
+		UPDATE SET 
+		modifyDate = GETDATE(),
+		modifyId = B.userid,
+		url = B.url
+	WHEN NOT MATCHED THEN
+		INSERT (vSecretPath, vSecretGroupId, url, createId, modifyId)
+		VALUES(B.spath, B.sgid, B.url, B.userid, B.userid);`
+
+	_, err := db.Query(query, secretPath, secretGroupPath, realm, username, realm, url)
+
+	return err
+}
+
+func DeleteSecret(secretPath, secretGroupPath string) error {
+	db, dbErr := DBClient()
+	defer db.Close()
+	if dbErr != nil {
+		return dbErr
+	}
+
+	query := `DELETE FROM vSecret WHERE vSecretPath = ?
+	AND vSecretGroupId = (select vSecretGroupId from vSecretGroup where vSecretGroupPath = ?)
+	SELECT @@ROWCOUNT`
+
+	rows, err := db.Query(query, secretPath, secretGroupPath)
+	err = resultErrorCheck(rows)
+	return err
+}
+
+func GetSecretGroup(data []models.SecretGroupItem, username, realm string) ([]models.SecretGroupItem, error) {
+	db, dbErr := DBClient()
+	defer db.Close()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
+	query := `declare @values table
+	(
+		sg varchar(310)
+	)`
+	for _, d := range data {
+		query += "insert into @values values ('/iam/secret/" + d.Name + "/')"
+	}
+	query += `select C.secretGroup, 
+	FORMAT(D.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
+	u1.USERNAME as Creator, 
+	FORMAT(D.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
+	u2.USERNAME as Modifier
+	from (select REPLACE(REPLACE(B.sg,'/iam/secret/',''),'/','') as secretGroup 
+	from (select
+	REPLACE(url,'*','%%') as auth_url
+	from USER_ENTITY u
+	join user_roles_mapping ur on u.ID = ur.userId
+	join roles_authority_mapping ra on ur.rId = ra.rId
+	join authority a on ra.aId = a.aId
+	where ur.useYn = 'true'
+	and ra.useYn = 'true'
+	and u.USERNAME = ?
+	and u.REALM_ID = ?
+	) A
+	join @values B
+	ON PATINDEX(A.auth_url, B.sg) = 1
+	group by B.sg) C
+	left outer join
+	vSecretGroup D
+	LEFT OUTER JOIN USER_ENTITY u1
+	on D.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2
+	on D.modifyId = u2.ID
+	ON C.secretGroup = D.vSecretGroupPath
+	ORDER BY C.secretGroup`
+
+	rows, err := db.Query(query, username, realm)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	arr := make([]models.SecretGroupItem, 0)
+
+	for rows.Next() {
+		var r models.SecretGroupItem
+
+		err := rows.Scan(&r.Name, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, d := range data { //이게 최선인듯...
+			if d.Name == r.Name {
+				r.Description = d.Description
+				break
+			}
+		}
+
+		arr = append(arr, r)
+	}
+	return arr, err
+}
+
+func GetSecret(groupName, realm string) (map[string]models.SecretItem, error) {
+	db, dbErr := DBClient()
+	defer db.Close()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
+	query := `SELECT s.vSecretPath, s.url, 
+	FORMAT(s.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
+	u1.USERNAME as Creator, 
+	FORMAT(s.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
+	u2.USERNAME as Modifier
+	FROM vSecret s
+	LEFT OUTER JOIN USER_ENTITY u1
+	on s.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2
+	on s.modifyId = u2.ID
+	WHERE s.vSecretGroupId = (SELECT vSecretGroupId FROM vSecretGroup WHERE vSecretGroupPath = ? AND REALM_ID = ?)
+	ORDER BY s.vSecretPath`
+
+	rows, err := db.Query(query, groupName, realm)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var m = make(map[string]models.SecretItem)
+
+	for rows.Next() {
+		var r models.SecretItem
+
+		err := rows.Scan(&r.Name, &r.Url, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
+		if err != nil {
+			return nil, err
+		}
+
+		m[r.Name] = r
+	}
+	return m, err
+}
+
+func GetSecretGroupMetadata(groupName, realm string) (models.SecretGroupResponse, error) {
+	var result models.SecretGroupResponse
+
+	db, dbErr := DBClient()
+	defer db.Close()
+	if dbErr != nil {
+		return result, dbErr
+	}
+
+	result.Roles = make([]models.IdItem, 0)
+	result.Users = make([]models.IdItem, 0)
+
+	query := `SELECT 
+	r.rId, r.rName
+	FROM roles r
+	JOIN roles_authority_mapping ra
+	on r.rId = ra.rId
+	join authority a
+	on ra.aId = a.aId
+	where a.aName = ?
+	AND r.REALM_ID = ?`
+
+	rows, err := db.Query(query, groupName+"_MANAGER", realm)
+	if err != nil {
+		return result, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var r models.IdItem
+
+		err := rows.Scan(&r.Id, &r.Name)
+		if err != nil {
+			return result, err
+		}
+
+		result.Roles = append(result.Roles, r)
+	}
+
+	query = `SELECT 
+	u.ID, u.USERNAME
+	FROM USER_ENTITY u
+	JOIN user_roles_mapping ur
+	on u.ID = ur.userId
+	JOIN roles r
+	ON ur.rId = r.rId
+	where r.rName = ?
+	AND r.REALM_ID = ?`
+
+	rows, err = db.Query(query, groupName+"_Manager", realm)
+	if err != nil {
+		return result, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var r models.IdItem
+
+		err := rows.Scan(&r.Id, &r.Name)
+		if err != nil {
+			return result, err
+		}
+
+		result.Users = append(result.Users, r)
+	}
+
+	query = `SELECT 
+	FORMAT(g.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
+	u1.USERNAME as Creator, 
+	FORMAT(g.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
+	u2.USERNAME as Modifier
+	FROM vSecretGroup g
+	LEFT OUTER JOIN USER_ENTITY u1
+	on g.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2
+	on g.modifyId = u2.ID
+	where vSecretGroupPath = ?
+	AND g.REALM_ID = ?`
+
+	rows, err = db.Query(query, groupName, realm)
+	if err != nil {
+		return result, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		err := rows.Scan(&result.CreateDate, &result.Creator, &result.ModifyDate, &result.Modifier)
+		if err != nil {
+			return result, err
+		}
+	}
+
+	return result, err
+}
+
+func GetSecretByName(groupName, secretName, realm string) (*models.SecretItem, error) {
+	db, dbErr := DBClient()
+	defer db.Close()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
+	query := `SELECT s.vSecretPath, s.url, 
+	FORMAT(s.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
+	u1.USERNAME as Creator, 
+	FORMAT(s.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
+	u2.USERNAME as Modifier
+	FROM vSecret s
+	LEFT OUTER JOIN USER_ENTITY u1
+	on s.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2
+	on s.modifyId = u2.ID
+	WHERE s.vSecretGroupId = (SELECT vSecretGroupId FROM vSecretGroup WHERE vSecretGroupPath = ? AND REALM_ID = ?) AND vSecretPath = ?`
+
+	rows, err := db.Query(query, groupName, realm, secretName)
+	if err != nil {
+		return nil, err
+	}
+
+	m := new(models.SecretItem)
+
+	rows.Next()
+	err = rows.Scan(&m.Name, &m.Url, &m.CreateDate, &m.Creator, &m.ModifyDate, &m.Modifier)
+	if err != nil {
+		return m, nil
+	}
+	defer rows.Close()
+
+	return m, err
+}

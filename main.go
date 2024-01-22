@@ -41,7 +41,6 @@ func main() {
 	clients.InitKeycloakClient(
 		conf.Keycloak_client_id,
 		conf.Keycloak_client_secret,
-		conf.Keycloak_realm,
 		conf.Keycloak_endpoint)
 
 	clients.InitVaultClient(

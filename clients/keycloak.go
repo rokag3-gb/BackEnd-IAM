@@ -16,16 +16,14 @@ var keycloakConfig kcConfig = kcConfig{}
 type kcConfig struct {
 	ClientID     string
 	ClientSecret string
-	Realm        string
 	Endpoint     string
 }
 
-func InitKeycloakClient(clientID string, clientSecret string, realm string, endpoint string) error {
+func InitKeycloakClient(clientID string, clientSecret string, endpoint string) error {
 	if keycloakConfig == (kcConfig{}) {
 		keycloakConfig = kcConfig{
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
-			Realm:        realm,
 			Endpoint:     endpoint,
 		}
 	}
@@ -34,12 +32,6 @@ func InitKeycloakClient(clientID string, clientSecret string, realm string, endp
 		//		restyClient := keycloakClient.RestyClient()
 		//		restyClient.SetDebug(true)
 		//		restyClient.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
-	}
-
-	var ctx = context.Background()
-	_, err := KeycloakToken(ctx)
-	if err != nil {
-		panic("Keycloak Client Init fail " + err.Error())
 	}
 
 	return nil
@@ -53,22 +45,22 @@ func KeycloakConfig() kcConfig {
 	return keycloakConfig
 }
 
-func KeycloakToken(ctx context.Context) (*gocloak.JWT, error) {
+func KeycloakToken(ctx context.Context, realm string) (*gocloak.JWT, error) {
 	token, err := keycloakClient.LoginClient(ctx,
 		keycloakConfig.ClientID,
 		keycloakConfig.ClientSecret,
-		keycloakConfig.Realm)
+		"master")
 	if err != nil {
 		return nil, err
 	}
 	return token, nil
 }
 
-func Token(ctx context.Context, clientid string, clientSecret string, username string, password string) (*gocloak.JWT, error) {
+func Token(ctx context.Context, clientid string, clientSecret string, username string, password string, realm string) (*gocloak.JWT, error) {
 	token, err := keycloakClient.Login(ctx,
 		clientid,
 		clientSecret,
-		keycloakConfig.Realm,
+		realm,
 		username,
 		password)
 
@@ -78,12 +70,12 @@ func Token(ctx context.Context, clientid string, clientSecret string, username s
 	return token, nil
 }
 
-func TokenRefresh(ctx context.Context, refreshToken string, clientid string, clientSecret string) (*gocloak.JWT, error) {
+func TokenRefresh(ctx context.Context, refreshToken string, clientid string, clientSecret string, realm string) (*gocloak.JWT, error) {
 	token, err := keycloakClient.RefreshToken(ctx,
 		refreshToken,
 		clientid,
 		clientSecret,
-		keycloakConfig.Realm)
+		realm)
 
 	if err != nil {
 		return nil, err
@@ -91,11 +83,11 @@ func TokenRefresh(ctx context.Context, refreshToken string, clientid string, cli
 	return token, nil
 }
 
-func TokenLogout(ctx context.Context, refreshToken string, clientid string, clientSecret string) error {
+func TokenLogout(ctx context.Context, refreshToken string, clientid string, clientSecret string, realm string) error {
 	err := keycloakClient.Logout(ctx,
 		clientid,
 		clientSecret,
-		keycloakConfig.Realm,
+		realm,
 		refreshToken)
 
 	if err != nil {
@@ -104,14 +96,14 @@ func TokenLogout(ctx context.Context, refreshToken string, clientid string, clie
 	return nil
 }
 
-func TokenGetToken(ctx context.Context, data []byte, secret *string) (*gocloak.JWT, error) {
+func TokenGetToken(ctx context.Context, data []byte, secret *string, realm string) (*gocloak.JWT, error) {
 	options := gocloak.TokenOptions{}
 	err := json.Unmarshal([]byte(data), &options)
 	if secret != nil {
 		options.ClientSecret = secret
 	}
 
-	token, err := keycloakClient.GetToken(ctx, keycloakConfig.Realm, options)
+	token, err := keycloakClient.GetToken(ctx, realm, options)
 
 	if err != nil {
 		return nil, err

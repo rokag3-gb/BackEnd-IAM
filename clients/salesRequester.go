@@ -2,7 +2,7 @@ package clients
 
 import (
 	"iam/config"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	logger "cloudmt.co.kr/mateLogger"
@@ -25,7 +25,7 @@ func SalesDeleteAccountUser(id string, token string) (string, error) {
 
 	defer resp.Body.Close()
 
-	bytes, _ := ioutil.ReadAll(resp.Body)
+	bytes, _ := io.ReadAll(resp.Body)
 	str := string(bytes)
 
 	if resp.StatusCode >= 400 && resp.StatusCode < 600 {
