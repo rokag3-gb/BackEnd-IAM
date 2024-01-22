@@ -1958,6 +1958,17 @@ const docTemplate = `{
                     "ServiceAccount"
                 ],
                 "summary": "서비스 어카운트 생성",
+                "parameters": [
+                    {
+                        "description": "body",
+                        "name": "Body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateServiceAccount"
+                        }
+                    }
+                ],
                 "responses": {
                     "201": {
                         "description": "Created"
@@ -2018,7 +2029,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.ClientSecret"
                         }
                     },
                     "500": {
@@ -2049,7 +2060,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.ClientSecret"
                         }
                     },
                     "500": {
@@ -2394,6 +2405,25 @@ const docTemplate = `{
             "properties": {
                 "useYn": {
                     "type": "boolean"
+                }
+            }
+        },
+        "models.ClientSecret": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.CreateServiceAccount": {
+            "type": "object",
+            "properties": {
+                "clientId": {
+                    "type": "string"
                 }
             }
         },

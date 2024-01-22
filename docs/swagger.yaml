@@ -37,6 +37,18 @@ definitions:
     required:
     - useYn
     type: object
+  models.ClientSecret:
+    properties:
+      type:
+        type: string
+      value:
+        type: string
+    type: object
+  models.CreateServiceAccount:
+    properties:
+      clientId:
+        type: string
+    type: object
   models.CreateUserInfo:
     properties:
       email:
@@ -1782,6 +1794,13 @@ paths:
       tags:
       - ServiceAccount
     post:
+      parameters:
+      - description: body
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateServiceAccount'
       produces:
       - application/json
       responses:
@@ -1824,7 +1843,7 @@ paths:
         "200":
           description: OK
           schema:
-            type: string
+            $ref: '#/definitions/models.ClientSecret'
         "500":
           description: Internal Server Error
       summary: 서비스 어카운트 시크릿 조회
@@ -1844,7 +1863,7 @@ paths:
         "200":
           description: OK
           schema:
-            type: string
+            $ref: '#/definitions/models.ClientSecret'
         "500":
           description: Internal Server Error
       summary: 서비스 어카운트 시크릿 재생성

@@ -56,7 +56,7 @@ func GetServiceAccount(c *gin.Context) {
 // @Produce json
 // @Router /serviceAccount/{clientId}/secret [get]
 // @Param clientId path string true "client ID"
-// @Success 200 {object} string
+// @Success 200 {object} models.ClientSecret
 // @Failure 500
 func GetServiceAccountSecret(c *gin.Context) {
 	clientId := c.Param("clientId")
@@ -83,7 +83,7 @@ func GetServiceAccountSecret(c *gin.Context) {
 // @Produce json
 // @Router /serviceAccount/{clientId}/secret/regenerate [post]
 // @Param clientId path string true "client ID"
-// @Success 200 {object} string
+// @Success 200 {object} models.ClientSecret
 // @Failure 500
 func RegenerateServiceAccountSecret(c *gin.Context) {
 	clientId := c.Param("clientId")
@@ -109,6 +109,7 @@ func RegenerateServiceAccountSecret(c *gin.Context) {
 // @Tags ServiceAccount
 // @Produce json
 // @Router /serviceAccount [post]
+// @Param Body body models.CreateServiceAccount true "body"
 // @Success 201
 // @Failure 500
 func CreateServiceAccount(c *gin.Context) {
@@ -121,7 +122,7 @@ func CreateServiceAccount(c *gin.Context) {
 
 	var r *models.CreateServiceAccount
 	json.Unmarshal([]byte(value), &r)
-	if r == nil {
+	if r == nil || r.ClientId == "" {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
@@ -165,5 +166,5 @@ func DeleteServiceAccount(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusCreated)
+	c.Status(http.StatusNoContent)
 }
