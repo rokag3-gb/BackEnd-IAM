@@ -22,6 +22,7 @@ import (
 // @Failure 500
 func GetServiceAccount(c *gin.Context) {
 	paramPairs := c.Request.URL.Query()
+	realm := c.GetString("realm")
 	var params = map[string][]string{}
 
 	for key, values := range paramPairs {
@@ -40,7 +41,7 @@ func GetServiceAccount(c *gin.Context) {
 		}
 	}
 
-	arr, err := iamdb.SelectServiceAccount(params)
+	arr, err := iamdb.SelectServiceAccount(params, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -59,14 +60,15 @@ func GetServiceAccount(c *gin.Context) {
 // @Failure 500
 func GetServiceAccountSecret(c *gin.Context) {
 	clientId := c.Param("clientId")
+	realm := c.GetString("realm")
 
-	token, err := clients.KeycloakToken(c)
+	token, err := clients.KeycloakToken(c, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	secret, err := clients.GetServiceAccountSecret(c, token.AccessToken, clients.KeycloakConfig().Realm, clientId)
+	secret, err := clients.GetServiceAccountSecret(c, token.AccessToken, realm, clientId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -85,14 +87,15 @@ func GetServiceAccountSecret(c *gin.Context) {
 // @Failure 500
 func RegenerateServiceAccountSecret(c *gin.Context) {
 	clientId := c.Param("clientId")
+	realm := c.GetString("realm")
 
-	token, err := clients.KeycloakToken(c)
+	token, err := clients.KeycloakToken(c, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	secret, err := clients.RegenerateServiceAccountSecret(c, token.AccessToken, clients.KeycloakConfig().Realm, clientId)
+	secret, err := clients.RegenerateServiceAccountSecret(c, token.AccessToken, realm, clientId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -109,6 +112,7 @@ func RegenerateServiceAccountSecret(c *gin.Context) {
 // @Success 201
 // @Failure 500
 func CreateServiceAccount(c *gin.Context) {
+	realm := c.GetString("realm")
 	value, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
@@ -122,13 +126,13 @@ func CreateServiceAccount(c *gin.Context) {
 		return
 	}
 
-	token, err := clients.KeycloakToken(c)
+	token, err := clients.KeycloakToken(c, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = clients.CreateServiceAccount(c, token.AccessToken, clients.KeycloakConfig().Realm, r.ClientId)
+	err = clients.CreateServiceAccount(c, token.AccessToken, realm, r.ClientId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -147,14 +151,15 @@ func CreateServiceAccount(c *gin.Context) {
 // @Failure 500
 func DeleteServiceAccount(c *gin.Context) {
 	clientId := c.Param("clientId")
+	realm := c.GetString("realm")
 
-	token, err := clients.KeycloakToken(c)
+	token, err := clients.KeycloakToken(c, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = clients.DeleteServiceAccount(c, token.AccessToken, clients.KeycloakConfig().Realm, clientId)
+	err = clients.DeleteServiceAccount(c, token.AccessToken, realm, clientId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

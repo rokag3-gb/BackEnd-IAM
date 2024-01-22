@@ -241,7 +241,7 @@ func SelectNotExsistRole(client_id, user_id, realm string) ([]string, error) {
 	return arr, err
 }
 
-func SelectServiceAccount(params map[string][]string) ([]models.GetServiceAccountInfo, error) {
+func SelectServiceAccount(params map[string][]string, realm string) ([]models.GetServiceAccountInfo, error) {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
@@ -301,7 +301,7 @@ func SelectServiceAccount(params map[string][]string) ([]models.GetServiceAccoun
 	U.REALM_ID = ?
 	AND U.SERVICE_ACCOUNT_CLIENT_LINK IS NOT NULL `
 
-	queryParams := []interface{}{config.GetConfig().Keycloak_realm}
+	queryParams := []interface{}{realm}
 
 	for key, values := range params {
 		query += " AND ("
