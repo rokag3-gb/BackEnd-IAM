@@ -311,3 +311,39 @@ func GetLoginError(date int, realm string) ([]models.MetricItem, error) {
 
 	return arr, nil
 }
+
+func GetIdpCount(realm string) ([]models.MetricItem, error) {
+	db, dbErr := DBClient()
+	defer db.Close()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
+	query := `select 
+	A.PROVIDER_ALIAS, 
+	count(B.IDENTITY_PROVIDER) as count
+	from IDENTITY_PROVIDER A
+	LEFT OUTER JOIN FEDERATED_IDENTITY B
+	ON B.IDENTITY_PROVIDER = A.PROVIDER_ALIAS
+	WHERE A.REALM_ID = ?
+	GROUP BY A.PROVIDER_ALIAS`
+
+	rows, err := db.Query(query, realm)
+	if err != nil {
+		return nil, err
+	}
+
+	arr := make([]models.MetricItem, 0)
+
+	for rows.Next() {
+		var m models.MetricItem
+		err = rows.Scan(&m.Key, &m.Value)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, m)
+	}
+
+	return arr, nil
+}

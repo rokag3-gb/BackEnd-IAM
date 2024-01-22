@@ -244,3 +244,66 @@ func UsersUpdate(userId, username, phoneNumber, realm string) error {
 		return err
 	}
 }
+
+func CreateUserAddRole(uid, username, realm string) error {
+	db, dbErr := DBClient()
+	defer db.Close()
+	if dbErr != nil {
+		return dbErr
+	}
+
+	query := `DECLARE @C_USERNAME nvarchar(255);
+	SET @C_USERNAME = (SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?)
+	
+	INSERT INTO user_roles_mapping(userId, rId, createId, createDate, modifyId, modifyDate)
+	(SELECT ? as userId, rId,
+		@C_USERNAME as createId,
+		GETDATE() as createDate,
+		@C_USERNAME as modifyId,
+		GETDATE() as modifyDate
+	from roles A
+	where defaultRole = 1)`
+
+	_, err := db.Query(query, username, realm, uid)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func SelectNotExsistRole(client_id, user_id, realm string) ([]string, error) {
+	var arr = make([]string, 0)
+
+	db, err := DBClient()
+	defer db.Close()
+	if err != nil {
+		return arr, err
+	}
+
+	query := `SELECT roleId FROM IAM.dbo.clientDefaultRole
+	WHERE clientId = ?
+	AND isEnable = 1
+	AND roleId NOT IN
+	(SELECT rId FROM IAM.dbo.user_roles_mapping
+	WHERE userId = ?)`
+
+	rows, err := db.Query(query, client_id, user_id)
+	if err != nil {
+		return arr, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var rId string
+
+		err := rows.Scan(&rId)
+		if err != nil {
+			return arr, err
+		}
+
+		arr = append(arr, rId)
+	}
+
+	return arr, err
+}

@@ -3,6 +3,7 @@ package iamdb
 import (
 	"database/sql"
 	"iam/models"
+	"strings"
 )
 
 func CreateSecretGroupTx(tx *sql.Tx, secretGroupPath, username, realm string) error {
@@ -79,13 +80,15 @@ func GetSecretGroup(data []models.SecretGroupItem, username, realm string) ([]mo
 	if dbErr != nil {
 		return nil, dbErr
 	}
+	queryParams := []interface{}{}
 
 	query := `declare @values table
 	(
 		sg varchar(310)
 	)`
 	for _, d := range data {
-		query += "insert into @values values ('/iam/secret/" + d.Name + "/')"
+		queryParams = append(queryParams, "/iam/secret/"+d.Name+"/")
+		query += `insert into @values values (?)`
 	}
 	query += `select C.secretGroup, 
 	FORMAT(D.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
@@ -116,7 +119,8 @@ func GetSecretGroup(data []models.SecretGroupItem, username, realm string) ([]mo
 	ON C.secretGroup = D.vSecretGroupPath
 	ORDER BY C.secretGroup`
 
-	rows, err := db.Query(query, username, realm)
+	queryParams = append(queryParams, username, realm)
+	rows, err := db.Query(query, queryParams...)
 	if err != nil {
 		return nil, err
 	}
@@ -314,4 +318,59 @@ func GetSecretByName(groupName, secretName, realm string) (*models.SecretItem, e
 	defer rows.Close()
 
 	return m, err
+}
+
+func GetAllSecret(data []models.SecretGroupItem, realm string) ([]models.SecretItem, error) {
+	db, dbErr := DBClient()
+	defer db.Close()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
+	var groups []string
+
+	args := []interface{}{}
+	for _, group := range data {
+		groups = append(groups, group.Name)
+		args = append(args, group.Name)
+	}
+	args = append(args, realm)
+
+	query := `SELECT SG.vSecretGroupPath, 
+	S.vSecretPath, 
+	S.url, 
+	FORMAT(S.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
+	u1.USERNAME as Creator, 
+	FORMAT(S.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
+	u2.USERNAME as Modifier
+FROM vSecret S
+JOIN vSecretGroup SG
+	ON S.vSecretGroupId = SG.vSecretGroupId
+LEFT OUTER JOIN USER_ENTITY u1
+	on S.createId = u1.ID
+LEFT OUTER JOIN USER_ENTITY u2
+	on S.modifyId = u2.ID
+WHERE SG.vSecretGroupPath IN (?` + strings.Repeat(",?", len(groups)-1) + `)
+AND SG.REALM_ID = ?`
+
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	arr := make([]models.SecretItem, 0)
+
+	for rows.Next() {
+		var r models.SecretItem
+
+		err := rows.Scan(&r.SecretGroup, &r.Name, &r.Url, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, r)
+	}
+
+	return arr, err
 }

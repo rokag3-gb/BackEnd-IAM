@@ -54,3 +54,50 @@ func SelectAccount(email, user_id, realm string) (bool, error) {
 
 	return ret, err
 }
+
+func CheckAccountUser(accountId, userId, realm string) (bool, error) {
+	db, err := DBClient()
+	defer db.Close()
+	if err != nil {
+		return false, err
+	}
+
+	query := `SELECT AU.AccountId
+	FROM [Sale].[dbo].[Account_User] AU
+	JOIN [IAM].[dbo].[USER_ENTITY] U
+	ON AU.UserId = U.ID
+	WHERE ((AccountId = ? AND UserId = ?)
+	OR (AccountId = '1' AND UserId = ?))
+	AND REALM_ID = ?`
+
+	rows, err := db.Query(query, accountId, userId, userId, realm)
+
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func CreateAccountUser(accountId string, userId string, saveId string) error {
+	db, dbErr := DBClient()
+	defer db.Close()
+	if dbErr != nil {
+		return dbErr
+	}
+
+	query := `INSERT INTO Sale.dbo.Account_User(AccountId, UserId, SaveId)
+	VALUES(?, ?, ?)`
+
+	_, err := db.Query(query, accountId, userId, saveId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
