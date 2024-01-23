@@ -2043,8 +2043,12 @@ paths:
       produces:
       - application/json
       responses:
-        "204":
-          description: No Content
+        "200":
+          description: OK
+          schema:
+            items:
+              type: integer
+            type: array
         "400":
           description: Bad Request
         "500":
