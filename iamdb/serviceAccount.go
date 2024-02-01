@@ -32,8 +32,8 @@ func SelectServiceAccount(params map[string][]string, realm string) ([]models.Ge
 	(select u.ID, 
 	', '+string_agg(r.rName, ', ')+', ' as Roles
 	from roles r 
-	join user_roles_mapping ur 
-	on r.rId = ur.rId
+	join UserRole ur 
+	on r.rId = ur.RoleId
 	join USER_ENTITY u
 	on ur.userId = u.ID
 	GROUP BY u.ID) A

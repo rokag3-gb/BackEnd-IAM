@@ -6,14 +6,14 @@ import (
 	"iam/models"
 )
 
-func GetRoles(realm string) ([]models.RolesInfo, error) {
+func GetRoles() ([]models.RolesInfo, error) {
 	db, err := DBClient()
 	defer db.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	query := `select r.rId, r.rName, r.defaultRole,
+	query := `select r.rId, r.rName, r.defaultRole, r.REALM_ID,
 	FORMAT(r.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
 	u1.USERNAME as Creator, 
 	FORMAT(r.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
@@ -23,10 +23,9 @@ func GetRoles(realm string) ([]models.RolesInfo, error) {
 	on r.createId = u1.ID
 	LEFT OUTER JOIN USER_ENTITY u2
 	on r.modifyId = u2.ID
-	where r.REALM_ID = ?
 	order by r.rName`
 
-	rows, err := db.Query(query, realm)
+	rows, err := db.Query(query)
 
 	if err != nil {
 		return nil, err
@@ -38,7 +37,7 @@ func GetRoles(realm string) ([]models.RolesInfo, error) {
 	for rows.Next() {
 		var r models.RolesInfo
 
-		err := rows.Scan(&r.ID, &r.Name, &r.DefaultRole, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
+		err := rows.Scan(&r.ID, &r.Name, &r.DefaultRole, &r.DefaultRole, &r.Realm, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}
@@ -163,7 +162,8 @@ func UpdateRolesTx(tx *sql.Tx, role *models.RolesInfo, username, realm string) e
 	return err
 }
 
-func GetMyAuth(id, realm string) ([]string, error) {
+// 토큰에서 테넌트ID를 받아와야 하는 유형
+func GetMyAuth(id, tenantId string) ([]string, error) {
 	db, err := DBClient()
 	defer db.Close()
 	if err != nil {
@@ -171,18 +171,15 @@ func GetMyAuth(id, realm string) ([]string, error) {
 	}
 
 	query := `select a.aName
-	from user_roles_mapping ur 
-	join roles_authority_mapping ra 
-	on ur.rId = ra.rId
-	join authority a 
-	on ra.aId = a.aId
+	from UserRole ur 
+		join roles_authority_mapping ra on ur.RoleId = ra.rId
+		join authority a on ra.aId = a.aId
+		JOIN Tenant t ON ur.TenantId = t.TenantId AND t.TenantId = ?
 	where userId = ?
-	and	ur.useYn = 1
-	and	ra.useYn = 1
-	AND a.REALM_ID = ?
-	order by a.aName`
+		and	ra.useYn = 1
+	order by a.aName	`
 
-	rows, err := db.Query(query, id, realm)
+	rows, err := db.Query(query, tenantId, id)
 	if err != nil {
 		return nil, err
 	}
@@ -203,6 +200,7 @@ func GetMyAuth(id, realm string) ([]string, error) {
 	return arr, err
 }
 
+// 토큰에서 테넌트ID를 받아와야 하는 유형
 func GetMenuAuth(id, site, realm string) ([]models.MenuAutuhorityInfo, error) {
 	db, err := DBClient()
 	defer db.Close()
@@ -221,9 +219,9 @@ func GetMenuAuth(id, site, realm string) ([]models.MenuAutuhorityInfo, error) {
 	(select a.aName
 	, a.url
 	, a.method
-	from user_roles_mapping ur 
+	from UserRole ur 
 	join roles_authority_mapping ra 
-	on ur.rId = ra.rId
+	on ur.RoleId = ra.rId
 	join authority a 
 	on ra.aId = a.aId
 	where userId = ?
@@ -237,9 +235,9 @@ func GetMenuAuth(id, site, realm string) ([]models.MenuAutuhorityInfo, error) {
 	(select a.aName
 	, a.url
 	, a.method
-	from user_roles_mapping ur 
+	from UserRole ur 
 	join roles_authority_mapping ra 
-	on ur.rId = ra.rId
+	on ur.RoleId = ra.rId
 	join authority a 
 	on ra.aId = a.aId
 	where userId = ?
@@ -274,7 +272,7 @@ func GetMenuAuth(id, site, realm string) ([]models.MenuAutuhorityInfo, error) {
 	return arr, err
 }
 
-func GetRolseAuth(id, realm string) ([]models.RolesInfo, error) {
+func GetRolseAuth(id string) ([]models.RolesInfo, error) {
 	db, err := DBClient()
 	defer db.Close()
 	if err != nil {
@@ -298,10 +296,9 @@ func GetRolseAuth(id, realm string) ([]models.RolesInfo, error) {
 	LEFT OUTER JOIN USER_ENTITY u2
 	on ra.modifyId = u2.ID
 	where ra.rId = ?
-	AND	a.REALM_ID = ?
 	order by a.aName`
 
-	rows, err := db.Query(query, id, realm)
+	rows, err := db.Query(query, id)
 	if err != nil {
 		return nil, err
 	}
@@ -387,24 +384,24 @@ func GetUserRole(userID, realm string) ([]models.RolesInfo, error) {
 		return nil, dbErr
 	}
 
-	query := `select r.rId, r.rName, r.defaultRole, ur.useYn,
+	query := `select r.rId, 
+	r.rName, 
+	r.defaultRole, 
+	ur.useYn,
+	t.TenantId,
 	FORMAT(ur.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
 	u1.USERNAME as Creator, 
 	FORMAT(ur.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
 	u2.USERNAME as Modifier
-	from 
-	roles r join
-	user_roles_mapping ur 
-	on r.rId = ur.rId
-	LEFT OUTER JOIN USER_ENTITY u1
-	on ur.createId = u1.ID
-	LEFT OUTER JOIN USER_ENTITY u2
-	on ur.modifyId = u2.ID
-	where ur.userId = ?
-	AND r.REALM_ID = ?
-	order by r.rName`
+from roles r 
+	join UserRole ur on r.rId = ur.RoleId
+	join Tenant t on ur.TenantId = t.TenantId
+	LEFT OUTER JOIN USER_ENTITY u1 on ur.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2 on ur.modifyId = u2.ID
+where ur.userId = ?
+order by r.rName`
 
-	rows, err := db.Query(query, userID, realm)
+	rows, err := db.Query(query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -415,7 +412,7 @@ func GetUserRole(userID, realm string) ([]models.RolesInfo, error) {
 	for rows.Next() {
 		var r models.RolesInfo
 
-		err := rows.Scan(&r.ID, &r.Name, &r.DefaultRole, &r.Use, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
+		err := rows.Scan(&r.ID, &r.Name, &r.DefaultRole, &r.Use, &r.TenantId, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}
@@ -425,45 +422,45 @@ func GetUserRole(userID, realm string) ([]models.RolesInfo, error) {
 	return arr, err
 }
 
-func AssignUserRole(userID, roleID, username, realm string) error {
+func AssignUserRole(userID, username, realm string, roleInfo models.RolesInfo) error {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
 
-	query := `INSERT INTO user_roles_mapping(userId, rId, createId, modifyId)
-	select ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
+	query := `INSERT INTO UserRole(tenantId, UserId, RoleId, SavedAt, SaverId)
+	select ?, ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
-	_, err := db.Query(query, userID, roleID, username, realm)
+	_, err := db.Query(query, roleInfo.TenantId, userID, roleInfo.ID, username, realm)
 	return err
 }
 
 func AssignUserRoleTx(tx *sql.Tx, userID, roleID, username, realm string) error {
-	query := `INSERT INTO user_roles_mapping(userId, rId, createId, modifyId)
+	query := `INSERT INTO UserRole(userId, rId, createId, modifyId)
 	select ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
 
 	_, err := tx.Query(query, userID, roleID, username, realm)
 	return err
 }
 
-func DismissUserRole(userID string, roleID string) error {
+func DismissUserRole(userID, roleID, tenantId string) error {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
 
-	query := `DELETE FROM user_roles_mapping where userId = ? AND rId = ?
+	query := `DELETE FROM UserRole where userId = ? AND RoleId = ? AND TenantId = ?
 	SELECT @@ROWCOUNT`
 
-	rows, err := db.Query(query, userID, roleID)
+	rows, err := db.Query(query, userID, roleID, tenantId)
 	err = resultErrorCheck(rows)
 	return err
 }
 
 func DeleteUserRoleByRoleNameTx(tx *sql.Tx, roleName, realm string) error {
-	query := `DELETE FROM user_roles_mapping where 
+	query := `DELETE FROM UserRole where 
 	rId = (select rId from roles where rName = ? AND REALM_ID = ?)`
 
 	_, err := tx.Query(query, roleName, realm)
@@ -471,7 +468,7 @@ func DeleteUserRoleByRoleNameTx(tx *sql.Tx, roleName, realm string) error {
 }
 
 func DeleteUserRoleByRoleIdTx(tx *sql.Tx, roleName string) error {
-	query := `DELETE FROM user_roles_mapping where rId = ?`
+	query := `DELETE FROM UserRole where rId = ?`
 
 	_, err := tx.Query(query, roleName)
 	return err
@@ -484,7 +481,7 @@ func UpdateUserRole(userID, roleID, username, realm string, use bool) error {
 		return dbErr
 	}
 
-	query := `UPDATE user_roles_mapping SET 
+	query := `UPDATE UserRole SET 
 	useYn = ?, 
 	modifyDate=GETDATE(), 
 	modifyId=(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) 
@@ -496,34 +493,33 @@ func UpdateUserRole(userID, roleID, username, realm string, use bool) error {
 	return err
 }
 
-func GetUserAuth(userID, realm string) ([]models.AutuhorityInfo, error) {
+func GetUserAuth(userID, tenantId string) ([]models.AutuhorityInfo, error) {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
 
-	query := `select a.aId, a.aName, a.url, a.method, 
-	FORMAT(a.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
-	u1.USERNAME as Creator, 
-	FORMAT(a.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
-	u2.USERNAME as Modifier
-	from user_roles_mapping ur 
-	join roles_authority_mapping ra 
-	on ur.rId = ra.rId
-	join authority a 
-	on ra.aId = a.aId
-	LEFT OUTER JOIN USER_ENTITY u1
-	on a.createId = u1.ID
-	LEFT OUTER JOIN USER_ENTITY u2
-	on a.modifyId = u2.ID
-	where userId = ?
-	and	ur.useYn = 'true'
-	and	ra.useYn = 'true'
-	AND a.REALM_ID = ?
-	order by a.aName`
+	query := `SELECT a.aId
+	, a.aName
+	, a.url
+	, a.method
+	, FORMAT(a.createDate, 'yyyy-MM-dd HH:mm') as createDate
+	, u1.USERNAME as Creator
+	, FORMAT(a.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate 
+	, u2.USERNAME as Modifier
+FROM UserRole ur 
+	join roles_authority_mapping ra on ur.RoleId = ra.rId
+	join authority a on ra.aId = a.aId
+	JOIN Tenant t ON ur.TenantId = t.TenantId
+	LEFT OUTER JOIN USER_ENTITY u1 on a.createId = u1.ID
+	LEFT OUTER JOIN USER_ENTITY u2 on a.modifyId = u2.ID
+WHERE ur.userId = ?
+	and	ra.useYn = 1
+	AND t.TenantId = ?
+order by a.aName`
 
-	rows, err := db.Query(query, userID, realm)
+	rows, err := db.Query(query, userID, tenantId)
 
 	if err != nil {
 		return nil, err
@@ -555,10 +551,10 @@ func GetUserAuthActive(userName, authName, realm string) (map[string]interface{}
 
 	query := `select 1
 	from USER_ENTITY u
-	join user_roles_mapping ur 
+	join UserRole ur 
 	on u.ID = ur.userId
 	join roles_authority_mapping ra 
-	on ur.rId = ra.rId
+	on ur.RoleId = ra.rId
 	join authority a 
 	on ra.aId = a.aId
 	where u.USERNAME = ?
@@ -749,7 +745,7 @@ func DeleteUserRoleByUserId(id string) error {
 		return dbErr
 	}
 
-	query := `DELETE user_roles_mapping where userId = ?`
+	query := `DELETE UserRole where userId = ?`
 
 	_, err := db.Query(query, id)
 	return err
@@ -824,7 +820,7 @@ func CheckRoleAuthID(roleID, authID, realm string) error {
 	return nil
 }
 
-func CheckUserRoleID(userID, roleID, realm string) error {
+func CheckUserRoleID(userID, roleID string) error {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
@@ -832,14 +828,14 @@ func CheckUserRoleID(userID, roleID, realm string) error {
 	}
 
 	query := `select count(*) as result
-	from
-	(
-	select ID as id from USER_ENTITY where ID = ? AND REALM_ID = ?
-	union 
-	select rId as id from roles where rId = ? AND REALM_ID = ?
-	) a`
+from
+(
+select ID as id from USER_ENTITY where ID = ?
+union 
+select rId as id from roles where rId = ?
+) a`
 
-	rows, err := db.Query(query, userID, realm, roleID, realm)
+	rows, err := db.Query(query, userID, roleID)
 	if err != nil {
 		return err
 	}

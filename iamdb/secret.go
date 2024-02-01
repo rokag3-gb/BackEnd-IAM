@@ -99,8 +99,8 @@ func GetSecretGroup(data []models.SecretGroupItem, username, realm string) ([]mo
 	from (select
 	REPLACE(url,'*','%%') as auth_url
 	from USER_ENTITY u
-	join user_roles_mapping ur on u.ID = ur.userId
-	join roles_authority_mapping ra on ur.rId = ra.rId
+	join UserRole ur on u.ID = ur.userId
+	join roles_authority_mapping ra on ur.RoleId = ra.rId
 	join authority a on ra.aId = a.aId
 	where ur.useYn = 'true'
 	and ra.useYn = 'true'
@@ -231,10 +231,10 @@ func GetSecretGroupMetadata(groupName, realm string) (models.SecretGroupResponse
 	query = `SELECT 
 	u.ID, u.USERNAME
 	FROM USER_ENTITY u
-	JOIN user_roles_mapping ur
+	JOIN UserRole ur
 	on u.ID = ur.userId
 	JOIN roles r
-	ON ur.rId = r.rId
+	ON ur.RoleId = r.rId
 	where r.rName = ?
 	AND r.REALM_ID = ?`
 

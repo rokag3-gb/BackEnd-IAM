@@ -21,8 +21,7 @@ import (
 // @Success 200 {object} []models.RolesInfo
 // @Failure 500
 func GetRoles(c *gin.Context) {
-	realm := c.GetString("realm")
-	RolesInfos, err := iamdb.GetRoles(realm)
+	RolesInfos, err := iamdb.GetRoles()
 
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -290,14 +289,13 @@ func GetMenuAuth(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func GetRolesAuth(c *gin.Context) {
-	realm := c.GetString("realm")
 	roleId, err := getRoleID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
 
-	arr, err := iamdb.GetRolseAuth(roleId, realm)
+	arr, err := iamdb.GetRolseAuth(roleId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -473,13 +471,13 @@ func AssignUserRole(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.CheckUserRoleID(userid, roles.ID, realm)
+	err = iamdb.CheckUserRoleID(userid, roles.ID)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.AssignUserRole(userid, roles.ID, c.GetString("username"), realm)
+	err = iamdb.AssignUserRole(userid, c.GetString("username"), realm, *roles)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -494,7 +492,8 @@ func AssignUserRole(c *gin.Context) {
 // @Produce  json
 // @Param userId path string true "User Id"
 // @Param roleId path string true "Role Id"
-// @Router /authority/user/{userId}/roles/{roleId} [delete]
+// @Param tenantId path string true "tenantId"
+// @Router /authority/user/{userId}/roles/{roleId}/{tenantId} [delete]
 // @Success 204
 // @Failure 400
 // @Failure 500
@@ -510,7 +509,13 @@ func DismissUserRole(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.DismissUserRole(userid, roleId)
+	tenantId := c.Param("tenantId")
+	if tenantId == "" {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "required 'tenantId'")
+		return
+	}
+
+	err = iamdb.DismissUserRole(userid, roleId, tenantId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

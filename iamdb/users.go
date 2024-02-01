@@ -39,8 +39,8 @@ func GetUsers(params map[string][]string, realm string) ([]models.GetUserInfo, e
 	(select u.ID, 
 	', '+string_agg(r.rName, ', ')+', ' as Roles
 	from roles r 
-	join user_roles_mapping ur 
-	on r.rId = ur.rId
+	join UserRole ur 
+	on r.rId = ur.RoleId
 	join USER_ENTITY u
 	on ur.userId = u.ID
 	GROUP BY u.ID) A
@@ -255,7 +255,7 @@ func CreateUserAddRole(uid, username, realm string) error {
 	query := `DECLARE @C_USERNAME nvarchar(255);
 	SET @C_USERNAME = (SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?)
 	
-	INSERT INTO user_roles_mapping(userId, rId, createId, createDate, modifyId, modifyDate)
+	INSERT INTO UserRole(userId, rId, createId, createDate, modifyId, modifyDate)
 	(SELECT ? as userId, rId,
 		@C_USERNAME as createId,
 		GETDATE() as createDate,
@@ -285,7 +285,7 @@ func SelectNotExsistRole(client_id, user_id, realm string) ([]string, error) {
 	WHERE clientId = ?
 	AND isEnable = 1
 	AND roleId NOT IN
-	(SELECT rId FROM IAM.dbo.user_roles_mapping
+	(SELECT rId FROM IAM.dbo.UserRole
 	WHERE userId = ?)`
 
 	rows, err := db.Query(query, client_id, user_id)
