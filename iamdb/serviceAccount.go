@@ -5,7 +5,7 @@ import (
 	"iam/models"
 )
 
-func SelectServiceAccount(params map[string][]string, realm string) ([]models.GetServiceAccountInfo, error) {
+func SelectServiceAccount(params map[string][]string) ([]models.GetServiceAccountInfo, error) {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
@@ -20,6 +20,7 @@ func SelectServiceAccount(params map[string][]string, realm string) ([]models.Ge
 	, U.ENABLED
 	, U.USERNAME
 	, E.CLIENT_ID
+	, E.REALM_ID
 	, ISNULL(TRIM(', ' FROM A.Roles), '') as Roles 
 	, ISNULL(TRIM(', ' FROM D.Account), '') as Account 
 	, ISNULL(TRIM(', ' FROM D.AccountId), '') as AccountId 
@@ -61,11 +62,9 @@ func SelectServiceAccount(params map[string][]string, realm string) ([]models.Ge
 	group by AU.UserId
 	) D
 	ON U.ID = D.UserId
-	WHERE
-	U.REALM_ID = ?
-	AND U.SERVICE_ACCOUNT_CLIENT_LINK IS NOT NULL `
+	WHERE U.SERVICE_ACCOUNT_CLIENT_LINK IS NOT NULL `
 
-	queryParams := []interface{}{realm}
+	queryParams := []interface{}{}
 
 	for key, values := range params {
 		query += " AND ("

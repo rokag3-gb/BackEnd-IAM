@@ -2,11 +2,12 @@ package iamdb
 
 import (
 	"database/sql"
+	"errors"
 	"iam/models"
 	"strings"
 )
 
-func GetUsers(params map[string][]string, realm string) ([]models.GetUserInfo, error) {
+func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
@@ -23,6 +24,7 @@ func GetUsers(params map[string][]string, realm string) ([]models.GetUserInfo, e
 	, U.FIRST_NAME
 	, U.LAST_NAME
 	, U.EMAIL
+	, U.REALM_ID
 	, U.PhoneNumber
 	, ISNULL(TRIM(', ' FROM A.Roles), '') as Roles 
 	, ISNULL(TRIM(', ' FROM B.Groups), '') as Groups 
@@ -80,11 +82,9 @@ func GetUsers(params map[string][]string, realm string) ([]models.GetUserInfo, e
 	group by AU.UserId
 	) D
 	ON U.ID = D.UserId
-	WHERE
-	U.REALM_ID = ?
-	AND U.SERVICE_ACCOUNT_CLIENT_LINK is NULL `
+	WHERE U.SERVICE_ACCOUNT_CLIENT_LINK is NULL `
 
-	queryParams := []interface{}{realm}
+	queryParams := []interface{}{}
 
 	for key, values := range params {
 		query += " AND ("
@@ -122,7 +122,7 @@ func GetUsers(params map[string][]string, realm string) ([]models.GetUserInfo, e
 	for rows.Next() {
 		var r models.GetUserInfo
 
-		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.PhoneNumber, &r.Roles, &r.Groups, &r.Account, &r.AccountId, &r.OpenId, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
+		err := rows.Scan(&r.ID, &r.Enabled, &r.Username, &r.FirstName, &r.LastName, &r.Email, &r.Realm, &r.PhoneNumber, &r.Roles, &r.Groups, &r.Account, &r.AccountId, &r.OpenId, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
 		if err != nil {
 			return nil, err
 		}
@@ -182,7 +182,7 @@ func GetUserDetail(userId, realm string) ([]models.GetUserInfo, error) {
 	return arr, err
 }
 
-func UsersCreate(userId, username, realm string) error {
+func UsersCreate(userId, reqUserId string) error {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
@@ -190,21 +190,20 @@ func UsersCreate(userId, username, realm string) error {
 	}
 
 	query := `UPDATE USER_ENTITY SET 
-	createId=B.ID,
+	createId=?,
 	createDate=GETDATE(),
-	modifyId=B.ID,
+	modifyId=?,
 	modifyDate=GETDATE()
-	FROM USER_ENTITY A,
-	(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) B
+	FROM USER_ENTITY A
 	where A.ID = ?
 	SELECT @@ROWCOUNT`
 
-	rows, err := db.Query(query, username, realm, userId)
+	rows, err := db.Query(query, reqUserId, reqUserId, userId)
 	err = resultErrorCheck(rows)
 	return err
 }
 
-func UsersUpdate(userId, username, phoneNumber, realm string) error {
+func UsersUpdate(userId, phoneNumber, reqUserId string) error {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
@@ -214,14 +213,13 @@ func UsersUpdate(userId, username, phoneNumber, realm string) error {
 	if phoneNumber != "" {
 		query := `UPDATE USER_ENTITY SET 
 		PhoneNumber=?,
-		modifyId=B.ID,
+		modifyId=?,
 		modifyDate=GETDATE()
-		FROM USER_ENTITY A,
-		(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) B
+		FROM USER_ENTITY A
 		where A.ID = ?
 		SELECT @@ROWCOUNT`
 
-		rows, err := db.Query(query, phoneNumber, username, realm, userId)
+		rows, err := db.Query(query, phoneNumber, reqUserId)
 		if err != nil {
 			return err
 		}
@@ -229,14 +227,13 @@ func UsersUpdate(userId, username, phoneNumber, realm string) error {
 		return err
 	} else {
 		query := `UPDATE USER_ENTITY SET 
-		modifyId=B.ID,
+		modifyId=?,
 		modifyDate=GETDATE()
-		FROM USER_ENTITY A,
-		(SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?) B
+		FROM USER_ENTITY A
 		where A.ID = ?
 		SELECT @@ROWCOUNT`
 
-		rows, err := db.Query(query, username, realm, userId)
+		rows, err := db.Query(query, reqUserId, userId)
 		if err != nil {
 			return err
 		}
@@ -245,26 +242,17 @@ func UsersUpdate(userId, username, phoneNumber, realm string) error {
 	}
 }
 
-func CreateUserAddRole(uid, username, realm string) error {
+func CreateUserAddRole(uid, reqUserId string) error {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
 
-	query := `DECLARE @C_USERNAME nvarchar(255);
-	SET @C_USERNAME = (SELECT ID FROM USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?)
-	
-	INSERT INTO UserRole(userId, rId, createId, createDate, modifyId, modifyDate)
-	(SELECT ? as userId, rId,
-		@C_USERNAME as createId,
-		GETDATE() as createDate,
-		@C_USERNAME as modifyId,
-		GETDATE() as modifyDate
-	from roles A
-	where defaultRole = 1)`
+	query := `INSERT INTO UserRole(userId, rId, createId, createDate, modifyId, modifyDate)
+	(SELECT ? as userId, rId, ?, GETDATE(), ?, GETDATE() from roles A where defaultRole = 1)`
 
-	_, err := db.Query(query, username, realm, uid)
+	_, err := db.Query(query, uid, reqUserId, reqUserId)
 	if err != nil {
 		return err
 	}
@@ -337,4 +325,63 @@ func SelectAccountList(user_id string) ([]int64, error) {
 	}
 
 	return arr, err
+}
+
+func GetAccountUserId(id string) ([]string, error) {
+	db, dbErr := DBClient()
+	defer db.Close()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
+	query := `SELECT Seq 
+	FROM Sale.dbo.Account_User AU
+	JOIN IAM.dbo.USER_ENTITY U ON AU.UserId = ?`
+
+	rows, err := db.Query(query, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var arr = make([]string, 0)
+
+	if rows.Next() {
+		str := ""
+		err := rows.Scan(&str)
+		if err != nil {
+			return nil, err
+		}
+
+		arr = append(arr, str)
+	}
+
+	return arr, nil
+}
+
+func GetUserRealmById(groupId string) (string, error) {
+	db, dbErr := DBClient()
+	defer db.Close()
+	if dbErr != nil {
+		return "", dbErr
+	}
+
+	query := `SELECT REALM_ID from USER_ENTITY WHERE ID = ?`
+
+	rows, err := db.Query(query, groupId)
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var realm string
+		err := rows.Scan(&realm)
+		if err != nil {
+			return "", err
+		}
+
+		return realm, nil
+	}
+	return "", errors.New("Realm not found")
 }

@@ -19,8 +19,7 @@ import (
 // @Success 200 {object} []models.GroupItem
 // @Failure 500
 func GetGroup(c *gin.Context) {
-	realm := c.GetString("realm")
-	arr, err := iamdb.GetGroup(realm)
+	arr, err := iamdb.GetGroup()
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -39,8 +38,8 @@ func GetGroup(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func CreateGroup(c *gin.Context) {
-	realm := c.GetString("realm")
-	token, err := clients.KeycloakToken(c, realm)
+	realm := c.Param("realm")
+	token, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -78,17 +77,23 @@ func CreateGroup(c *gin.Context) {
 // @Tags Groups
 // @Produce  json
 // @Router /groups/{groupId} [delete]
+// @Param realm path string true "Realm Id"
 // @Param groupId path string true "Group Id"
 // @Success 204
 // @Failure 500
 func DeleteGroup(c *gin.Context) {
-	realm := c.GetString("realm")
-	token, err := clients.KeycloakToken(c, realm)
+	token, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	groupid := c.Param("groupid")
+
+	realm, err := iamdb.GetGroupRealmById(groupid)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
 
 	err = clients.KeycloakClient().DeleteGroup(c, token.AccessToken, realm, groupid)
 	if err != nil {
@@ -103,13 +108,13 @@ func DeleteGroup(c *gin.Context) {
 // @Tags Groups
 // @Produce  json
 // @Router /groups/{groupId} [put]
+// @Param realm path string true "Realm Id"
 // @Param Body body models.GroupInfo true "body"
 // @Success 204
 // @Failure 400
 // @Failure 500
 func UpdateGroup(c *gin.Context) {
-	realm := c.GetString("realm")
-	token, err := clients.KeycloakToken(c, realm)
+	token, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -118,6 +123,12 @@ func UpdateGroup(c *gin.Context) {
 	var json models.GroupInfo
 	if err := c.ShouldBindJSON(&json); err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
+		return
+	}
+
+	realm, err := iamdb.GetGroupRealmById(groupid)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 

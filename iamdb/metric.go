@@ -1,30 +1,42 @@
 package iamdb
 
 import (
-	"iam/config"
+	"fmt"
 	"iam/models"
 )
 
-func MetricCount(realm string) (map[string]int, error) {
+func MetricCount(realms []string) (map[string]int, error) {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
+	queryParams := []interface{}{}
 
-	query := `select 
-	(select count(*) from USER_ENTITY where REALM_ID = ? AND SERVICE_ACCOUNT_CLIENT_LINK is NULL) AS users,
-	(select count(*) from KEYCLOAK_GROUP where REALM_ID = ?) AS groups,
-	(select count(*) from CLIENT where REALM_ID = ? AND (NAME IS NULL OR LEN(NAME) = 0)) AS applicastions,
-	(select count(*) from roles where REALM_ID = ?) AS roles,
-	(select count(*) from authority where REALM_ID = ?) AS authorities`
+	RealmParam := ""
+	if len(realms) != 0 {
+		RealmParam = "AND REALM_ID IN("
+		for _ = range realms {
+			RealmParam += "?,"
+		}
+		RealmParam = RealmParam[0 : len(RealmParam)-1]
+		RealmParam += ")"
+	}
 
-	rows, err := db.Query(query,
-		realm,
-		realm,
-		realm,
-		realm,
-		realm)
+	query := fmt.Sprintf(`select 
+	(select count(*) from USER_ENTITY WHERE 1=1 %s AND SERVICE_ACCOUNT_CLIENT_LINK is NULL) AS users,
+	(select count(*) from KEYCLOAK_GROUP where 1=1 %s) AS groups,
+	(select count(*) from CLIENT where 1=1 %s AND (NAME IS NULL OR LEN(NAME) = 0)) AS applicastions,
+	(select count(*) from roles where 1=1 %s) AS roles,
+	(select count(*) from authority where 1=1 %s) AS authorities`, RealmParam, RealmParam, RealmParam, RealmParam, RealmParam)
+
+	for i := 0; i < 5; i++ {
+		for _, realm := range realms {
+			queryParams = append(queryParams, realm)
+		}
+	}
+
+	rows, err := db.Query(query, queryParams...)
 	if err != nil {
 		return nil, err
 	}
@@ -78,40 +90,54 @@ func GetApplications(realm string) ([]string, error) {
 	return arr, nil
 }
 
-func GetLoginApplication(date int, realm string) ([]models.MetricItem, error) {
+func GetLoginApplication(date int, realms []string) ([]models.MetricItem, error) {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
+	queryParams := []interface{}{}
 
-	query := `select B.CLIENT_ID
+	RealmParam := ""
+	if len(realms) != 0 {
+		RealmParam = "AND REALM_ID IN("
+		for _ = range realms {
+			RealmParam += "?,"
+		}
+		RealmParam = RealmParam[0 : len(RealmParam)-1]
+		RealmParam += ")"
+	}
+
+	query := fmt.Sprintf(`select B.CLIENT_ID
+	, B.REALM_ID
 	, count(A.CLIENT_ID) as count
 	from
 	(select * FROM
 	(SELECT
 	CLIENT_ID, DATEADD(SECOND, EVENT_TIME/1000, '01/01/1970 09:00:00') as etime
 	FROM EVENT_ENTITY
-	where CLIENT_ID != ?
-	AND TYPE = 'LOGIN'
-	AND REALM_ID = ?
+	where TYPE = 'LOGIN' %s
 	) AA 
 	where AA.etime > getdate()-?
 	) A
 	RIGHT OUTER JOIN
 	(select CLIENT_ID from CLIENT
-	where
-	REALM_ID = ?
-	AND (NAME IS NULL OR LEN(NAME) = 0)
+	where (NAME IS NULL OR LEN(NAME) = 0) %s
 	) B
 	ON A.CLIENT_ID = B.CLIENT_ID
-	group by B.client_id`
+	group by B.client_id`, RealmParam, RealmParam)
 
-	rows, err := db.Query(query,
-		config.GetConfig().Keycloak_client_id,
-		realm,
-		date,
-		realm)
+	for _, realm := range realms {
+		queryParams = append(queryParams, realm)
+	}
+
+	queryParams = append(queryParams, date)
+
+	for _, realm := range realms {
+		queryParams = append(queryParams, realm)
+	}
+
+	rows, err := db.Query(query, queryParams...)
 
 	if err != nil {
 		return nil, err
@@ -131,16 +157,27 @@ func GetLoginApplication(date int, realm string) ([]models.MetricItem, error) {
 	return arr, nil
 }
 
-func GetLoginApplicationDate(date int, realm string) ([]map[string]interface{}, error) {
+func GetLoginApplicationDate(date int, realms []string) ([]map[string]interface{}, error) {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
+	queryParams := []interface{}{}
 
-	query := `select 
+	RealmParam := ""
+	if len(realms) != 0 {
+		RealmParam = "AND REALM_ID IN("
+		for _ = range realms {
+			RealmParam += "?,"
+		}
+		RealmParam = RealmParam[0 : len(RealmParam)-1]
+		RealmParam += ")"
+	}
+
+	query := fmt.Sprintf(`select 
 	E.CLIENT_ID,
-	 CONVERT(CHAR(10), E.SYSTEM_DATE, 23),
+	CONVERT(CHAR(10), E.SYSTEM_DATE, 23),
 	ISNULL(B.COUNT, 0) as LOGIN_COUNT
 	from
 	(
@@ -164,8 +201,7 @@ func GetLoginApplicationDate(date int, realm string) ([]map[string]interface{}, 
 	select * from
 	(select CLIENT_ID from CLIENT
 	where
-	REALM_ID = ?
-	AND  (NAME IS NULL OR LEN(NAME) = 0)
+	AND  (NAME IS NULL OR LEN(NAME) = 0) %s
 	) C
 	join
 	(
@@ -178,12 +214,13 @@ func GetLoginApplicationDate(date int, realm string) ([]map[string]interface{}, 
 	) E
 	ON B.EVENT_DATE = E.SYSTEM_DATE
 	AND B.CLIENT_ID = E.CLIENT_ID
-	ORDER BY E.SYSTEM_DATE, E.CLIENT_ID`
+	ORDER BY E.SYSTEM_DATE, E.CLIENT_ID`, RealmParam)
 
-	rows, err := db.Query(query,
-		realm,
-		date,
-		date)
+	for _, realm := range realms {
+		queryParams = append(queryParams, realm)
+	}
+
+	rows, err := db.Query(query, queryParams...)
 
 	if err != nil {
 		return nil, err
@@ -216,27 +253,42 @@ func GetLoginApplicationDate(date int, realm string) ([]map[string]interface{}, 
 	return arr, nil
 }
 
-func GetLoginApplicationLog(date, realm string) ([]models.MetricLogItem, error) {
+func GetLoginApplicationLog(date string, realms []string) ([]models.MetricLogItem, error) {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
+	queryParams := []interface{}{}
 
-	query := `SELECT 
+	RealmParam := ""
+	if len(realms) != 0 {
+		RealmParam = "AND REALM_ID IN("
+		for _ = range realms {
+			RealmParam += "?,"
+		}
+		RealmParam = RealmParam[0 : len(RealmParam)-1]
+		RealmParam += ")"
+	}
+
+	query := fmt.Sprintf(`SELECT 
 	E.CLIENT_ID,
 	U.USERNAME,
 	CONVERT(NVARCHAR, DATEADD(SECOND, EVENT_TIME/1000, '01/01/1970 09:00:00'), 23) as EVENT_DATE
 	FROM EVENT_ENTITY E
 	JOIN USER_ENTITY U
 	ON E.USER_ID = U.ID
-	WHERE E.REALM_ID = ?
+	WHERE E.REALM_ID = %s
 	AND TYPE = 'LOGIN'
 	AND JSON_VALUE(DETAILS_JSON, '$.response_mode') IS NULL
 	AND EVENT_TIME > CAST(DATEDIFF(SECOND,{d '1970-01-01'}, ?) AS BIGINT) * 1000
-	ORDER BY EVENT_TIME`
+	ORDER BY EVENT_TIME`, RealmParam)
 
-	rows, err := db.Query(query, realm, date)
+	for _, realm := range realms {
+		queryParams = append(queryParams, realm)
+	}
+
+	rows, err := db.Query(query, queryParams...)
 
 	if err != nil {
 		return nil, err
@@ -258,14 +310,26 @@ func GetLoginApplicationLog(date, realm string) ([]models.MetricLogItem, error) 
 	return arr, nil
 }
 
-func GetLoginError(date int, realm string) ([]models.MetricItem, error) {
+func GetLoginError(date int, realms []string) ([]models.MetricItem, error) {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
 
-	query := `declare @values table
+	queryParams := []interface{}{}
+
+	RealmParam := ""
+	if len(realms) != 0 {
+		RealmParam = "AND REALM_ID IN("
+		for _ = range realms {
+			RealmParam += "?,"
+		}
+		RealmParam = RealmParam[0 : len(RealmParam)-1]
+		RealmParam += ")"
+	}
+
+	query := fmt.Sprintf(`declare @values table
 	(
 		error varchar(64),
 		errorMessage varchar(64)
@@ -284,15 +348,18 @@ func GetLoginError(date int, realm string) ([]models.MetricItem, error) {
 	(SELECT
 	ERROR, DATEADD(SECOND, EVENT_TIME/1000, '01/01/1970 09:00:00') as etime
 	FROM EVENT_ENTITY
-	where TYPE = 'LOGIN_ERROR'
-	AND REALM_ID = ?
-	) AA
+	where TYPE = 'LOGIN_ERROR' %s) AA
 	where AA.etime > GETDATE() - ?) A
 	RIGHT OUTER JOIN @values B
 	ON A.ERROR = B.error
-	GROUP BY B.errorMessage`
+	GROUP BY B.errorMessage`, RealmParam)
 
-	rows, err := db.Query(query, realm, date)
+	for _, realm := range realms {
+		queryParams = append(queryParams, realm)
+	}
+	queryParams = append(queryParams, date)
+
+	rows, err := db.Query(query, queryParams...)
 	if err != nil {
 		return nil, err
 	}
@@ -312,23 +379,38 @@ func GetLoginError(date int, realm string) ([]models.MetricItem, error) {
 	return arr, nil
 }
 
-func GetIdpCount(realm string) ([]models.MetricItem, error) {
+func GetIdpCount(realms []string) ([]models.MetricItem, error) {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
 
-	query := `select 
+	queryParams := []interface{}{}
+
+	RealmParam := ""
+	if len(realms) != 0 {
+		RealmParam = "WHERE REALM_ID IN("
+		for _ = range realms {
+			RealmParam += "?,"
+		}
+		RealmParam = RealmParam[0 : len(RealmParam)-1]
+		RealmParam += ")"
+	}
+
+	query := fmt.Sprintf(`select 
 	A.PROVIDER_ALIAS, 
 	count(B.IDENTITY_PROVIDER) as count
 	from IDENTITY_PROVIDER A
 	LEFT OUTER JOIN FEDERATED_IDENTITY B
-	ON B.IDENTITY_PROVIDER = A.PROVIDER_ALIAS
-	WHERE A.REALM_ID = ?
-	GROUP BY A.PROVIDER_ALIAS`
+	ON B.IDENTITY_PROVIDER = A.PROVIDER_ALIAS %s
+	GROUP BY A.PROVIDER_ALIAS`, RealmParam)
 
-	rows, err := db.Query(query, realm)
+	for _, realm := range realms {
+		queryParams = append(queryParams, realm)
+	}
+
+	rows, err := db.Query(query, queryParams...)
 	if err != nil {
 		return nil, err
 	}

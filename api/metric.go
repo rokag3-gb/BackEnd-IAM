@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,11 +21,13 @@ import (
 // @Tags Metric
 // @Produce  json
 // @Router /metric/count [get]
+// @Param realm query string true "realm"
 // @Success 200 {object} models.MetricCount
 // @Failure 500
 func MetricCount(c *gin.Context) {
-	realm := c.GetString("realm")
-	count, err := iamdb.MetricCount(realm)
+	realm := c.Query("realm")
+	realms := strings.Split(realm, ",")
+	count, err := iamdb.MetricCount(realms)
 
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -39,62 +42,66 @@ func MetricCount(c *gin.Context) {
 // @Tags Metric
 // @Produce  json
 // @Router /metric/session [get]
+// @Param realm query string true "realm"
 // @Success 200 {object} []models.MetricItem
 // @Failure 500
 func GetMetricSession(c *gin.Context) {
-	realm := c.GetString("realm")
-	token, err := clients.KeycloakToken(c, realm)
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
-	}
-
-	url := fmt.Sprintf("%s/admin/realms/%s/client-session-stats", config.GetConfig().Keycloak_endpoint, realm)
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
-	}
-
-	req.Header.Add("authorization", "Bearer "+token.AccessToken)
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
-	}
-	defer resp.Body.Close()
-
-	bytes, _ := io.ReadAll(resp.Body)
-
-	arr := make([]map[string]interface{}, 0)
-
-	json.Unmarshal(bytes, &arr)
-
-	apps, err := iamdb.GetApplications(realm)
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
-	}
-
+	tmpRealm := c.Query("realm")
+	realms := strings.Split(tmpRealm, ",")
 	ret := make([]models.MetricItem, 0)
-	for _, app := range apps {
-		var m models.MetricItem
-		m.Key = app
-		m.Value = 0
-		ret = append(ret, m)
+	token, err := clients.KeycloakToken(c)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
 	}
 
-	for i, app := range ret {
-		for _, ar := range arr {
-			if ar["clientId"] == app.Key {
-				v, err := strconv.Atoi(ar["active"].(string))
-				if err != nil {
-					break
+	for _, realm := range realms {
+		url := fmt.Sprintf("%s/admin/realms/%s/client-session-stats", config.GetConfig().Keycloak_endpoint, realm)
+
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			return
+		}
+
+		req.Header.Add("authorization", "Bearer "+token.AccessToken)
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			return
+		}
+		defer resp.Body.Close()
+
+		bytes, _ := io.ReadAll(resp.Body)
+
+		arr := make([]map[string]interface{}, 0)
+
+		json.Unmarshal(bytes, &arr)
+
+		apps, err := iamdb.GetApplications(realm)
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			return
+		}
+
+		for _, app := range apps {
+			var m models.MetricItem
+			m.Key = app
+			m.Value = 0
+			ret = append(ret, m)
+		}
+
+		for i, app := range ret {
+			for _, ar := range arr {
+				if ar["clientId"] == app.Key {
+					v, err := strconv.Atoi(ar["active"].(string))
+					if err != nil {
+						break
+					}
+					ret[i].Value = v
 				}
-				ret[i].Value = v
 			}
 		}
 	}
@@ -107,12 +114,14 @@ func GetMetricSession(c *gin.Context) {
 // @Tags Metric
 // @Produce  json
 // @Router /metric/login/application [get]
+// @Param realm query string true "realm"
 // @Param date query string true "Date count"
 // @Success 200 {object} []models.MetricItem
 // @Failure 500
 func GetLoginApplication(c *gin.Context) {
-	realm := c.GetString("realm")
-	m, err := iamdb.GetLoginApplication(c.MustGet("date").(int)-1, realm)
+	realm := c.Query("realm")
+	realms := strings.Split(realm, ",")
+	m, err := iamdb.GetLoginApplication(c.MustGet("date").(int)-1, realms)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -126,17 +135,19 @@ func GetLoginApplication(c *gin.Context) {
 // @Tags Metric
 // @Produce  json
 // @Router /metric/login/application/log [get]
+// @Param realm query string true "realm"
 // @Param date query string true "Date"
 // @Success 200 {object} []models.MetricAppItem
 // @Failure 500
 func GetLoginApplicationLog(c *gin.Context) {
-	realm := c.GetString("realm")
+	realm := c.Query("realm")
+	realms := strings.Split(realm, ",")
 	date := c.Query("date")
 	if date == "" {
 		common.ErrorProcess(c, nil, http.StatusBadRequest, "required 'date'")
 		return
 	}
-	m, err := iamdb.GetLoginApplicationLog(date, realm)
+	m, err := iamdb.GetLoginApplicationLog(date, realms)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -150,12 +161,14 @@ func GetLoginApplicationLog(c *gin.Context) {
 // @Tags Metric
 // @Produce  json
 // @Router /metric/login/application/date [get]
+// @Param realm query string true "realm"
 // @Param date query string true "Date count"
 // @Success 200 {object} []models.MetricAppItem
 // @Failure 500
 func GetLoginApplicationDate(c *gin.Context) {
-	realm := c.GetString("realm")
-	m, err := iamdb.GetLoginApplicationDate(c.MustGet("date").(int)-1, realm)
+	realm := c.Query("realm")
+	realms := strings.Split(realm, ",")
+	m, err := iamdb.GetLoginApplicationDate(c.MustGet("date").(int)-1, realms)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -169,12 +182,14 @@ func GetLoginApplicationDate(c *gin.Context) {
 // @Tags Metric
 // @Produce  json
 // @Router /metric/login/error [get]
+// @Param realm query string true "realm"
 // @Param date query string true "Date count"
 // @Success 200 {object} []models.MetricItem
 // @Failure 500
 func GetLoginError(c *gin.Context) {
-	realm := c.GetString("realm")
-	m, err := iamdb.GetLoginError(c.MustGet("date").(int)-1, realm)
+	realm := c.Query("realm")
+	realms := strings.Split(realm, ",")
+	m, err := iamdb.GetLoginError(c.MustGet("date").(int)-1, realms)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -188,11 +203,13 @@ func GetLoginError(c *gin.Context) {
 // @Tags Metric
 // @Produce  json
 // @Router /metric/idp/count [get]
+// @Param realm query string true "realm"
 // @Success 200 {object} []models.MetricItem
 // @Failure 500
 func GetIdpCount(c *gin.Context) {
-	realm := c.GetString("realm")
-	m, err := iamdb.GetIdpCount(realm)
+	realm := c.Query("realm")
+	realms := strings.Split(realm, ",")
+	m, err := iamdb.GetIdpCount(realms)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

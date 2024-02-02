@@ -1,6 +1,6 @@
 package iamdb
 
-func SelectAccount(email, user_id, realm string) (bool, error) {
+func SelectAccount(email, user_id string) (bool, error) {
 	ret := false
 	db, err := DBClient()
 	defer db.Close()
@@ -91,8 +91,7 @@ func CreateAccountUser(accountId string, userId string, saveId string) error {
 		return dbErr
 	}
 
-	query := `INSERT INTO Sale.dbo.Account_User(AccountId, UserId, SaveId)
-	VALUES(?, ?, ?)`
+	query := `INSERT INTO Sale.dbo.Account_User(AccountId, UserId, SaveId) VALUES(?, ?, ?)`
 
 	_, err := db.Query(query, accountId, userId, saveId)
 	if err != nil {

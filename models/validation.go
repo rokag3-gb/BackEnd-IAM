@@ -10,6 +10,7 @@ type CreateUserInfo struct {
 	LastName  string `json:"lastName"`
 	Email     string `json:"email" binding:"required"`
 	Password  string `json:"password" binding:"required"`
+	Realm     string `json:"realm" binding:"required"`
 }
 
 type UpdateUserInfo struct {
@@ -31,6 +32,7 @@ type GetUserInfo struct {
 	FirstName        *string              `json:"firstName"`
 	LastName         *string              `json:"lastName"`
 	Email            *string              `json:"email"`
+	Realm            *string              `json:"realm"`
 	PhoneNumber      *string              `json:"phoneNumber"`
 	Groups           *string              `json:"groups,omitempty"`
 	Roles            *string              `json:"roles,omitempty"`
@@ -80,6 +82,7 @@ type AutuhorityInfo struct {
 	URL        *string `json:"url,omitempty"`
 	Method     *string `json:"method,omitempty"`
 	Use        *bool   `json:"useYn,omitempty"`
+	Realm      string  `json:"realm,omitempty"`
 	CreateDate *string `json:"createDate"`
 	Creator    *string `json:"creator"`
 	ModifyDate *string `json:"modifyDate"`
@@ -95,6 +98,7 @@ type MenuAutuhorityInfo struct {
 type GroupItem struct {
 	ID           string  `json:"id" binding:"required"`
 	Name         string  `json:"name" binding:"required"`
+	Realm        string  `json:"realm" binding:"required"`
 	CountMembers int     `json:"countMembers" binding:"required"`
 	CreateDate   *string `json:"createDate"`
 	Creator      *string `json:"creator"`

@@ -114,9 +114,9 @@ func makeRouter() *gin.Engine {
 		authority.DELETE("/roles/:roleId/auth/:authId", api.DismissRoleAuth)
 		authority.PUT("/roles/:roleId/auth/:authId", api.UpdateRoleAuth)
 		authority.GET("/user/:userid", api.GetUserRole)
-		authority.POST("/user/:userid/roles", api.AssignUserRole)
-		authority.DELETE("/user/:userid/roles/:roleId/:tenantId", api.DismissUserRole)
-		authority.PUT("/user/:userid/roles/:roleId", api.UpdateUserRole)
+		authority.POST("/user/:tenantId/:userid/roles", api.AssignUserRole)
+		authority.DELETE("/user/:tenantId/:userid/roles/:roleId", api.DismissUserRole)
+		authority.PUT("/user/:tenantId/:userid/roles", api.UpdateUserRole)
 		authority.GET("/user/:userid/auth", api.GetUserAuth)
 		authority.GET("/user/:userid/auth/:authId", api.GetUserAuthActive) //실제로 전달되는것은 username과 role name 입니다. gin 제한사항으로 인하여 이름 변경이 불가능
 		authority.GET("/user/auth", api.GetMyAuth)
@@ -125,13 +125,13 @@ func makeRouter() *gin.Engine {
 		authority.DELETE("/auth/:authId", api.DeleteAuth)
 		authority.PUT("/auth/:authId", api.UpdateAuth)
 		authority.GET("/auth/:authId", api.GetAuthInfo)
-		authority.GET("/auth/menu/:site", api.GetMenuAuth)
+		authority.GET("/auth/:tenantId/menu/:site", api.GetMenuAuth)
 	}
 
 	groups := route.Group("/groups")
 	{
 		groups.GET("", api.GetGroup)
-		groups.POST("", api.CreateGroup)
+		groups.POST("/", api.CreateGroup)
 		groups.DELETE("/:groupid", api.DeleteGroup)
 		groups.PUT("/:groupid", api.UpdateGroup)
 	}
@@ -160,10 +160,10 @@ func makeRouter() *gin.Engine {
 	serviceAccount := route.Group("/serviceAccount")
 	{
 		serviceAccount.GET("", api.GetServiceAccount)
-		serviceAccount.GET("/:clientId/secret", api.GetServiceAccountSecret)
-		serviceAccount.POST("/:clientId/secret/regenerate", api.RegenerateServiceAccountSecret)
-		serviceAccount.POST("", api.CreateServiceAccount)
-		serviceAccount.DELETE("/:clientId", api.DeleteServiceAccount)
+		serviceAccount.GET("/:realm/:clientId/secret", api.GetServiceAccountSecret)
+		serviceAccount.POST("/:realm/:clientId/secret/regenerate", api.RegenerateServiceAccountSecret)
+		serviceAccount.POST(":realm", api.CreateServiceAccount)
+		serviceAccount.DELETE("/:realm/:clientId", api.DeleteServiceAccount)
 	}
 
 	accountUser := route.Group("/account/:accountId/users")

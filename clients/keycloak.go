@@ -45,7 +45,7 @@ func KeycloakConfig() kcConfig {
 	return keycloakConfig
 }
 
-func KeycloakToken(ctx context.Context, realm string) (*gocloak.JWT, error) {
+func KeycloakToken(ctx context.Context) (*gocloak.JWT, error) {
 	token, err := keycloakClient.LoginClient(ctx,
 		keycloakConfig.ClientID,
 		keycloakConfig.ClientSecret,

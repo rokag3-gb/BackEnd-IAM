@@ -47,7 +47,6 @@ var SearchUsers = map[string]string{
 // @Success 200 {object} []models.GetUserInfo
 // @Failure 500
 func Users(c *gin.Context) {
-	realm := c.GetString("realm")
 	paramPairs := c.Request.URL.Query()
 	var params = map[string][]string{}
 
@@ -71,7 +70,7 @@ func Users(c *gin.Context) {
 		}
 	}
 
-	arr, err := iamdb.GetUsers(params, realm)
+	arr, err := iamdb.GetUsers(params)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -100,8 +99,7 @@ func Users(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func CreateUser(c *gin.Context) {
-	realm := c.GetString("realm")
-	token, err := clients.KeycloakToken(c, realm)
+	token, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -113,7 +111,7 @@ func CreateUser(c *gin.Context) {
 	}
 	newUserId, err := clients.KeycloakClient().CreateUser(c,
 		token.AccessToken,
-		realm,
+		json.Realm,
 		gocloak.User{
 			Username:  gocloak.StringP(json.Username),
 			FirstName: gocloak.StringP(json.FirstName),
@@ -128,7 +126,7 @@ func CreateUser(c *gin.Context) {
 	err = clients.KeycloakClient().SetPassword(c,
 		token.AccessToken,
 		newUserId,
-		realm,
+		json.Realm,
 		json.Password,
 		false)
 	if err != nil {
@@ -136,13 +134,13 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.UsersCreate(newUserId, c.GetString("username"), realm)
+	err = iamdb.UsersCreate(newUserId, c.GetString("userid"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.CreateUserAddRole(newUserId, c.GetString("username"), realm)
+	err = iamdb.CreateUserAddRole(newUserId, c.GetString("userid"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -159,7 +157,7 @@ func CreateUser(c *gin.Context) {
 // @Summary 유저 정보 변경
 // @Tags Users
 // @Produce  json
-// @Router /users/{userId} [post]
+// @Router /users/{userId} [put]
 // @Param userId path string true "User Id"
 // @Param Body body models.CreateUserInfo true "body"
 // @Success 204
@@ -179,7 +177,7 @@ func CreateUser(c *gin.Context) {
 // @Failure 500
 func UpdateUser(c *gin.Context) {
 	realm := c.GetString("realm")
-	token, err := clients.KeycloakToken(c, realm)
+	token, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -241,7 +239,7 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.UsersUpdate(userid, c.GetString("username"), phoneNumber, realm)
+	err = iamdb.UsersUpdate(userid, phoneNumber, c.GetString("userid"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -272,7 +270,7 @@ func UpdateUser(c *gin.Context) {
 // @Failure 500
 func UpdateMe(c *gin.Context) {
 	realm := c.GetString("realm")
-	token, err := clients.KeycloakToken(c, realm)
+	token, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -334,7 +332,7 @@ func UpdateMe(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.UsersUpdate(userid, c.GetString("username"), phoneNumber, realm)
+	err = iamdb.UsersUpdate(userid, phoneNumber, userid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -349,20 +347,18 @@ func UpdateMe(c *gin.Context) {
 // @Produce  json
 // @Router /users/{userId} [delete]
 // @Param userId path string true "User Id"
-// @Param Body body models.CreateUserInfo true "body"
 // @Success 204
 // @Failure 400
 // @Failure 500
 func DeleteUser(c *gin.Context) {
-	realm := c.GetString("realm")
-	token, err := clients.KeycloakToken(c, realm)
+	token, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	userid := c.Param("userid")
 
-	arr, err := iamdb.GetAccountUserId(userid, realm)
+	arr, err := iamdb.GetAccountUserId(userid)
 	if err != nil {
 		logger.Error(err.Error())
 	} else {
@@ -377,6 +373,12 @@ func DeleteUser(c *gin.Context) {
 				logger.Error("%s", err.Error())
 			}
 		}
+	}
+
+	realm, err := iamdb.GetUserRealmById(userid)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
 	}
 
 	err = clients.KeycloakClient().DeleteUser(c,
@@ -415,13 +417,17 @@ func DeleteUser(c *gin.Context) {
 // @Success 200 {object} models.GetUserInfo
 // @Failure 500
 func GetUser(c *gin.Context) {
-	realm := c.GetString("realm")
-	token, err := clients.KeycloakToken(c, realm)
+	token, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	userid := c.Param("userid")
+	realm, err := iamdb.GetUserRealmById(userid)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
 
 	user, err := clients.KeycloakClient().GetUserByID(c,
 		token.AccessToken, realm, userid)
@@ -432,7 +438,7 @@ func GetUser(c *gin.Context) {
 
 	var params = map[string][]string{}
 	params["U.ID"] = append(params["U.ID"], *user.ID)
-	arr, err := iamdb.GetUsers(params, realm)
+	arr, err := iamdb.GetUsers(params)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -471,13 +477,18 @@ func GetUser(c *gin.Context) {
 // @Success 200 {object} []models.CredentialRepresentation
 // @Failure 500
 func GetUserCredentials(c *gin.Context) {
-	realm := c.GetString("realm")
-	token, err := clients.KeycloakToken(c, realm)
+	token, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	userid := c.Param("userid")
+
+	realm, err := iamdb.GetUserRealmById(userid)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
 
 	credentials, err := clients.KeycloakClient().GetCredentials(c,
 		token.AccessToken, realm, userid)
@@ -510,8 +521,7 @@ func GetUserCredentials(c *gin.Context) {
 // @Success 204
 // @Failure 500
 func ResetUserPassword(c *gin.Context) {
-	realm := c.GetString("realm")
-	token, err := clients.KeycloakToken(c, realm)
+	token, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -520,6 +530,12 @@ func ResetUserPassword(c *gin.Context) {
 
 	var json models.ResetUserPasswordInfo
 	if err := c.ShouldBindJSON(&json); err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	realm, err := iamdb.GetUserRealmById(userid)
+	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
@@ -549,13 +565,18 @@ func ResetUserPassword(c *gin.Context) {
 // @Success 200 {object} []models.GroupData
 // @Failure 500
 func GetUserGroups(c *gin.Context) {
-	realm := c.GetString("realm")
-	token, err := clients.KeycloakToken(c, realm)
+	token, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	userid := c.Param("userid")
+
+	realm, err := iamdb.GetUserRealmById(userid)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
 
 	groups, err := clients.KeycloakClient().GetUserGroups(c,
 		token.AccessToken, realm, userid,
@@ -581,14 +602,19 @@ func GetUserGroups(c *gin.Context) {
 // @Success 204
 // @Failure 500
 func AddUserToGroup(c *gin.Context) {
-	realm := c.GetString("realm")
-	token, err := clients.KeycloakToken(c, realm)
+	token, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	userid := c.Param("userid")
 	groupid := c.Param("groupid")
+
+	realm, err := iamdb.GetUserRealmById(userid)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
 
 	err = clients.KeycloakClient().AddUserToGroup(c,
 		token.AccessToken,
@@ -613,14 +639,19 @@ func AddUserToGroup(c *gin.Context) {
 // @Success 204
 // @Failure 500
 func DeleteUserFromGroup(c *gin.Context) {
-	realm := c.GetString("realm")
-	token, err := clients.KeycloakToken(c, realm)
+	token, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	userid := c.Param("userid")
 	groupid := c.Param("groupid")
+
+	realm, err := iamdb.GetUserRealmById(userid)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
 
 	err = clients.KeycloakClient().DeleteUserFromGroup(c,
 		token.AccessToken,
@@ -644,13 +675,18 @@ func DeleteUserFromGroup(c *gin.Context) {
 // @Success 200 {object} []models.SesstionData
 // @Failure 500
 func GetUserSessions(c *gin.Context) {
-	realm := c.GetString("realm")
-	token, err := clients.KeycloakToken(c, realm)
+	token, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	userid := c.Param("userid")
+
+	realm, err := iamdb.GetUserRealmById(userid)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
 
 	sessions, err := clients.KeycloakClient().GetUserSessions(c,
 		token.AccessToken, realm, userid)
@@ -672,14 +708,19 @@ func GetUserSessions(c *gin.Context) {
 // @Success 200 {object} []models.SesstionData
 // @Failure 500
 func LogoutUserSession(c *gin.Context) {
-	realm := c.GetString("realm")
-	token, err := clients.KeycloakToken(c, realm)
+	token, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	userid := c.Param("userid")
 	sessionid := c.Param("sessionid")
+
+	realm, err := iamdb.GetUserRealmById(userid)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
 
 	sessions, err := clients.KeycloakClient().GetUserSessions(c,
 		token.AccessToken, realm, userid)
@@ -722,13 +763,18 @@ func LogoutUserSession(c *gin.Context) {
 // @Success 204
 // @Failure 500
 func LogoutAllSessions(c *gin.Context) {
-	realm := c.GetString("realm")
-	token, err := clients.KeycloakToken(c, realm)
+	token, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	userid := c.Param("userid")
+
+	realm, err := iamdb.GetUserRealmById(userid)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
 
 	err = clients.KeycloakClient().LogoutAllSessions(c,
 		token.AccessToken,
@@ -761,13 +807,18 @@ func LogoutAllSessions(c *gin.Context) {
 // @Success 200 {object} models.UserIdProviderData
 // @Failure 500
 func GetUserFederatedIdentities(c *gin.Context) {
-	realm := c.GetString("realm")
-	token, err := clients.KeycloakToken(c, realm)
+	token, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	userid := c.Param("userid")
+
+	realm, err := iamdb.GetUserRealmById(userid)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
 
 	identities, err := clients.KeycloakClient().GetUserFederatedIdentities(c,
 		token.AccessToken, realm, userid)
@@ -800,14 +851,19 @@ func GetUserFederatedIdentities(c *gin.Context) {
 // @Success 204
 // @Failure 500
 func DeleteUserFederatedIdentity(c *gin.Context) {
-	realm := c.GetString("realm")
-	token, err := clients.KeycloakToken(c, realm)
+	token, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	userid := c.Param("userid")
 	providerId := c.Param("providerId")
+
+	realm, err := iamdb.GetUserRealmById(userid)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
 
 	err = clients.KeycloakClient().DeleteUserFederatedIdentity(c, token.AccessToken, realm, userid, providerId)
 	if err != nil {
@@ -819,7 +875,7 @@ func DeleteUserFederatedIdentity(c *gin.Context) {
 }
 
 // token godoc
-// @Summary Users 유저 초기 설정 작업
+// @Summary Users 유저 초기 설정 작업(대상이 자기 자신인 경우에만)
 // @Tags Users
 // @Produce  json
 // @Router /users/initialize [post]
@@ -829,12 +885,14 @@ func DeleteUserFederatedIdentity(c *gin.Context) {
 func UserInitialize(c *gin.Context) {
 	token := c.GetString("accessToken")
 	realm := c.GetString("realm")
+	tenantId := c.Param("tenantId")
+
 	email, client_id, err := middlewares.GetInitInfo(token)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
-	result, err := iamdb.SelectAccount(email, c.GetString("userId"), realm)
+	result, err := iamdb.SelectAccount(email, c.GetString("userId"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -847,7 +905,7 @@ func UserInitialize(c *gin.Context) {
 		}
 
 		for _, roleId := range roleIdList {
-			err = iamdb.AssignUserRole(c.GetString("userId"), roleId, c.GetString("username"), realm)
+			err = iamdb.AssignUserRole(c.GetString("userId"), tenantId, roleId, c.GetString("userId"))
 			if err != nil {
 				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 				return
