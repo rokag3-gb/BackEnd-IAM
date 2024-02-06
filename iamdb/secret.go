@@ -102,8 +102,7 @@ func GetSecretGroup(data []models.SecretGroupItem, username, realm string) ([]mo
 	join UserRole ur on u.ID = ur.userId
 	join roles_authority_mapping ra on ur.RoleId = ra.rId
 	join authority a on ra.aId = a.aId
-	where ur.useYn = 'true'
-	and ra.useYn = 'true'
+	where ra.useYn = 'true'
 	and u.USERNAME = ?
 	and u.REALM_ID = ?
 	) A

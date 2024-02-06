@@ -160,3 +160,17 @@ func GetInitInfo(token string) (string, string, error) {
 
 	return email, client_id, nil
 }
+
+func AccessControlAllowOrigin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		c.Header("Access-Control-Allow-Origin", config.GetConfig().Access_control_allow_origin)
+		c.Header("Access-Control-Allow-Headers", config.GetConfig().Access_control_allow_headers)
+		c.Header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+	}
+}

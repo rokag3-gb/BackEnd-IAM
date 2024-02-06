@@ -249,10 +249,10 @@ func CreateUserAddRole(uid, reqUserId string) error {
 		return dbErr
 	}
 
-	query := `INSERT INTO UserRole(userId, rId, createId, createDate, modifyId, modifyDate)
-	(SELECT ? as userId, rId, ?, GETDATE(), ?, GETDATE() from roles A where defaultRole = 1)`
+	query := `INSERT INTO UserRole(UserId, RoleId, SaverId, SavedAt)
+	(SELECT ? as userId, rId, ?, GETDATE() from roles A where defaultRole = 1)`
 
-	_, err := db.Query(query, uid, reqUserId, reqUserId)
+	_, err := db.Query(query, uid, reqUserId)
 	if err != nil {
 		return err
 	}

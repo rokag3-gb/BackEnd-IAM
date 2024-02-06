@@ -53,6 +53,10 @@ func CreateRoles(c *gin.Context) {
 		return
 	}
 
+	if roles.Realm == "" {
+		common.ErrorProcess(c, err, http.StatusBadRequest, "required 'Realm'")
+		return
+	}
 	db, err := iamdb.DBClient()
 	defer db.Close()
 	if err != nil {
@@ -67,7 +71,7 @@ func CreateRoles(c *gin.Context) {
 	}
 	roleId := uuid.New()
 
-	err = iamdb.CreateRolesIdTx(tx, roleId.String(), *roles.Name, roles.Realm, c.GetString("userid"), roles.DefaultRole)
+	err = iamdb.CreateRolesIdTx(tx, roleId.String(), *roles.Name, roles.Realm, c.GetString("userId"), roles.DefaultRole)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -76,7 +80,7 @@ func CreateRoles(c *gin.Context) {
 
 	if roles.AuthId != nil {
 		for _, authId := range *roles.AuthId {
-			err = iamdb.AssignRoleAuthTx(tx, roleId.String(), authId, c.GetString("userid"))
+			err = iamdb.AssignRoleAuthTx(tx, roleId.String(), authId, c.GetString("userId"))
 			if err != nil {
 				tx.Rollback()
 				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -177,11 +181,6 @@ func UpdateRoles(c *gin.Context) {
 		return
 	}
 
-	if roles.Name == nil {
-		common.ErrorProcess(c, err, http.StatusBadRequest, "required 'body'")
-		return
-	}
-
 	db, err := iamdb.DBClient()
 	defer db.Close()
 	if err != nil {
@@ -197,7 +196,7 @@ func UpdateRoles(c *gin.Context) {
 
 	roles.ID = roleId
 
-	err = iamdb.UpdateRolesTx(tx, roles, c.GetString("userid"))
+	err = iamdb.UpdateRolesTx(tx, roles, c.GetString("userId"))
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -255,7 +254,7 @@ func GetMyAuth(c *gin.Context) {
 // @Tags Authority
 // @Produce  json
 // @Param site path string true "Site"
-// @Router /authority/{tenantId}/auth/menu/{site} [get]
+// @Router /authority/auth/menu/{site} [get]
 // @Param tenantId path string true "tenantId"
 // @Success 200 {object} []models.MenuAutuhorityInfo
 // @Failure 400
@@ -406,7 +405,7 @@ func UpdateRoleAuth(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.UpdateRoleAuth(c.GetString("userid"), roleId, authId, use.Use)
+	err = iamdb.UpdateRoleAuth(c.GetString("userId"), roleId, authId, use.Use)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -476,7 +475,7 @@ func AssignUserRole(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.AssignUserRole(userid, tenantId, roles.ID, c.GetString("userid"))
+	err = iamdb.AssignUserRole(userid, tenantId, roles.ID, c.GetString("userId"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -525,7 +524,7 @@ func DismissUserRole(c *gin.Context) {
 }
 
 // token godoc
-// @Summary 유저 역할 수정
+// @Summary 유저 역할 수정 (현재 사용되지 않음)
 // @Tags Authority
 // @Produce  json
 // @Param realm path string true "Realm Id"
@@ -560,7 +559,7 @@ func UpdateUserRole(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.UpdateUserRole(userid, roleId, tenantId, c.GetString("userid"), use.Use)
+	err = iamdb.UpdateUserRole(userid, roleId, tenantId, c.GetString("userId"), use.Use)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -605,7 +604,7 @@ func GetUserAuth(c *gin.Context) {
 // @Param userName path string true "User Name"
 // @Param authName path string true "Auth Name"
 // @Param tenantId path string true "tenantId"
-// @Router /authority/user/{tenantId}/{userName}/auth/{authName} [get]
+// @Router /authority/tenant/{tenantId}/user/{userName}/auth/{authName} [get]
 // @Success 200 {object} models.Active
 // @Failure 400
 // @Failure 500
@@ -671,11 +670,15 @@ func CreateAuth(c *gin.Context) {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "required 'Name'")
 		return
 	}
+	if auth.Realm == "" {
+		common.ErrorProcess(c, err, http.StatusBadRequest, "required 'Realm'")
+		return
+	}
 
 	authId := uuid.New()
 	auth.ID = authId.String()
 
-	err = iamdb.CreateAuth(auth, c.GetString("userid"), auth.Realm)
+	err = iamdb.CreateAuth(auth, c.GetString("userId"), auth.Realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -767,7 +770,7 @@ func UpdateAuth(c *gin.Context) {
 
 	auth.ID = authId
 
-	err = iamdb.UpdateAuth(auth, c.GetString("userid"))
+	err = iamdb.UpdateAuth(auth, c.GetString("userId"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

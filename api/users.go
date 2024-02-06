@@ -134,17 +134,20 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.UsersCreate(newUserId, c.GetString("userid"))
+	err = iamdb.UsersCreate(newUserId, c.GetString("userId"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.CreateUserAddRole(newUserId, c.GetString("userid"))
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
-	}
+	/*
+		이제 디폴트롤을 넣을 필요가 없지 않나??
+		err = iamdb.CreateUserAddRole(newUserId, c.GetString("userId"))
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			return
+		}
+	*/
 
 	if c.Param("accountId") != "" {
 		err = iamdb.CreateAccountUser(c.Param("accountId"), newUserId, c.GetString("userId"))
@@ -239,7 +242,7 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.UsersUpdate(userid, phoneNumber, c.GetString("userid"))
+	err = iamdb.UsersUpdate(userid, phoneNumber, c.GetString("userId"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

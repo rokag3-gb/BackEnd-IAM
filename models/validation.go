@@ -1,7 +1,8 @@
 package models
 
 type GroupInfo struct {
-	Name string `json:"name" binding:"required"`
+	Name  string `json:"name" binding:"required"`
+	Realm string `json:"realm" binding:"required"`
 }
 
 type CreateUserInfo struct {
@@ -67,13 +68,13 @@ type RolesInfo struct {
 	Name        *string   `json:"name" binding:"required"`
 	Use         bool      `json:"useYn,omitempty"`
 	TenantId    string    `json:"tenantId,omitempty"`
-	DefaultRole bool      `json:"defaultRole,omitempty"`
+	DefaultRole bool      `json:"defaultRole"`
 	Realm       string    `json:"realm,omitempty"`
 	AuthId      *[]string `json:"authId,omitempty"`
-	CreateDate  *string   `json:"createDate"`
-	Creator     *string   `json:"creator"`
-	ModifyDate  *string   `json:"modifyDate"`
-	Modifier    *string   `json:"modifier"`
+	CreateDate  *string   `json:"createDate,omitempty"`
+	Creator     *string   `json:"creator,omitempty"`
+	ModifyDate  *string   `json:"modifyDate,omitempty"`
+	Modifier    *string   `json:"modifier,omitempty"`
 }
 
 type AutuhorityInfo struct {
@@ -140,6 +141,7 @@ type IdItem struct {
 type MetricItem struct {
 	Key   string `json:"key"`
 	Value int    `json:"valse"`
+	Realm string `json:"realm,omitempty"`
 }
 
 type SecretItem struct {

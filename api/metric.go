@@ -26,7 +26,11 @@ import (
 // @Failure 500
 func MetricCount(c *gin.Context) {
 	realm := c.Query("realm")
-	realms := strings.Split(realm, ",")
+	var realms []string
+	if realm != "" {
+		realms = strings.Split(realm, ",")
+	}
+
 	count, err := iamdb.MetricCount(realms)
 
 	if err != nil {
@@ -46,8 +50,12 @@ func MetricCount(c *gin.Context) {
 // @Success 200 {object} []models.MetricItem
 // @Failure 500
 func GetMetricSession(c *gin.Context) {
-	tmpRealm := c.Query("realm")
-	realms := strings.Split(tmpRealm, ",")
+	realm := c.Query("realm")
+	var realms []string
+	if realm != "" {
+		realms = strings.Split(realm, ",")
+	}
+
 	ret := make([]models.MetricItem, 0)
 	token, err := clients.KeycloakToken(c)
 	if err != nil {
@@ -120,7 +128,10 @@ func GetMetricSession(c *gin.Context) {
 // @Failure 500
 func GetLoginApplication(c *gin.Context) {
 	realm := c.Query("realm")
-	realms := strings.Split(realm, ",")
+	var realms []string
+	if realm != "" {
+		realms = strings.Split(realm, ",")
+	}
 	m, err := iamdb.GetLoginApplication(c.MustGet("date").(int)-1, realms)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -141,7 +152,10 @@ func GetLoginApplication(c *gin.Context) {
 // @Failure 500
 func GetLoginApplicationLog(c *gin.Context) {
 	realm := c.Query("realm")
-	realms := strings.Split(realm, ",")
+	var realms []string
+	if realm != "" {
+		realms = strings.Split(realm, ",")
+	}
 	date := c.Query("date")
 	if date == "" {
 		common.ErrorProcess(c, nil, http.StatusBadRequest, "required 'date'")
@@ -167,7 +181,10 @@ func GetLoginApplicationLog(c *gin.Context) {
 // @Failure 500
 func GetLoginApplicationDate(c *gin.Context) {
 	realm := c.Query("realm")
-	realms := strings.Split(realm, ",")
+	var realms []string
+	if realm != "" {
+		realms = strings.Split(realm, ",")
+	}
 	m, err := iamdb.GetLoginApplicationDate(c.MustGet("date").(int)-1, realms)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -188,7 +205,10 @@ func GetLoginApplicationDate(c *gin.Context) {
 // @Failure 500
 func GetLoginError(c *gin.Context) {
 	realm := c.Query("realm")
-	realms := strings.Split(realm, ",")
+	var realms []string
+	if realm != "" {
+		realms = strings.Split(realm, ",")
+	}
 	m, err := iamdb.GetLoginError(c.MustGet("date").(int)-1, realms)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -208,7 +228,10 @@ func GetLoginError(c *gin.Context) {
 // @Failure 500
 func GetIdpCount(c *gin.Context) {
 	realm := c.Query("realm")
-	realms := strings.Split(realm, ",")
+	var realms []string
+	if realm != "" {
+		realms = strings.Split(realm, ",")
+	}
 	m, err := iamdb.GetIdpCount(realms)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")

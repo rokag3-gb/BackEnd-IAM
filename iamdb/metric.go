@@ -121,11 +121,11 @@ func GetLoginApplication(date int, realms []string) ([]models.MetricItem, error)
 	where AA.etime > getdate()-?
 	) A
 	RIGHT OUTER JOIN
-	(select CLIENT_ID from CLIENT
+	(select CLIENT_ID, REALM_ID from CLIENT
 	where (NAME IS NULL OR LEN(NAME) = 0) %s
 	) B
 	ON A.CLIENT_ID = B.CLIENT_ID
-	group by B.client_id`, RealmParam, RealmParam)
+	group by B.client_id, B.REALM_ID`, RealmParam, RealmParam)
 
 	for _, realm := range realms {
 		queryParams = append(queryParams, realm)
@@ -146,7 +146,7 @@ func GetLoginApplication(date int, realms []string) ([]models.MetricItem, error)
 
 	for rows.Next() {
 		var m models.MetricItem
-		err = rows.Scan(&m.Key, &m.Value)
+		err = rows.Scan(&m.Key, &m.Realm, &m.Value)
 		if err != nil {
 			return nil, err
 		}
@@ -200,8 +200,7 @@ func GetLoginApplicationDate(date int, realms []string) ([]map[string]interface{
 	(
 	select * from
 	(select CLIENT_ID from CLIENT
-	where
-	AND  (NAME IS NULL OR LEN(NAME) = 0) %s
+	where (NAME IS NULL OR LEN(NAME) = 0) %s
 	) C
 	join
 	(
@@ -219,6 +218,9 @@ func GetLoginApplicationDate(date int, realms []string) ([]map[string]interface{
 	for _, realm := range realms {
 		queryParams = append(queryParams, realm)
 	}
+
+	queryParams = append(queryParams, date)
+	queryParams = append(queryParams, date)
 
 	rows, err := db.Query(query, queryParams...)
 

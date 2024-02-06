@@ -113,7 +113,7 @@ func CreateRolesIdTx(tx *sql.Tx, id, name, userId, realm string, defaultRole boo
 	query := `INSERT INTO roles(rId, rName, defaultRole, REALM_ID, createId, modifyId) 
 	VALUES(?, ?, ?, ?, ?, ?)`
 
-	_, err := tx.Query(query, id, name, realm, userId, userId, defaultRole)
+	_, err := tx.Query(query, id, name, defaultRole, realm, userId, userId)
 	return err
 }
 
@@ -379,17 +379,13 @@ func GetUserRole(userId string) ([]models.RolesInfo, error) {
 	query := `select r.rId, 
 	r.rName, 
 	r.defaultRole, 
-	ur.useYn,
 	t.TenantId,
-	FORMAT(ur.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
-	u1.USERNAME as Creator, 
-	FORMAT(ur.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate, 
-	u2.USERNAME as Modifier
+	FORMAT(ur.SavedAt, 'yyyy-MM-dd HH:mm') as createDate, 
+	u1.USERNAME as SaveUser
 from roles r 
 	join UserRole ur on r.rId = ur.RoleId
 	join Tenant t on ur.TenantId = t.TenantId
-	LEFT OUTER JOIN USER_ENTITY u1 on ur.createId = u1.ID
-	LEFT OUTER JOIN USER_ENTITY u2 on ur.modifyId = u2.ID
+	LEFT OUTER JOIN USER_ENTITY u1 on ur.SaverId = u1.ID
 where ur.userId = ?
 order by r.rName`
 
@@ -404,7 +400,7 @@ order by r.rName`
 	for rows.Next() {
 		var r models.RolesInfo
 
-		err := rows.Scan(&r.ID, &r.Name, &r.DefaultRole, &r.Use, &r.TenantId, &r.CreateDate, &r.Creator, &r.ModifyDate, &r.Modifier)
+		err := rows.Scan(&r.ID, &r.Name, &r.DefaultRole, &r.TenantId, &r.CreateDate, &r.Creator)
 		if err != nil {
 			return nil, err
 		}
@@ -428,11 +424,11 @@ func AssignUserRole(userID, tenantId, roleId, reqUserId string) error {
 	return err
 }
 
-func AssignUserRoleTx(tx *sql.Tx, userID, roleID, username, realm string) error {
-	query := `INSERT INTO UserRole(userId, rId, createId, modifyId)
-	select ?, ?, ID, ID from USER_ENTITY WHERE USERNAME = ? AND REALM_ID = ?`
+func AssignUserRoleTx(tx *sql.Tx, userID, tenantId, roleId, reqUserId string) error {
+	query := `INSERT INTO UserRole(tenantId, UserId, RoleId, SavedAt, SaverId)
+	VALUES(?, ?, ?, GETDATE(), ?)`
 
-	_, err := tx.Query(query, userID, roleID, username, realm)
+	_, err := tx.Query(query, tenantId, userID, roleId, reqUserId)
 	return err
 }
 
@@ -453,14 +449,14 @@ func DismissUserRole(userID, roleID, tenantId string) error {
 
 func DeleteUserRoleByRoleNameTx(tx *sql.Tx, roleName, realm string) error {
 	query := `DELETE FROM UserRole where 
-	rId = (select rId from roles where rName = ? AND REALM_ID = ?)`
+	RoleId = (select rId from roles where rName = ? AND REALM_ID = ?)`
 
 	_, err := tx.Query(query, roleName, realm)
 	return err
 }
 
 func DeleteUserRoleByRoleIdTx(tx *sql.Tx, roleName string) error {
-	query := `DELETE FROM UserRole where rId = ?`
+	query := `DELETE FROM UserRole where RoleId = ?`
 
 	_, err := tx.Query(query, roleName)
 	return err
@@ -496,7 +492,7 @@ func GetUserAuth(userID, tenantId string) ([]models.AutuhorityInfo, error) {
 	, a.aName
 	, a.url
 	, a.method
-	, a.realm
+	, a.REALM_ID
 	, FORMAT(a.createDate, 'yyyy-MM-dd HH:mm') as createDate
 	, u1.USERNAME as Creator
 	, FORMAT(a.modifyDate, 'yyyy-MM-dd HH:mm') as modifyDate 
@@ -535,7 +531,7 @@ order by a.aName`
 	return arr, nil
 }
 
-func GetUserAuthActive(userName, authName, realm string) (map[string]interface{}, error) {
+func GetUserAuthActive(userName, authName, tenantId string) (map[string]interface{}, error) {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
@@ -543,20 +539,15 @@ func GetUserAuthActive(userName, authName, realm string) (map[string]interface{}
 	}
 
 	query := `select 1
-	from USER_ENTITY u
-	join UserRole ur 
-	on u.ID = ur.userId
-	join roles_authority_mapping ra 
-	on ur.RoleId = ra.rId
-	join authority a 
-	on ra.aId = a.aId
-	where u.USERNAME = ?
+from USER_ENTITY u
+	join UserRole ur on u.ID = ur.userId
+	join roles_authority_mapping ra on ur.RoleId = ra.rId
+	join authority a on ra.aId = a.aId
+where u.USERNAME = ?
 	AND a.aName = ?
-	and	ur.useYn = 'true'
-	and	ra.useYn = 'true'
-	AND u.REALM_ID = ?`
+	AND ur.TenantId = ?`
 
-	rows, err := db.Query(query, userName, authName, realm)
+	rows, err := db.Query(query, userName, authName, tenantId)
 
 	if err != nil {
 		return nil, err

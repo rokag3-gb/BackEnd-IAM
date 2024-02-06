@@ -73,14 +73,14 @@ func CreateSecretGroup(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.CreateRolesIdTx(tx, roleId.String(), rolename, false, c.GetString("username"), realm)
+	err = iamdb.CreateRolesIdTx(tx, roleId.String(), rolename, c.GetString("userId"), realm, false)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.AssignRoleAuthTx(tx, roleId.String(), authId.String(), c.GetString("username"), realm)
+	err = iamdb.AssignRoleAuthTx(tx, roleId.String(), authId.String(), c.GetString("userId"))
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -89,7 +89,7 @@ func CreateSecretGroup(c *gin.Context) {
 
 	if sg.RoleId != nil {
 		for _, role := range *sg.RoleId {
-			err = iamdb.AssignRoleAuthTx(tx, role, authId.String(), c.GetString("username"), realm)
+			err = iamdb.AssignRoleAuthTx(tx, role, authId.String(), c.GetString("userId"))
 			if err != nil {
 				tx.Rollback()
 				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -287,6 +287,7 @@ func GetSecretList(c *gin.Context) {
 // @Failure 500
 func UpdateSecretGroup(c *gin.Context) {
 	groupName := c.Param("groupName")
+	tenantId := c.GetString("tenantId")
 	realm := c.GetString("realm")
 	authorityMessage := ""
 	roleMessage := ""
@@ -345,7 +346,7 @@ func UpdateSecretGroup(c *gin.Context) {
 			}
 
 			for _, role := range *sg.RoleId {
-				err = iamdb.AssignRoleAuthTx(tx, role, authId, c.GetString("username"), realm)
+				err = iamdb.AssignRoleAuthTx(tx, role, authId, c.GetString("userId"))
 				if err != nil {
 					tx.Rollback()
 					common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -367,7 +368,7 @@ func UpdateSecretGroup(c *gin.Context) {
 			}
 
 			for _, user := range *sg.UserId {
-				err = iamdb.AssignUserRoleTx(tx, user, roleId, c.GetString("username"), realm)
+				err = iamdb.AssignUserRoleTx(tx, user, tenantId, roleId, c.GetString("userId"))
 				if err != nil {
 					tx.Rollback()
 					common.ErrorProcess(c, err, http.StatusInternalServerError, "")

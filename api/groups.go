@@ -38,7 +38,6 @@ func GetGroup(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func CreateGroup(c *gin.Context) {
-	realm := c.Param("realm")
 	token, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -56,14 +55,14 @@ func CreateGroup(c *gin.Context) {
 
 	newGroup, err := clients.KeycloakClient().CreateGroup(c,
 		token.AccessToken,
-		realm,
+		json.Realm,
 		group)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.GroupCreate(newGroup, c.GetString("username"), realm)
+	err = iamdb.GroupCreate(newGroup, c.GetString("username"), json.Realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
