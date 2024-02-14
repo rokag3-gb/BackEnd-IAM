@@ -242,17 +242,28 @@ func UsersUpdate(userId, phoneNumber, reqUserId string) error {
 	}
 }
 
-func CreateUserAddRole(uid, reqUserId string) error {
+func CreateUserAddDefaultRole(uid, reqUserId string) error {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
 
-	query := `INSERT INTO UserRole(UserId, RoleId, SaverId, SavedAt)
-	(SELECT ? as userId, rId, ?, GETDATE() from roles A where defaultRole = 1)`
+	query := `WITH temp AS (
+		SELECT 
+			TenantId,
+			TRIM(value) AS RoleId
+		FROM 
+			IAM.dbo.Tenant T
+		JOIN Sale.dbo.Account_User AU ON AU.AccountId = T.CustomerAccountId AND AU.UserId = ?
+		CROSS APPLY 
+			STRING_SPLIT(DefaultRoleIds_CSV, ',')
+		)
+	INSERT INTO 
+		IAM.dbo.UserRole(UserId, RoleId, TenantId, SaverId, SavedAt)
+		(SELECT ?, RoleId, TenantId, ?, GETDATE() from temp)`
 
-	_, err := db.Query(query, uid, reqUserId)
+	_, err := db.Query(query, uid, uid, reqUserId)
 	if err != nil {
 		return err
 	}

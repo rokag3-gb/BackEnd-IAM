@@ -140,17 +140,14 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	/*
-		이제 디폴트롤을 넣을 필요가 없지 않나??
-		err = iamdb.CreateUserAddRole(newUserId, c.GetString("userId"))
-		if err != nil {
-			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-			return
-		}
-	*/
-
 	if c.Param("accountId") != "" {
 		err = iamdb.CreateAccountUser(c.Param("accountId"), newUserId, c.GetString("userId"))
+	}
+
+	err = iamdb.CreateUserAddDefaultRole(newUserId, c.GetString("userId"))
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
 	}
 
 	c.JSON(http.StatusOK, gocloak.User{ID: gocloak.StringP(newUserId)})
