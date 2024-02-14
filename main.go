@@ -96,7 +96,7 @@ func makeRouter() *gin.Engine {
 
 	route := gin.Default()
 
-	route.Use(middlewares.AccessControlAllowOrigin())
+	//	route.Use(middlewares.AccessControlAllowOrigin())
 	docs.SwaggerInfo.Title = "IAM.Backend API"
 	if conf.UseApiDocument {
 		route.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))

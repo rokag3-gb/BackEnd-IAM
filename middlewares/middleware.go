@@ -27,7 +27,7 @@ func GetUserMiddleware() gin.HandlerFunc {
 		}
 		token := strings.TrimPrefix(auth, "Bearer ")
 
-		username, userid, realm, err := getDataJWT(token)
+		username, userid, realm, tenantId, err := getDataJWT(token)
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
@@ -37,40 +37,43 @@ func GetUserMiddleware() gin.HandlerFunc {
 		c.Set("username", username)
 		c.Set("realm", realm)
 		c.Set("accessToken", token)
+		c.Set("tenantId", tenantId)
 	}
 }
 
-func getDataJWT(token string) (string, string, string, error) {
-	var username, userId, realm string
+func getDataJWT(token string) (string, string, string, string, error) {
+	var username, userId, realm, tenantId string
 
 	t, _ := jwt.Parse(token, nil)
 	if t == nil {
-		return username, userId, realm, errors.New("invalid authorization")
+		return username, userId, realm, tenantId, errors.New("invalid authorization")
 	}
 
 	claims, _ := t.Claims.(jwt.MapClaims)
 	if claims == nil {
-		return username, userId, realm, errors.New("invalid token")
+		return username, userId, realm, tenantId, errors.New("invalid token")
 	}
 
 	username = fmt.Sprintf("%v", claims["preferred_username"])
 	if username == "" {
-		return username, userId, realm, errors.New("invalid token")
+		return username, userId, realm, tenantId, errors.New("invalid token")
 	}
 
 	userId = fmt.Sprintf("%v", claims["sub"])
 	if userId == "" {
-		return username, userId, realm, errors.New("invalid token")
+		return username, userId, realm, tenantId, errors.New("invalid token")
 	}
 
 	realm = fmt.Sprintf("%v", claims["iss"])
 	if realm == "" {
-		return username, userId, realm, errors.New("invalid token")
+		return username, userId, realm, tenantId, errors.New("invalid token")
 	}
 	tmp := strings.Split(realm, "/")
 	realm = tmp[len(tmp)-1]
 
-	return username, userId, realm, nil
+	tenantId = fmt.Sprintf("%v", claims["tenantId"])
+
+	return username, userId, realm, tenantId, nil
 }
 
 func ListQueryRangeMiddleware() gin.HandlerFunc {
