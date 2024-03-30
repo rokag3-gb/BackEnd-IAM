@@ -53,14 +53,17 @@ func GetServiceAccount(c *gin.Context) {
 // @Summary 서비스 어카운트 시크릿 조회
 // @Tags ServiceAccount
 // @Produce json
-// @Router /serviceAccount/{realm}/{clientId}/secret [get]
-// @Param realm path string true "realm ID"
+// @Router /serviceAccount/{clientId}/secret [get]
+// @Param realm query string true "realm ID"
 // @Param clientId path string true "client ID"
 // @Success 200 {object} models.ClientSecret
 // @Failure 500
 func GetServiceAccountSecret(c *gin.Context) {
 	clientId := c.Param("clientId")
-	realm := c.Param("realm")
+	realm := c.Query("realm")
+	if realm == "" {
+		realm = c.GetString("realm")
+	}
 
 	token, err := clients.KeycloakToken(c)
 	if err != nil {
@@ -81,13 +84,17 @@ func GetServiceAccountSecret(c *gin.Context) {
 // @Summary 서비스 어카운트 시크릿 재생성
 // @Tags ServiceAccount
 // @Produce json
-// @Router /serviceAccount/{realm}/{clientId}/secret/regenerate [post]
+// @Router /serviceAccount/{clientId}/secret/regenerate [post]
 // @Param clientId path string true "client ID"
+// @Param realm query string true "realm ID"
 // @Success 200 {object} models.ClientSecret
 // @Failure 500
 func RegenerateServiceAccountSecret(c *gin.Context) {
 	clientId := c.Param("clientId")
-	realm := c.Param("realm")
+	realm := c.Query("realm")
+	if realm == "" {
+		realm = c.GetString("realm")
+	}
 
 	token, err := clients.KeycloakToken(c)
 	if err != nil {
@@ -109,11 +116,16 @@ func RegenerateServiceAccountSecret(c *gin.Context) {
 // @Tags ServiceAccount
 // @Produce json
 // @Router /{realm}/serviceAccount [post]
+// @Param realm query string true "realm ID"
 // @Param Body body models.CreateServiceAccount true "body"
 // @Success 201
 // @Failure 500
 func CreateServiceAccount(c *gin.Context) {
-	realm := c.Param("realm")
+	realm := c.Query("realm")
+	if realm == "" {
+		realm = c.GetString("realm")
+	}
+
 	value, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
@@ -146,13 +158,17 @@ func CreateServiceAccount(c *gin.Context) {
 // @Summary 서비스 어카운트 제거
 // @Tags ServiceAccount
 // @Produce json
-// @Router /serviceAccount/{realm}/{clientId} [delete]
+// @Router /serviceAccount/{clientId} [delete]
 // @Param clientId path string true "client ID"
+// @Param realm query string true "realm ID"
 // @Success 204
 // @Failure 500
 func DeleteServiceAccount(c *gin.Context) {
 	clientId := c.Param("clientId")
-	realm := c.Param("realm")
+	realm := c.Query("realm")
+	if realm == "" {
+		realm = c.GetString("realm")
+	}
 
 	token, err := clients.KeycloakToken(c)
 	if err != nil {

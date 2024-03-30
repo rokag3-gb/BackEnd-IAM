@@ -96,7 +96,6 @@ func makeRouter() *gin.Engine {
 
 	route := gin.Default()
 
-	//	route.Use(middlewares.AccessControlAllowOrigin())
 	docs.SwaggerInfo.Title = "IAM.Backend API"
 	if conf.UseApiDocument {
 		route.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
@@ -106,8 +105,6 @@ func makeRouter() *gin.Engine {
 
 	authority := route.Group("/authority")
 	{
-		authority.GET("/user/:userid", api.GetUserRole)
-
 		authority.GET("/roles", api.GetRoles)
 		authority.POST("/roles", api.CreateRoles)
 		authority.DELETE("/roles/:roleId", api.DeleteRoles)
@@ -116,18 +113,18 @@ func makeRouter() *gin.Engine {
 		authority.POST("/roles/:roleId/auth", api.AssignRoleAuth)
 		authority.DELETE("/roles/:roleId/auth/:authId", api.DismissRoleAuth)
 		authority.PUT("/roles/:roleId/auth/:authId", api.UpdateRoleAuth)
-		authority.GET("/tenant/:tenantId/user/:userid/auth", api.GetUserAuth)
-		authority.POST("/tenant/:tenantId/user/:userid/roles", api.AssignUserRole)
-		authority.DELETE("/tenant/:tenantId/user/:userid/roles/:roleId", api.DismissUserRole)
-		//authority.PUT("/tenant/:tenantId/user/:userid/roles", api.UpdateUserRole)
-		authority.GET("/tenant/:tenantId/user/:userid/auth/:authId", api.GetUserAuthActive) //실제로 전달되는것은 username과 role name 입니다. gin 제한사항으로 인하여 이름 변경이 불가능
+		authority.GET("/user/:userid", api.GetUserRole)
+		authority.POST("/user/:userid/roles", api.AssignUserRole)
+		authority.DELETE("/user/:userid/roles/:roleId", api.DismissUserRole)
+		//authority.PUT("/user/:userid/roles/:roleId", api.UpdateUserRole)
+		authority.GET("/user/:userid/auth", api.GetUserAuth)
+		authority.GET("/user/:userid/auth/:authId", api.GetUserAuthActive) //실제로 전달되는것은 username과 role name 입니다. gin 제한사항으로 인하여 이름 변경이 불가능
 		authority.GET("/user/auth", api.GetMyAuth)
-
-		authority.GET("/auth/:authId", api.GetAuthInfo)
 		authority.GET("/auth", api.GetAuth)
 		authority.POST("/auth", api.CreateAuth)
 		authority.DELETE("/auth/:authId", api.DeleteAuth)
 		authority.PUT("/auth/:authId", api.UpdateAuth)
+		authority.GET("/auth/:authId", api.GetAuthInfo)
 		authority.GET("/auth/menu/:site", api.GetMenuAuth)
 	}
 
@@ -163,10 +160,10 @@ func makeRouter() *gin.Engine {
 	serviceAccount := route.Group("/serviceAccount")
 	{
 		serviceAccount.GET("", api.GetServiceAccount)
-		serviceAccount.GET("/:realm/:clientId/secret", api.GetServiceAccountSecret)
-		serviceAccount.POST("/:realm/:clientId/secret/regenerate", api.RegenerateServiceAccountSecret)
-		serviceAccount.POST(":realm", api.CreateServiceAccount)
-		serviceAccount.DELETE("/:realm/:clientId", api.DeleteServiceAccount)
+		serviceAccount.GET("/:clientId/secret", api.GetServiceAccountSecret)
+		serviceAccount.POST("/:clientId/secret/regenerate", api.RegenerateServiceAccountSecret)
+		serviceAccount.POST("", api.CreateServiceAccount)
+		serviceAccount.DELETE("/:clientId", api.DeleteServiceAccount)
 	}
 
 	accountUser := route.Group("/account/:accountId/users")

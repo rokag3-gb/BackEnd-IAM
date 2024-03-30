@@ -444,10 +444,10 @@ func GetUserRole(c *gin.Context) {
 // @Summary 유저 역할 할당
 // @Tags Authority
 // @Produce  json
-// @Param tenantId path string true "tenantId"
+// @Param tenantId query string true "tenantId"
 // @Param userId path string true "User Id"
 // @Param roleId body models.Id true "Role Id"
-// @Router /authority/{tenantId}/user/{userId}/roles [post]
+// @Router /authority/user/{userId}/roles [post]
 // @Success 201
 // @Failure 400
 // @Failure 500
@@ -457,7 +457,11 @@ func AssignUserRole(c *gin.Context) {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
-	tenantId := c.Param("tenantId")
+
+	tenantId := c.Query("tenantId")
+	if tenantId == "" {
+		tenantId = c.GetString("tenantId")
+	}
 
 	roles, err := getRoles(c)
 	if err != nil {
@@ -489,7 +493,7 @@ func AssignUserRole(c *gin.Context) {
 // @Tags Authority
 // @Produce  json
 // @Param realm path string true "Realm Id"
-// @Param tenantId path string true "tenantId"
+// @Param tenantId query string true "tenantId"
 // @Param userId path string true "User Id"
 // @Param roleId path string true "Role Id"
 // @Router /authority/{tenantId}/user/{userId}/roles/{roleId} [delete]
@@ -508,10 +512,9 @@ func DismissUserRole(c *gin.Context) {
 		return
 	}
 
-	tenantId := c.Param("tenantId")
+	tenantId := c.Query("tenantId")
 	if tenantId == "" {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "required 'tenantId'")
-		return
+		tenantId = c.GetString("tenantId")
 	}
 
 	err = iamdb.DismissUserRole(userid, roleId, tenantId)
@@ -574,13 +577,17 @@ func UpdateUserRole(c *gin.Context) {
 // @Produce  json
 // @Param realm path string true "Realm Id"
 // @Param userId path string true "User Id"
-// @Param tenantId path string true "tenantId"
-// @Router /authority/user/{tenantId}/{userId}/auth [get]
+// @Param tenantId query string true "tenantId"
+// @Router /authority/user/{userId}/auth [get]
 // @Success 200 {object} []models.AutuhorityInfo
 // @Failure 400
 // @Failure 500
 func GetUserAuth(c *gin.Context) {
-	tenantId := c.Param("tenantId")
+	tenantId := c.Query("tenantId")
+	if tenantId == "" {
+		tenantId = c.GetString("tenantId")
+	}
+
 	userid, err := getUserID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
@@ -603,13 +610,16 @@ func GetUserAuth(c *gin.Context) {
 // @Param realm path string true "Realm Id"
 // @Param userName path string true "User Name"
 // @Param authName path string true "Auth Name"
-// @Param tenantId path string true "tenantId"
-// @Router /authority/tenant/{tenantId}/user/{userName}/auth/{authName} [get]
+// @Param tenantId query string true "tenantId"
+// @Router /authority/user/{userName}/auth/{authName} [get]
 // @Success 200 {object} models.Active
 // @Failure 400
 // @Failure 500
 func GetUserAuthActive(c *gin.Context) {
-	tenantId := c.Param("tenantId")
+	tenantId := c.Query("tenantId")
+	if tenantId == "" {
+		tenantId = c.GetString("tenantId")
+	}
 	userName, err := getUserID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
