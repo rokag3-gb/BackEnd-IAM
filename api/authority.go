@@ -459,7 +459,7 @@ func AssignUserRole(c *gin.Context) {
 	}
 
 	tenantId := c.Query("tenantId")
-	if tenantId == "" {
+	if tenantId == "" || tenantId == "<nil>" {
 		tenantId = c.GetString("tenantId")
 	}
 
@@ -502,6 +502,92 @@ func AssignUserRole(c *gin.Context) {
 // @Failure 500
 func DismissUserRole(c *gin.Context) {
 	userid, err := getUserID(c)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusBadRequest, "")
+		return
+	}
+	roleId, err := getRoleID(c)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusBadRequest, "")
+		return
+	}
+
+	tenantId := c.Query("tenantId")
+	if tenantId == "" {
+		tenantId = c.GetString("tenantId")
+	}
+
+	err = iamdb.DismissUserRole(userid, roleId, tenantId)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// token godoc
+// @Summary 그룹 역할 할당
+// @Tags Authority
+// @Produce  json
+// @Param tenantId query string true "tenantId"
+// @Param groupId path string true "Group Id"
+// @Param roleId body models.Id true "Role Id"
+// @Router /authority/group/{groupId}/roles [post]
+// @Success 201
+// @Failure 400
+// @Failure 500
+func AssignGroupRole(c *gin.Context) {
+	userid, err := getGroupID(c)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusBadRequest, "")
+		return
+	}
+
+	tenantId := c.Query("tenantId")
+	if tenantId == "" || tenantId == "<nil>" {
+		tenantId = c.GetString("tenantId")
+	}
+
+	roles, err := getRoles(c)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusBadRequest, "")
+		return
+	}
+	if roles.ID == "" || tenantId == "" {
+		common.ErrorProcess(c, err, http.StatusBadRequest, "required 'id'")
+		return
+	}
+
+	err = iamdb.CheckUserRoleID(userid, roles.ID)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	err = iamdb.AssignUserRole(userid, tenantId, roles.ID, c.GetString("userId"))
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	c.Status(http.StatusCreated)
+}
+
+// token godoc
+// @Summary 그룹 역할 제외
+// @Tags Authority
+// @Produce  json
+// @Param realm path string true "Realm Id"
+// @Param tenantId query string true "tenantId"
+// @Param groupId path string true "Group Id"
+// @Param roleId path string true "Role Id"
+// @Router /authority/{tenantId}/group/{groupId}/roles/{roleId} [delete]
+// @Success 204
+// @Failure 400
+// @Failure 500
+func DismissGroupRole(c *gin.Context) {
+	userid, err := getGroupID(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
@@ -873,6 +959,16 @@ func getUserID(c *gin.Context) (string, error) {
 
 	if userid == "" {
 		return "", errors.New("required 'User id'")
+	}
+
+	return userid, nil
+}
+
+func getGroupID(c *gin.Context) (string, error) {
+	userid := c.Param("groupId")
+
+	if userid == "" {
+		return "", errors.New("required 'Group id'")
 	}
 
 	return userid, nil

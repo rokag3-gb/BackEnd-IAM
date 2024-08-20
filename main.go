@@ -119,6 +119,8 @@ func makeRouter() *gin.Engine {
 		//authority.PUT("/user/:userid/roles/:roleId", api.UpdateUserRole)
 		authority.GET("/user/:userid/auth", api.GetUserAuth)
 		authority.GET("/user/:userid/auth/:authId", api.GetUserAuthActive) //실제로 전달되는것은 username과 role name 입니다. gin 제한사항으로 인하여 이름 변경이 불가능
+		authority.POST("/group/:groupId/roles", api.AssignGroupRole)
+		authority.DELETE("/group/:groupId/roles/:roleId", api.DismissGroupRole)
 		authority.GET("/user/auth", api.GetMyAuth)
 		authority.GET("/auth", api.GetAuth)
 		authority.POST("/auth", api.CreateAuth)
