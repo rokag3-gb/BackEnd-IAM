@@ -55,23 +55,26 @@ func getDataJWT(token string) (string, string, string, string, error) {
 	}
 
 	username = fmt.Sprintf("%v", claims["preferred_username"])
-	if username == "" {
+	if username == "<nil>" {
 		return username, userId, realm, tenantId, errors.New("invalid token")
 	}
 
 	userId = fmt.Sprintf("%v", claims["sub"])
-	if userId == "" {
+	if userId == "<nil>" {
 		return username, userId, realm, tenantId, errors.New("invalid token")
 	}
 
 	realm = fmt.Sprintf("%v", claims["iss"])
-	if realm == "" {
+	if realm == "<nil>" {
 		return username, userId, realm, tenantId, errors.New("invalid token")
 	}
 	tmp := strings.Split(realm, "/")
 	realm = tmp[len(tmp)-1]
 
 	tenantId = fmt.Sprintf("%v", claims["tenantId"])
+	if tenantId == "<nil>" {
+		tenantId = ""
+	}
 
 	return username, userId, realm, tenantId, nil
 }
