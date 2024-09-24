@@ -159,21 +159,21 @@ func RegenerateServiceAccountSecret(ctx context.Context, token, realm, clientid 
 	return result, errors.New("ServiceAccount not found")
 }
 
-func CreateServiceAccount(ctx context.Context, token, realm, clientid string) error {
+func CreateServiceAccount(ctx context.Context, token, realm, clientid string) (error, string) {
 	ServiceAccountsEnabled := true
 	idOfClient, err := keycloakClient.CreateClient(ctx, token, realm, gocloak.Client{ClientID: &clientid, ServiceAccountsEnabled: &ServiceAccountsEnabled})
 	if err != nil {
-		return err
+		return err, ""
 	}
 
 	_, err = keycloakClient.RegenerateClientSecret(ctx, token, realm, idOfClient)
 	if err != nil {
-		return err
+		return err, ""
 	}
 
 	logger.Info("CreateServiceAccountSecret : %s", idOfClient)
 
-	return nil
+	return nil, idOfClient
 }
 
 func DeleteServiceAccount(ctx context.Context, token, realm, clientid string) error {

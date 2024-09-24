@@ -267,15 +267,35 @@ type MetricLogItem struct {
 	EventDate string `json:"eventDate"`
 }
 
-type GetServiceAccountInfo struct {
+type GetServiceAccount struct {
 	ID         *string `json:"id,omitempty"`
 	Username   *string `json:"username,omitempty"`
 	ClientId   *string `json:"clientId,omitempty"`
+	RealmId    *string `json:"realmId,omitempty"`
 	Enabled    *bool   `json:"enabled"`
 	Roles      *string `json:"roles,omitempty"`
-	Account    *string `json:"Account,omitempty"`
-	AccountId  *string `json:"AccountId,omitempty"`
-	CreateDate *string `json:"createDate"`
+	Secret     *string `json:"secret,omitempty"`
+	Account    *string `json:"account,omitempty"`
+	AccountId  *string `json:"accountId,omitempty"`
+	CreateDate string  `json:"createDate"`
+	Creator    string  `json:"creator"`
+	ModifyDate string  `json:"modifyDate"`
+	Modifier   string  `json:"modifier"`
+}
+
+type GetServiceAccountInfo struct {
+	ID               *string `json:"id,omitempty"`
+	CreatedTimestamp *int64  `json:"createdTimestamp,omitempty"`
+	Username         *string `json:"username,omitempty"`
+	Enabled          *bool   `json:"enabled"`
+	Realm            *string `json:"realm"`
+	Roles            *string `json:"roles,omitempty"`
+	Account          *string `json:"Account,omitempty"`
+	AccountId        *string `json:"AccountId,omitempty"`
+	CreateDate       string  `json:"createDate"`
+	Creator          string  `json:"creator"`
+	ModifyDate       string  `json:"modifyDate"`
+	Modifier         string  `json:"modifier"`
 }
 
 type ClientSecret struct {

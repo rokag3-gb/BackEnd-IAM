@@ -161,11 +161,12 @@ func makeRouter() *gin.Engine {
 
 	serviceAccount := route.Group("/serviceAccount")
 	{
-		serviceAccount.GET("", api.GetServiceAccount)
-		serviceAccount.GET("/:clientId/secret", api.GetServiceAccountSecret)
-		serviceAccount.POST("/:clientId/secret/regenerate", api.RegenerateServiceAccountSecret)
+		serviceAccount.GET("", api.GetServiceAccounts)
+		serviceAccount.GET("/:id", api.GetServiceAccount)
+		serviceAccount.GET("/:id/secret", api.GetServiceAccountSecret)
+		serviceAccount.POST("/:id/secret/regenerate", api.RegenerateServiceAccountSecret)
 		serviceAccount.POST("", api.CreateServiceAccount)
-		serviceAccount.DELETE("/:clientId", api.DeleteServiceAccount)
+		serviceAccount.DELETE("/:id", api.DeleteServiceAccount)
 	}
 
 	accountUser := route.Group("/account/:accountId/users")
