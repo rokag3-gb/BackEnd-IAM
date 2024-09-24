@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"iam/clients"
 	"iam/common"
 	"iam/iamdb"
@@ -9,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,9 +20,9 @@ import (
 // @Tags ServiceAccount
 // @Produce  json
 // @Router /serviceAccount [get]
-// @Success 200 {object} []models.GetServiceAccountInfo
+// @Success 200 {object} []models.GetServiceAccount
 // @Failure 500
-func GetServiceAccount(c *gin.Context) {
+func GetServiceAccounts(c *gin.Context) {
 	paramPairs := c.Request.URL.Query()
 	var params = map[string][]string{}
 
@@ -40,26 +42,100 @@ func GetServiceAccount(c *gin.Context) {
 		}
 	}
 
-	arr, err := iamdb.SelectServiceAccount(params)
+	db, err := iamdb.DBClient()
+	defer db.Close()
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
+	}
+
+	arr, idArr, err := iamdb.SelectServiceAccounts(db)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	info, err := iamdb.SelectClientsAttribute(db, idArr)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	for i, v := range arr {
+		createDate := info[*v.ClientId+"_createDate"]
+		creator := info[*v.ClientId+"_creator"]
+		modifyDate := info[*v.ClientId+"_modifyDate"]
+		modifier := info[*v.ClientId+"_modifier"]
+
+		arr[i].CreateDate = createDate
+		arr[i].Creator = creator
+		arr[i].ModifyDate = modifyDate
+		arr[i].Modifier = modifier
 	}
 
 	c.JSON(http.StatusOK, arr)
 }
 
 // token godoc
+// @Summary 유저 상세정보 조회
+// @Tags Users
+// @Produce  json
+// @Router /users/{userId} [get]
+// @Param userId path string true "User Id"
+// @Success 200 {object} models.GetUserInfo
+// @Failure 500
+func GetServiceAccount(c *gin.Context) {
+	db, err := iamdb.DBClient()
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
+	}
+	defer db.Close()
+
+	userid := c.Param("id")
+	result, err := iamdb.SelectServiceAccount(db, userid)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	data, err := iamdb.SelectClientAttribute(db, *result.ClientId)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	result.CreateDate = data["createDate"]
+	result.Creator = data["creator"]
+	result.ModifyDate = data["modifyDate"]
+	result.Modifier = data["modifier"]
+
+	c.JSON(http.StatusOK, result)
+}
+
+// token godoc
 // @Summary 서비스 어카운트 시크릿 조회
 // @Tags ServiceAccount
 // @Produce json
-// @Router /serviceAccount/{clientId}/secret [get]
-// @Param realm query string true "realm ID"
-// @Param clientId path string true "client ID"
+// @Router /serviceAccount/{userId}/secret [get]
+// @Param userId path string true "User Id"
 // @Success 200 {object} models.ClientSecret
 // @Failure 500
 func GetServiceAccountSecret(c *gin.Context) {
-	clientId := c.Param("clientId")
+	userId := c.Param("id")
+
+	db, err := iamdb.DBClient()
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
+		return
+	}
+	defer db.Close()
+
+	clientId, err := iamdb.SelectClientIdFromUserId(db, userId)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	realm := c.Query("realm")
 	if realm == "" {
 		realm = c.GetString("realm")
@@ -84,13 +160,27 @@ func GetServiceAccountSecret(c *gin.Context) {
 // @Summary 서비스 어카운트 시크릿 재생성
 // @Tags ServiceAccount
 // @Produce json
-// @Router /serviceAccount/{clientId}/secret/regenerate [post]
-// @Param clientId path string true "client ID"
+// @Router /serviceAccount/{userId}/secret/regenerate [post]
+// @Param userId path string true "User Id"
 // @Param realm query string true "realm ID"
 // @Success 200 {object} models.ClientSecret
 // @Failure 500
 func RegenerateServiceAccountSecret(c *gin.Context) {
-	clientId := c.Param("clientId")
+	userId := c.Param("id")
+
+	db, err := iamdb.DBClient()
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
+		return
+	}
+	defer db.Close()
+
+	clientId, err := iamdb.SelectClientIdFromUserId(db, userId)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	realm := c.Query("realm")
 	if realm == "" {
 		realm = c.GetString("realm")
@@ -108,6 +198,25 @@ func RegenerateServiceAccountSecret(c *gin.Context) {
 		return
 	}
 
+	idOfClient, err := iamdb.SelectIdFromClientId(db, clientId)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	curTime := time.Now().Format("2006-01-02,15:04:05")
+
+	err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "modifyDate", curTime)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+	err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "modifier", userId)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
 	c.JSON(http.StatusOK, secret)
 }
 
@@ -115,8 +224,7 @@ func RegenerateServiceAccountSecret(c *gin.Context) {
 // @Summary 서비스 어카운트 생성
 // @Tags ServiceAccount
 // @Produce json
-// @Router /{realm}/serviceAccount [post]
-// @Param realm query string true "realm ID"
+// @Router /serviceAccount [post]
 // @Param Body body models.CreateServiceAccount true "body"
 // @Success 201
 // @Failure 500
@@ -124,6 +232,9 @@ func CreateServiceAccount(c *gin.Context) {
 	realm := c.Query("realm")
 	if realm == "" {
 		realm = c.GetString("realm")
+	}
+	if realm == "" {
+		common.ErrorProcess(c, fmt.Errorf("required 'realm'"), http.StatusBadRequest, "")
 	}
 
 	value, err := io.ReadAll(c.Request.Body)
@@ -145,10 +256,41 @@ func CreateServiceAccount(c *gin.Context) {
 		return
 	}
 
-	err = clients.CreateServiceAccount(c, token.AccessToken, realm, r.ClientId)
+	err, idOfClient := clients.CreateServiceAccount(c, token.AccessToken, realm, r.ClientId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
+	}
+
+	db, dbErr := iamdb.DBClient()
+	if dbErr != nil {
+		common.ErrorProcess(c, dbErr, http.StatusInternalServerError, dbErr.Error())
+	}
+	defer db.Close()
+
+	curTime := time.Now().Format("2006-01-02,15:04:05")
+	userId := c.GetString("userId")
+	{
+		err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "createDate", curTime)
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			return
+		}
+		err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "creator", userId)
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			return
+		}
+		err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "modifyDate", curTime)
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			return
+		}
+		err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "modifier", userId)
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			return
+		}
 	}
 
 	c.Status(http.StatusCreated)
@@ -158,13 +300,26 @@ func CreateServiceAccount(c *gin.Context) {
 // @Summary 서비스 어카운트 제거
 // @Tags ServiceAccount
 // @Produce json
-// @Router /serviceAccount/{clientId} [delete]
-// @Param clientId path string true "client ID"
-// @Param realm query string true "realm ID"
+// @Router /serviceAccount/{userId} [delete]
+// @Param userId path string true "User Id"
 // @Success 204
 // @Failure 500
 func DeleteServiceAccount(c *gin.Context) {
-	clientId := c.Param("clientId")
+	userId := c.Param("id")
+
+	db, err := iamdb.DBClient()
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
+		return
+	}
+	defer db.Close()
+
+	clientId, err := iamdb.SelectClientIdFromUserId(db, userId)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	realm := c.Query("realm")
 	if realm == "" {
 		realm = c.GetString("realm")
@@ -181,6 +336,8 @@ func DeleteServiceAccount(c *gin.Context) {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
+
+	//키클락에서 어트리뷰트를 삭제하므로 삭제할 필요 없음
 
 	c.Status(http.StatusNoContent)
 }

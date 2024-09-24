@@ -370,7 +370,7 @@ func GetAccountUserId(id string) ([]string, error) {
 	return arr, nil
 }
 
-func GetUserRealmById(groupId string) (string, error) {
+func GetUserRealmById(userId string) (string, error) {
 	db, dbErr := DBClient()
 	defer db.Close()
 	if dbErr != nil {
@@ -379,7 +379,7 @@ func GetUserRealmById(groupId string) (string, error) {
 
 	query := `SELECT REALM_ID from USER_ENTITY WHERE ID = ?`
 
-	rows, err := db.Query(query, groupId)
+	rows, err := db.Query(query, userId)
 	if err != nil {
 		return "", err
 	}
