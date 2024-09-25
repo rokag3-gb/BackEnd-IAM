@@ -260,7 +260,7 @@ func GetMyAuth(c *gin.Context) {
 // @Failure 400
 // @Failure 500
 func GetMenuAuth(c *gin.Context) {
-	tenantId := c.GetString("tenantId")
+	realm := c.GetString("realm")
 	userId := c.GetString("userId")
 	site := c.Param("site")
 
@@ -268,7 +268,7 @@ func GetMenuAuth(c *gin.Context) {
 		common.ErrorProcess(c, nil, http.StatusBadRequest, "")
 	}
 
-	arr, err := iamdb.GetMenuAuth(userId, site, tenantId)
+	arr, err := iamdb.GetMenuAuth(userId, site, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

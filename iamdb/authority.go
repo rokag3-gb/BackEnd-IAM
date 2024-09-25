@@ -223,12 +223,10 @@ from UserRole ur
 	join roles_authority_mapping ra on ur.RoleId = ra.rId
 	join authority a on ra.aId = a.aId
 where userId = ?
-	and	ur.useYn = 1
 	and	ra.useYn = 1
 	AND a.REALM_ID = ?
 	AND (a.method = 'DISABLE')
-	AND PATINDEX('SIDE_MENU/' + ? +'/%', a.url) = 1
-	AND ur.TenantId = 'iam-7a8101')
+	AND PATINDEX('SIDE_MENU/' + ? +'/%', a.url) = 1)
 	
 insert @values(aName, url, method)
 	(select a.aName
@@ -238,13 +236,11 @@ from UserRole ur
 	join roles_authority_mapping ra on ur.RoleId = ra.rId
 	join authority a on ra.aId = a.aId
 where userId = ?
-	and	ur.useYn = 1
 	and	ra.useYn = 1
 	AND a.REALM_ID = ?
 	AND (a.method = 'SHOW')
 	AND PATINDEX('SIDE_MENU/' + ? +'/%', a.url) = 1
-	AND a.url NOT IN(SELECT url FROM @values)
-	AND ur.TenantId = 'iam-7a8101')
+	AND a.url NOT IN(SELECT url FROM @values))
 	
 SELECT aName, url, method FROM @values ORDER BY aName`
 
