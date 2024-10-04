@@ -460,7 +460,12 @@ func AssignUserRole(c *gin.Context) {
 
 	tenantId := c.Query("tenantId")
 	if tenantId == "" || tenantId == "<nil>" {
-		tenantId = c.GetString("tenantId")
+		tenant, err := iamdb.GetTenantIdByRealm(c.GetString("realm"))
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusBadRequest, "")
+			return
+		}
+		tenantId = tenant
 	}
 
 	roles, err := getRoles(c)
@@ -513,8 +518,13 @@ func DismissUserRole(c *gin.Context) {
 	}
 
 	tenantId := c.Query("tenantId")
-	if tenantId == "" {
-		tenantId = c.GetString("tenantId")
+	if tenantId == "" || tenantId == "<nil>" {
+		tenant, err := iamdb.GetTenantIdByRealm(c.GetString("realm"))
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusBadRequest, "")
+			return
+		}
+		tenantId = tenant
 	}
 
 	err = iamdb.DismissUserRole(userid, roleId, tenantId)
@@ -546,7 +556,12 @@ func AssignGroupRole(c *gin.Context) {
 
 	tenantId := c.Query("tenantId")
 	if tenantId == "" || tenantId == "<nil>" {
-		tenantId = c.GetString("tenantId")
+		tenant, err := iamdb.GetTenantIdByRealm(c.GetString("realm"))
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusBadRequest, "")
+			return
+		}
+		tenantId = tenant
 	}
 
 	roles, err := getRoles(c)
@@ -599,8 +614,13 @@ func DismissGroupRole(c *gin.Context) {
 	}
 
 	tenantId := c.Query("tenantId")
-	if tenantId == "" {
-		tenantId = c.GetString("tenantId")
+	if tenantId == "" || tenantId == "<nil>" {
+		tenant, err := iamdb.GetTenantIdByRealm(c.GetString("realm"))
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusBadRequest, "")
+			return
+		}
+		tenantId = tenant
 	}
 
 	err = iamdb.DismissUserRole(userid, roleId, tenantId)
@@ -670,8 +690,13 @@ func UpdateUserRole(c *gin.Context) {
 // @Failure 500
 func GetUserAuth(c *gin.Context) {
 	tenantId := c.Query("tenantId")
-	if tenantId == "" {
-		tenantId = c.GetString("tenantId")
+	if tenantId == "" || tenantId == "<nil>" {
+		tenant, err := iamdb.GetTenantIdByRealm(c.GetString("realm"))
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusBadRequest, "")
+			return
+		}
+		tenantId = tenant
 	}
 
 	userid, err := getUserID(c)
@@ -703,8 +728,13 @@ func GetUserAuth(c *gin.Context) {
 // @Failure 500
 func GetUserAuthActive(c *gin.Context) {
 	tenantId := c.Query("tenantId")
-	if tenantId == "" {
-		tenantId = c.GetString("tenantId")
+	if tenantId == "" || tenantId == "<nil>" {
+		tenant, err := iamdb.GetTenantIdByRealm(c.GetString("realm"))
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusBadRequest, "")
+			return
+		}
+		tenantId = tenant
 	}
 	userName, err := getUserID(c)
 	if err != nil {

@@ -396,3 +396,30 @@ func GetUserRealmById(userId string) (string, error) {
 	}
 	return "", errors.New("Realm not found")
 }
+
+func GetTenantIdByRealm(realm string) (string, error) {
+	db, dbErr := DBClient()
+	defer db.Close()
+	if dbErr != nil {
+		return "", dbErr
+	}
+
+	query := `SELECT TenantId FROM Tenant WHERE RealmName = ?`
+
+	rows, err := db.Query(query, realm)
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var tenantId string
+		err := rows.Scan(&tenantId)
+		if err != nil {
+			return "", err
+		}
+
+		return tenantId, nil
+	}
+	return "", errors.New("Realm not found")
+}
