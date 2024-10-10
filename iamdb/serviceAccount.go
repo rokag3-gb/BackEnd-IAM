@@ -179,6 +179,16 @@ func SelectClientIdFromUserId(db *sql.DB, UserId string) (string, error) {
 	return id, err
 }
 
+func SelectIdOfClientFromClientId(db *sql.DB, ClientId string) (string, error) {
+	var id string
+
+	query := `SELECT ID FROM CLIENT WHERE CLIENT_ID = ?`
+
+	err := db.QueryRow(query, ClientId).Scan(&id)
+
+	return id, err
+}
+
 func SelectServiceAccount(db *sql.DB, userId string) (models.GetServiceAccount, error) {
 	var r models.GetServiceAccount
 	var rows *sql.Rows

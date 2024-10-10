@@ -297,6 +297,65 @@ func CreateServiceAccount(c *gin.Context) {
 }
 
 // token godoc
+// @Summary 서비스 어카운트 정보 변경
+// @Tags ServiceAccount
+// @Produce json
+// @Router /serviceAccount/{userId} [post]
+// @Param Body body models.UpdateServiceAccount true "body"
+// @Param userId path string true "User Id"
+// @Success 201
+// @Failure 500
+func UpdateServiceAccount(c *gin.Context) {
+	userId := c.Param("id")
+	realm := c.Query("realm")
+	if realm == "" {
+		realm = c.GetString("realm")
+	}
+	if realm == "" {
+		common.ErrorProcess(c, fmt.Errorf("required 'realm'"), http.StatusBadRequest, "")
+	}
+
+	db, err := iamdb.DBClient()
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
+		return
+	}
+	defer db.Close()
+
+	clientId, err := iamdb.SelectClientIdFromUserId(db, userId)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	idOfClient, err := iamdb.SelectIdOfClientFromClientId(db, clientId)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	var r models.UpdateServiceAccount
+	if err := c.ShouldBindJSON(&r); err != nil {
+		common.ErrorProcess(c, err, http.StatusBadRequest, "")
+		return
+	}
+
+	token, err := clients.KeycloakToken(c)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	err = clients.UpdateServiceAccount(c, token.AccessToken, realm, idOfClient, r.ClientId, r.Enabled)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// token godoc
 // @Summary 서비스 어카운트 제거
 // @Tags ServiceAccount
 // @Produce json

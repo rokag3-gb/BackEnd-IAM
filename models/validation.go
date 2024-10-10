@@ -306,3 +306,8 @@ type ClientSecret struct {
 type CreateServiceAccount struct {
 	ClientId string `json:"clientId"`
 }
+
+type UpdateServiceAccount struct {
+	Enabled  bool   `json:"enabled"`
+	ClientId string `json:"clientId"`
+}

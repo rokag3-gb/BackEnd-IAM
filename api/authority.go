@@ -54,15 +54,15 @@ func CreateRoles(c *gin.Context) {
 	}
 
 	if roles.Realm == "" {
-		common.ErrorProcess(c, err, http.StatusBadRequest, "required 'Realm'")
-		return
+		roles.Realm = c.GetString("realm")
 	}
+
 	db, err := iamdb.DBClient()
-	defer db.Close()
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
+	defer db.Close()
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -797,8 +797,7 @@ func CreateAuth(c *gin.Context) {
 		return
 	}
 	if auth.Realm == "" {
-		common.ErrorProcess(c, err, http.StatusBadRequest, "required 'Realm'")
-		return
+		auth.Realm = c.GetString("realm")
 	}
 
 	authId := uuid.New()

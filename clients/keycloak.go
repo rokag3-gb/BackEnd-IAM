@@ -176,6 +176,26 @@ func CreateServiceAccount(ctx context.Context, token, realm, clientid string) (e
 	return nil, idOfClient
 }
 
+func UpdateServiceAccount(ctx context.Context, token, realm, idOfClient, clientId string, Enabled bool) error {
+	ServiceAccountsEnabled := true
+
+	client := gocloak.Client{
+		ID:                     &idOfClient,
+		ClientID:               &clientId,
+		Enabled:                &Enabled,
+		ServiceAccountsEnabled: &ServiceAccountsEnabled,
+	}
+
+	err := keycloakClient.UpdateClient(ctx, token, realm, client)
+	if err != nil {
+		return err
+	}
+
+	logger.Info("CreateServiceAccountSecret : %s", idOfClient)
+
+	return nil
+}
+
 func DeleteServiceAccount(ctx context.Context, token, realm, clientid string) error {
 	clients, err := keycloakClient.GetClients(ctx, token, realm, gocloak.GetClientsParams{ClientID: &clientid})
 	if err != nil {
