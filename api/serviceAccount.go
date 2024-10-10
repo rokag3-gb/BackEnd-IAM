@@ -304,15 +304,13 @@ func CreateServiceAccount(c *gin.Context) {
 // @Param Body body models.UpdateServiceAccount true "body"
 // @Param userId path string true "User Id"
 // @Success 201
+// @Failure 400
 // @Failure 500
 func UpdateServiceAccount(c *gin.Context) {
 	userId := c.Param("id")
 	realm := c.Query("realm")
 	if realm == "" {
 		realm = c.GetString("realm")
-	}
-	if realm == "" {
-		common.ErrorProcess(c, fmt.Errorf("required 'realm'"), http.StatusBadRequest, "")
 	}
 
 	db, err := iamdb.DBClient()
