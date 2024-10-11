@@ -17,6 +17,11 @@ const docTemplate = `{
     "paths": {
         "/account/{accountId}/users": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -40,6 +45,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -76,6 +86,11 @@ const docTemplate = `{
         },
         "/account/{accountId}/users/me": {
             "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -116,6 +131,11 @@ const docTemplate = `{
         },
         "/account/{accountId}/users/{userId}": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -152,6 +172,11 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -199,6 +224,11 @@ const docTemplate = `{
         },
         "/account/{accountId}/users/{userId}/credentials": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -240,6 +270,11 @@ const docTemplate = `{
         },
         "/account/{accountId}/users/{userId}/federated-identity": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -278,6 +313,11 @@ const docTemplate = `{
         },
         "/account/{accountId}/users/{userId}/federated-identity/{providerId}": {
             "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -320,6 +360,11 @@ const docTemplate = `{
         },
         "/account/{accountId}/users/{userId}/reset-password": {
             "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -364,6 +409,11 @@ const docTemplate = `{
         },
         "/authority/auth": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -396,6 +446,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -439,6 +494,11 @@ const docTemplate = `{
         },
         "/authority/auth/menu/{site}": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -483,6 +543,11 @@ const docTemplate = `{
         },
         "/authority/auth/{authId}": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -515,6 +580,11 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -560,6 +630,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -601,6 +676,11 @@ const docTemplate = `{
         },
         "/authority/group/{groupId}/roles": {
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -648,6 +728,11 @@ const docTemplate = `{
         },
         "/authority/roles": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -680,6 +765,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -716,6 +806,11 @@ const docTemplate = `{
         },
         "/authority/roles/{roleId}": {
             "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -754,6 +849,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "tags": [
                     "Authority"
                 ],
@@ -782,6 +882,11 @@ const docTemplate = `{
         },
         "/authority/roles/{roleId}/auth": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -817,6 +922,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -848,6 +958,11 @@ const docTemplate = `{
         },
         "/authority/roles/{roleId}/auth/{authId}": {
             "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -884,6 +999,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -922,6 +1042,11 @@ const docTemplate = `{
         },
         "/authority/user/auth": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -947,6 +1072,11 @@ const docTemplate = `{
         },
         "/authority/user/{tenantId}/{userId}/roles/{roleId}": {
             "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1008,6 +1138,11 @@ const docTemplate = `{
         },
         "/authority/user/{userId}": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1052,6 +1187,11 @@ const docTemplate = `{
         },
         "/authority/user/{userId}/auth": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1103,6 +1243,11 @@ const docTemplate = `{
         },
         "/authority/user/{userId}/roles": {
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1150,6 +1295,11 @@ const docTemplate = `{
         },
         "/authority/user/{userName}/auth/{authName}": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1205,6 +1355,11 @@ const docTemplate = `{
         },
         "/authority/{tenantId}/group/{groupId}/roles/{roleId}": {
             "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1257,6 +1412,11 @@ const docTemplate = `{
         },
         "/authority/{tenantId}/user/{userId}/roles/{roleId}": {
             "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1309,6 +1469,11 @@ const docTemplate = `{
         },
         "/groups": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1332,6 +1497,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1368,6 +1538,11 @@ const docTemplate = `{
         },
         "/groups/{groupId}": {
             "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1406,6 +1581,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1441,6 +1621,11 @@ const docTemplate = `{
         },
         "/metric/count": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1472,6 +1657,11 @@ const docTemplate = `{
         },
         "/metric/idp/count": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1506,6 +1696,11 @@ const docTemplate = `{
         },
         "/metric/login/application": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1547,6 +1742,11 @@ const docTemplate = `{
         },
         "/metric/login/application/date": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1588,6 +1788,11 @@ const docTemplate = `{
         },
         "/metric/login/application/log": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1629,6 +1834,11 @@ const docTemplate = `{
         },
         "/metric/login/error": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1670,6 +1880,11 @@ const docTemplate = `{
         },
         "/metric/session": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1704,6 +1919,11 @@ const docTemplate = `{
         },
         "/secret": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1727,6 +1947,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1763,6 +1988,11 @@ const docTemplate = `{
         },
         "/secret/{SecretGroupName}": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1795,6 +2025,11 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1833,6 +2068,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1876,6 +2116,11 @@ const docTemplate = `{
         },
         "/secret/{SecretGroupName}/data": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1910,6 +2155,11 @@ const docTemplate = `{
         },
         "/secret/{SecretGroupName}/data/{Secretname}": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1949,6 +2199,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1996,6 +2251,11 @@ const docTemplate = `{
         },
         "/secret/{SecretGroupName}/delete/{Secretname}": {
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2043,6 +2303,11 @@ const docTemplate = `{
         },
         "/secret/{SecretGroupName}/destroy/{Secretname}": {
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2090,6 +2355,11 @@ const docTemplate = `{
         },
         "/secret/{SecretGroupName}/metadata/{Secretname}": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2129,6 +2399,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2167,6 +2442,11 @@ const docTemplate = `{
         },
         "/secret/{SecretGroupName}/undelete/{Secretname}": {
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2214,6 +2494,11 @@ const docTemplate = `{
         },
         "/serviceAccount": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2237,6 +2522,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2266,7 +2556,12 @@ const docTemplate = `{
             }
         },
         "/serviceAccount/{userId}": {
-            "post": {
+            "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2305,6 +2600,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2333,6 +2633,11 @@ const docTemplate = `{
         },
         "/serviceAccount/{userId}/secret": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2364,6 +2669,11 @@ const docTemplate = `{
         },
         "/serviceAccount/{userId}/secret/regenerate": {
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2402,6 +2712,11 @@ const docTemplate = `{
         },
         "/users/initialize": {
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2430,6 +2745,11 @@ const docTemplate = `{
         },
         "/users/{userId}": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2459,6 +2779,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2490,6 +2815,11 @@ const docTemplate = `{
         },
         "/users/{userId}/groups": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2536,6 +2866,11 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2569,6 +2904,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2604,6 +2944,11 @@ const docTemplate = `{
         },
         "/users/{userId}/logout": {
             "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2632,6 +2977,11 @@ const docTemplate = `{
         },
         "/users/{userId}/sessions": {
             "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2666,6 +3016,11 @@ const docTemplate = `{
         },
         "/users/{userId}/sessions/{sessionId}": {
             "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2879,9 +3234,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "secret": {
-                    "type": "string"
-                },
-                "username": {
                     "type": "string"
                 }
             }
@@ -3517,9 +3869,6 @@ const docTemplate = `{
         "models.UpdateServiceAccount": {
             "type": "object",
             "properties": {
-                "clientId": {
-                    "type": "string"
-                },
                 "enabled": {
                     "type": "boolean"
                 }
@@ -3543,6 +3892,14 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "Bearer": {
+            "description": "Type \"Bearer\" followed by a space and JWT token.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

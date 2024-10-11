@@ -17,6 +17,7 @@ import (
 )
 
 // token godoc
+// @Security Bearer
 // @Summary 리소스 수 조회
 // @Tags Metric
 // @Produce  json
@@ -42,6 +43,7 @@ func MetricCount(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 어플리케이션 별 현재 세션 수 조회
 // @Tags Metric
 // @Produce  json
@@ -118,6 +120,7 @@ func GetMetricSession(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 어플리케이션 별 유저 접속 수 조회
 // @Tags Metric
 // @Produce  json
@@ -142,6 +145,7 @@ func GetLoginApplication(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 접속 로그 출력
 // @Tags Metric
 // @Produce  json
@@ -171,6 +175,7 @@ func GetLoginApplicationLog(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 일자 별 유저 접속 수 조회
 // @Tags Metric
 // @Produce  json
@@ -195,6 +200,7 @@ func GetLoginApplicationDate(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유형 별 로그인 실패 수 조회
 // @Tags Metric
 // @Produce  json
@@ -219,6 +225,7 @@ func GetLoginError(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary ID 제공자 수 조회
 // @Tags Metric
 // @Produce  json

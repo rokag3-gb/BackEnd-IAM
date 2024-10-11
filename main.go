@@ -27,6 +27,10 @@ var g errgroup.Group
 
 // @title IAM.Backend API Document
 // @version 1.0
+// @securityDefinitions.apikey Bearer
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	if err := config.InitConfig(); err != nil {

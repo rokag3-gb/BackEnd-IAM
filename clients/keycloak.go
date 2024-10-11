@@ -176,12 +176,11 @@ func CreateServiceAccount(ctx context.Context, token, realm, clientid string) (e
 	return nil, idOfClient
 }
 
-func UpdateServiceAccount(ctx context.Context, token, realm, idOfClient, clientId string, Enabled bool) error {
+func UpdateServiceAccount(ctx context.Context, token, realm, idOfClient string, Enabled bool) error {
 	ServiceAccountsEnabled := true
 
 	client := gocloak.Client{
 		ID:                     &idOfClient,
-		ClientID:               &clientId,
 		Enabled:                &Enabled,
 		ServiceAccountsEnabled: &ServiceAccountsEnabled,
 	}

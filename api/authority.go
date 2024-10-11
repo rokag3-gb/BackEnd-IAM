@@ -14,6 +14,7 @@ import (
 )
 
 // token godoc
+// @Security Bearer
 // @Summary 전체 역할 목록 조회
 // @Tags Authority
 // @Produce  json
@@ -33,6 +34,7 @@ func GetRoles(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 역할 생성
 // @Tags Authority
 // @Produce  json
@@ -101,6 +103,7 @@ func CreateRoles(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 역할 삭제
 // @Tags Authority
 // @Param roleId path string true "Role Id"
@@ -159,6 +162,7 @@ func DeleteRoles(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 역할 수정
 // @Tags Authority
 // @Produce  json
@@ -230,6 +234,7 @@ func UpdateRoles(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 권한 조회
 // @Tags Authority
 // @Produce  json
@@ -250,6 +255,7 @@ func GetMyAuth(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 메뉴 권한 조회
 // @Tags Authority
 // @Produce  json
@@ -278,6 +284,7 @@ func GetMenuAuth(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 역할 할당 권한 목록 조회
 // @Tags Authority
 // @Produce  json
@@ -303,6 +310,7 @@ func GetRolesAuth(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 역할 권한 할당
 // @Tags Authority
 // @Produce  json
@@ -345,6 +353,7 @@ func AssignRoleAuth(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 역할 권한 제외
 // @Tags Authority
 // @Produce  json
@@ -377,6 +386,7 @@ func DismissRoleAuth(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 역할 권한 수정
 // @Tags Authority
 // @Produce  json
@@ -415,6 +425,7 @@ func UpdateRoleAuth(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 할당 역할 목록 조회
 // @Tags Authority
 // @Produce  json
@@ -441,6 +452,7 @@ func GetUserRole(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 역할 할당
 // @Tags Authority
 // @Produce  json
@@ -494,6 +506,7 @@ func AssignUserRole(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 역할 제외
 // @Tags Authority
 // @Produce  json
@@ -537,6 +550,7 @@ func DismissUserRole(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 그룹 역할 할당
 // @Tags Authority
 // @Produce  json
@@ -590,6 +604,7 @@ func AssignGroupRole(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 그룹 역할 제외
 // @Tags Authority
 // @Produce  json
@@ -633,6 +648,7 @@ func DismissGroupRole(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 역할 수정 (현재 사용되지 않음)
 // @Tags Authority
 // @Produce  json
@@ -678,6 +694,7 @@ func UpdateUserRole(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 활성 권한 목록 조회
 // @Tags Authority
 // @Produce  json
@@ -715,6 +732,7 @@ func GetUserAuth(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 권한 보유 여부 질의
 // @Tags Authority
 // @Produce  json
@@ -758,6 +776,7 @@ func GetUserAuthActive(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 전체 권한 목록 조회
 // @Tags Authority
 // @Produce  json
@@ -776,6 +795,7 @@ func GetAuth(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 권한 생성
 // @Tags Authority
 // @Produce  json
@@ -815,6 +835,7 @@ func CreateAuth(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 권한 삭제
 // @Tags Authority
 // @Produce  json
@@ -865,6 +886,7 @@ func DeleteAuth(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 권한 수정
 // @Tags Authority
 // @Produce  json
@@ -905,6 +927,7 @@ func UpdateAuth(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 권한 정보 조회
 // @Tags Authority
 // @Produce  json

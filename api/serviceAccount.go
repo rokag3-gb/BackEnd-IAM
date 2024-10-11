@@ -16,6 +16,7 @@ import (
 )
 
 // token godoc
+// @Security Bearer
 // @Summary 서비스 어카운트 계정 조회
 // @Tags ServiceAccount
 // @Produce  json
@@ -77,6 +78,7 @@ func GetServiceAccounts(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 상세정보 조회
 // @Tags Users
 // @Produce  json
@@ -113,6 +115,7 @@ func GetServiceAccount(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 서비스 어카운트 시크릿 조회
 // @Tags ServiceAccount
 // @Produce json
@@ -157,6 +160,7 @@ func GetServiceAccountSecret(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 서비스 어카운트 시크릿 재생성
 // @Tags ServiceAccount
 // @Produce json
@@ -221,6 +225,7 @@ func RegenerateServiceAccountSecret(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 서비스 어카운트 생성
 // @Tags ServiceAccount
 // @Produce json
@@ -297,10 +302,11 @@ func CreateServiceAccount(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 서비스 어카운트 정보 변경
 // @Tags ServiceAccount
 // @Produce json
-// @Router /serviceAccount/{userId} [post]
+// @Router /serviceAccount/{userId} [put]
 // @Param Body body models.UpdateServiceAccount true "body"
 // @Param userId path string true "User Id"
 // @Success 201
@@ -344,7 +350,20 @@ func UpdateServiceAccount(c *gin.Context) {
 		return
 	}
 
-	err = clients.UpdateServiceAccount(c, token.AccessToken, realm, idOfClient, r.ClientId, r.Enabled)
+	err = clients.UpdateServiceAccount(c, token.AccessToken, realm, idOfClient, r.Enabled)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	curTime := time.Now().Format("2006-01-02,15:04:05")
+
+	err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "modifyDate", curTime)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+	err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "modifier", userId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -354,6 +373,7 @@ func UpdateServiceAccount(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 서비스 어카운트 제거
 // @Tags ServiceAccount
 // @Produce json

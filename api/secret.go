@@ -16,6 +16,7 @@ import (
 )
 
 // token godoc
+// @Security Bearer
 // @Summary 비밀 그룹 생성
 // @Tags Secret
 // @Produce  json
@@ -134,6 +135,7 @@ func CreateSecretGroup(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 비밀 그룹 삭제
 // @Tags Secret
 // @Produce  json
@@ -223,6 +225,7 @@ func DeleteSecretGroup(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 비밀 목록 조회
 // @Tags Secret
 // @Produce  json
@@ -276,6 +279,7 @@ func GetSecretList(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 비밀 그룹 수정
 // @Tags Secret
 // @Produce  json
@@ -412,6 +416,7 @@ func UpdateSecretGroup(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 비밀 그룹 상세 정보 조회
 // @Tags Secret
 // @Produce  json
@@ -456,6 +461,7 @@ func GetSecretGroupMetadata(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 비밀 내용 조회
 // @Tags Secret
 // @Produce  json
@@ -498,6 +504,7 @@ func GetSecret(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 비밀 생성 / 수정
 // @Tags Secret
 // @Produce  json
@@ -544,6 +551,7 @@ func MargeSecret(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 비밀 상세 정보 조회
 // @Tags Secret
 // @Produce  json
@@ -588,6 +596,7 @@ func GetMetadataSecret(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 비밀특정버전삭제(복구가능)
 // @Tags Secret
 // @Produce  json
@@ -624,6 +633,7 @@ func DeleteSecret(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 비밀 복구
 // @Tags Secret
 // @Produce  json
@@ -660,6 +670,7 @@ func UndeleteSecret(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 비밀특정버전삭제(복구불가)
 // @Tags Secret
 // @Produce  json
@@ -696,6 +707,7 @@ func DestroySecret(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 비밀 삭제
 // @Tags Secret
 // @Produce  json
@@ -736,6 +748,7 @@ func CheckGroupName(groupName string) error {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 비밀 그룹 목록 조회
 // @Tags Secret
 // @Produce  json

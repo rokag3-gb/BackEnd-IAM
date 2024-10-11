@@ -13,7 +13,6 @@ func SelectServiceAccounts(db *sql.DB) ([]models.GetServiceAccount, []string, er
 
 	query := `SELECT 
 	U.ID
-	, U.USERNAME
 	, E.ENABLED
 	, E.CLIENT_ID
 	, E.REALM_ID
@@ -52,7 +51,7 @@ ORDER BY U.USERNAME`
 	for rows.Next() {
 		var r models.GetServiceAccount
 
-		err := rows.Scan(&r.ID, &r.Username, &r.Enabled, &r.ClientId, &r.RealmId, &r.Roles, &r.Account, &r.AccountId)
+		err := rows.Scan(&r.ID, &r.Enabled, &r.ClientId, &r.RealmId, &r.Roles, &r.Account, &r.AccountId)
 		if err != nil {
 			return arr, idArr, err
 		}
@@ -195,7 +194,6 @@ func SelectServiceAccount(db *sql.DB, userId string) (models.GetServiceAccount, 
 
 	query := `SELECT 
 	U.ID
-	, U.USERNAME
 	, E.ENABLED
 	, E.CLIENT_ID
 	, E.SECRET
@@ -233,7 +231,7 @@ AND U.ID = ?`
 	defer rows.Close()
 
 	for rows.Next() {
-		err := rows.Scan(&r.ID, &r.Username, &r.Enabled, &r.ClientId, &r.Secret, &r.RealmId, &r.Roles, &r.Account, &r.AccountId)
+		err := rows.Scan(&r.ID, &r.Enabled, &r.ClientId, &r.Secret, &r.RealmId, &r.Roles, &r.Account, &r.AccountId)
 		if err != nil {
 			return r, err
 		}

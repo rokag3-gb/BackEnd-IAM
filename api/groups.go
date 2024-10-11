@@ -12,6 +12,7 @@ import (
 )
 
 // token godoc
+// @Security Bearer
 // @Summary 그룹 목록
 // @Tags Groups
 // @Produce  json
@@ -29,6 +30,7 @@ func GetGroup(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 그룹 생성
 // @Tags Groups
 // @Produce  json
@@ -72,6 +74,7 @@ func CreateGroup(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 그룹 삭제
 // @Tags Groups
 // @Produce  json
@@ -103,6 +106,7 @@ func DeleteGroup(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 그룹 정보 변경
 // @Tags Groups
 // @Produce  json

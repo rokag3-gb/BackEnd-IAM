@@ -269,7 +269,6 @@ type MetricLogItem struct {
 
 type GetServiceAccount struct {
 	ID         *string `json:"id,omitempty"`
-	Username   *string `json:"username,omitempty"`
 	ClientId   *string `json:"clientId,omitempty"`
 	RealmId    *string `json:"realmId,omitempty"`
 	Enabled    *bool   `json:"enabled"`
@@ -308,6 +307,5 @@ type CreateServiceAccount struct {
 }
 
 type UpdateServiceAccount struct {
-	Enabled  bool   `json:"enabled"`
-	ClientId string `json:"clientId"`
+	Enabled bool `json:"enabled"`
 }

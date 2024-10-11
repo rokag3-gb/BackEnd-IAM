@@ -32,6 +32,7 @@ var SearchUsers = map[string]string{
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 목록
 // @Tags Users
 // @Produce  json
@@ -40,6 +41,7 @@ var SearchUsers = map[string]string{
 // @Failure 500
 
 // token godoc
+// @Security Bearer
 // @Summary Account 유저 목록
 // @Tags Account
 // @Produce  json
@@ -80,6 +82,7 @@ func Users(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 생성
 // @Tags Users
 // @Produce  json
@@ -90,6 +93,7 @@ func Users(c *gin.Context) {
 // @Failure 500
 
 // token godoc
+// @Security Bearer
 // @Summary Account 유저 생성
 // @Tags Account
 // @Produce  json
@@ -154,6 +158,7 @@ func CreateUser(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 정보 변경
 // @Tags Users
 // @Produce  json
@@ -165,6 +170,7 @@ func CreateUser(c *gin.Context) {
 // @Failure 500
 
 // token godoc
+// @Security Bearer
 // @Summary Account 유저 정보 변경
 // @Tags Account
 // @Produce  json
@@ -249,6 +255,7 @@ func UpdateUser(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 자신의 계정 정보 변경
 // @Tags Users
 // @Produce  json
@@ -259,6 +266,7 @@ func UpdateUser(c *gin.Context) {
 // @Failure 500
 
 // token godoc
+// @Security Bearer
 // @Summary Account 자신의 계정 정보 변경
 // @Tags Account
 // @Produce  json
@@ -342,6 +350,7 @@ func UpdateMe(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 삭제
 // @Tags Users
 // @Produce  json
@@ -399,6 +408,7 @@ func DeleteUser(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 상세정보 조회
 // @Tags Users
 // @Produce  json
@@ -408,6 +418,7 @@ func DeleteUser(c *gin.Context) {
 // @Failure 500
 
 // token godoc
+// @Security Bearer
 // @Summary Account 유저 상세정보 조회
 // @Tags Account
 // @Produce  json
@@ -459,6 +470,7 @@ func GetUser(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 자격증명 조회
 // @Tags Users
 // @Produce  json
@@ -468,6 +480,7 @@ func GetUser(c *gin.Context) {
 // @Failure 500
 
 // token godoc
+// @Security Bearer
 // @Summary Account 유저 자격증명 조회
 // @Tags Account
 // @Produce  json
@@ -501,6 +514,7 @@ func GetUserCredentials(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 비밀번호 변경
 // @Tags Users
 // @Produce  json
@@ -511,6 +525,7 @@ func GetUserCredentials(c *gin.Context) {
 // @Failure 500
 
 // token godoc
+// @Security Bearer
 // @Summary Account 유저 비밀번호 변경
 // @Tags Account
 // @Produce  json
@@ -555,6 +570,7 @@ func ResetUserPassword(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 그룹 조회
 // @Tags Users
 // @Produce  json
@@ -593,6 +609,7 @@ func GetUserGroups(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 그룹 가입
 // @Tags Users
 // @Produce  json
@@ -630,6 +647,7 @@ func AddUserToGroup(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 그룹 탈퇴
 // @Tags Users
 // @Produce  json
@@ -667,6 +685,7 @@ func DeleteUserFromGroup(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 세션 조회
 // @Tags Users
 // @Produce  json
@@ -699,6 +718,7 @@ func GetUserSessions(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 세션 제거
 // @Tags Users
 // @Produce  json
@@ -755,6 +775,7 @@ func LogoutUserSession(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 전체 세션 제거
 // @Tags Users
 // @Produce  json
@@ -789,6 +810,7 @@ func LogoutAllSessions(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 ID 제공자 조회
 // @Tags Users
 // @Produce  json
@@ -798,6 +820,7 @@ func LogoutAllSessions(c *gin.Context) {
 // @Failure 500
 
 // token godoc
+// @Security Bearer
 // @Summary Account 유저 ID 제공자 조회
 // @Tags Account
 // @Produce  json
@@ -831,6 +854,7 @@ func GetUserFederatedIdentities(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary 유저 ID 제공자 제거
 // @Tags Users
 // @Produce  json
@@ -841,6 +865,7 @@ func GetUserFederatedIdentities(c *gin.Context) {
 // @Failure 500
 
 // token godoc
+// @Security Bearer
 // @Summary Account 유저 ID 제공자 제거
 // @Tags Account
 // @Produce  json
@@ -875,6 +900,7 @@ func DeleteUserFederatedIdentity(c *gin.Context) {
 }
 
 // token godoc
+// @Security Bearer
 // @Summary Users 유저 초기 설정 작업(대상이 자기 자신인 경우에만)
 // @Tags Users
 // @Produce  json
