@@ -167,7 +167,6 @@ func makeRouter() *gin.Engine {
 	{
 		serviceAccount.GET("", api.GetServiceAccounts)
 		serviceAccount.GET("/:id", api.GetServiceAccount)
-		serviceAccount.GET("/:id/secret", api.GetServiceAccountSecret)
 		serviceAccount.POST("/:id/secret/regenerate", api.RegenerateServiceAccountSecret)
 		serviceAccount.POST("", api.CreateServiceAccount)
 		serviceAccount.PUT("/:id", api.UpdateServiceAccount)

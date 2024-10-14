@@ -63,7 +63,7 @@ func NewLogFile(path string, name string, file *os.File, limitLogSize int, logSt
 		limitLogSize: limitLogSize,
 		innerLogSize: 0,
 		logNum:       0,
-		logDate:      time.Now().Format("2006-01-02"),
+		logDate:      time.Now().In(time.FixedZone("KST", 9*60*60)).Format("2006-01-02"),
 		logStdout:    logStdout,
 	}
 
@@ -83,7 +83,7 @@ func (l *LogFile) Write(b []byte) (n int, err error) {
 		return
 	}
 
-	if l.logDate != time.Now().Format("2006-01-02") {
+	if l.logDate != time.Now().In(time.FixedZone("KST", 9*60*60)).Format("2006-01-02") {
 		l.logNum = 0
 		l.Rotate()
 	}
@@ -123,7 +123,7 @@ func (l *LogFile) Rotate() error {
 			}
 		}
 	}
-	l.logDate = time.Now().Format("2006-01-02")
+	l.logDate = time.Now().In(time.FixedZone("KST", 9*60*60)).Format("2006-01-02")
 
 	file, err := os.OpenFile(filepath.Join(l.path, l.name+"_"+l.logDate+".log"), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
@@ -168,12 +168,12 @@ func WarningFun(format string, a ...interface{}) {
 
 func infoText() string {
 	_, file, line, _ := runtime.Caller(2)
-	return time.Now().Format("2006-01-02,15:04:05.000") + "," + chopPath(file) + "," + strconv.Itoa(line) + ","
+	return time.Now().In(time.FixedZone("KST", 9*60*60)).Format("2006-01-02,15:04:05.000") + "," + chopPath(file) + "," + strconv.Itoa(line) + ","
 }
 
 func infoTextFun() string {
 	_, file, line, _ := runtime.Caller(3)
-	return time.Now().Format("2006-01-02,15:04:05.000") + "," + chopPath(file) + "," + strconv.Itoa(line) + ","
+	return time.Now().In(time.FixedZone("KST", 9*60*60)).Format("2006-01-02,15:04:05.000") + "," + chopPath(file) + "," + strconv.Itoa(line) + ","
 }
 
 func chopPath(original string) string {

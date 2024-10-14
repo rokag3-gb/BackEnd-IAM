@@ -10,10 +10,13 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
+
+var mutex = &sync.Mutex{}
 
 // token godoc
 // @Security Bearer
@@ -44,11 +47,11 @@ func GetServiceAccounts(c *gin.Context) {
 	}
 
 	db, err := iamdb.DBClient()
-	defer db.Close()
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
+	defer db.Close()
 
 	arr, idArr, err := iamdb.SelectServiceAccounts(db)
 	if err != nil {
@@ -79,12 +82,12 @@ func GetServiceAccounts(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary 유저 상세정보 조회
-// @Tags Users
+// @Summary 서비스 어카운트 계정 상세 정보 조회
+// @Tags ServiceAccount
 // @Produce  json
-// @Router /users/{userId} [get]
+// @Router /serviceAccount/{userId} [get]
 // @Param userId path string true "User Id"
-// @Success 200 {object} models.GetUserInfo
+// @Success 200 {object} models.GetServiceAccount
 // @Failure 500
 func GetServiceAccount(c *gin.Context) {
 	db, err := iamdb.DBClient()
@@ -116,51 +119,6 @@ func GetServiceAccount(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary 서비스 어카운트 시크릿 조회
-// @Tags ServiceAccount
-// @Produce json
-// @Router /serviceAccount/{userId}/secret [get]
-// @Param userId path string true "User Id"
-// @Success 200 {object} models.ClientSecret
-// @Failure 500
-func GetServiceAccountSecret(c *gin.Context) {
-	userId := c.Param("id")
-
-	db, err := iamdb.DBClient()
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
-		return
-	}
-	defer db.Close()
-
-	clientId, err := iamdb.SelectClientIdFromUserId(db, userId)
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	realm := c.Query("realm")
-	if realm == "" {
-		realm = c.GetString("realm")
-	}
-
-	token, err := clients.KeycloakToken(c)
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
-	}
-
-	secret, err := clients.GetServiceAccountSecret(c, token.AccessToken, realm, clientId)
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
-	}
-
-	c.JSON(http.StatusOK, secret)
-}
-
-// token godoc
-// @Security Bearer
 // @Summary 서비스 어카운트 시크릿 재생성
 // @Tags ServiceAccount
 // @Produce json
@@ -171,6 +129,7 @@ func GetServiceAccountSecret(c *gin.Context) {
 // @Failure 500
 func RegenerateServiceAccountSecret(c *gin.Context) {
 	userId := c.Param("id")
+	username := c.GetString("username")
 
 	db, err := iamdb.DBClient()
 	if err != nil {
@@ -208,14 +167,14 @@ func RegenerateServiceAccountSecret(c *gin.Context) {
 		return
 	}
 
-	curTime := time.Now().Format("2006-01-02,15:04:05")
+	curTime := time.Now().In(time.FixedZone("KST", 9*60*60)).Format("2006-01-02,15:04:05")
 
 	err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "modifyDate", curTime)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
-	err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "modifier", userId)
+	err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "modifier", username)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -273,15 +232,15 @@ func CreateServiceAccount(c *gin.Context) {
 	}
 	defer db.Close()
 
-	curTime := time.Now().Format("2006-01-02,15:04:05")
-	userId := c.GetString("userId")
+	curTime := time.Now().In(time.FixedZone("KST", 9*60*60)).Format("2006-01-02,15:04:05")
+	username := c.GetString("username")
 	{
 		err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "createDate", curTime)
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
 		}
-		err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "creator", userId)
+		err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "creator", username)
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
@@ -291,7 +250,7 @@ func CreateServiceAccount(c *gin.Context) {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
 		}
-		err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "modifier", userId)
+		err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "modifier", username)
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
@@ -314,6 +273,8 @@ func CreateServiceAccount(c *gin.Context) {
 // @Failure 500
 func UpdateServiceAccount(c *gin.Context) {
 	userId := c.Param("id")
+	username := c.GetString("username")
+
 	realm := c.Query("realm")
 	if realm == "" {
 		realm = c.GetString("realm")
@@ -356,14 +317,14 @@ func UpdateServiceAccount(c *gin.Context) {
 		return
 	}
 
-	curTime := time.Now().Format("2006-01-02,15:04:05")
+	curTime := time.Now().In(time.FixedZone("KST", 9*60*60)).Format("2006-01-02,15:04:05")
 
 	err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "modifyDate", curTime)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
-	err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "modifier", userId)
+	err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "modifier", username)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -407,6 +368,11 @@ func DeleteServiceAccount(c *gin.Context) {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
+
+	// Keycloak 에서 Delete Client가 동시에 실행되면 일정 확률로 에러가 발생하는 것 처럼 보임...
+	// 동시에 실행되지 않도록 수정
+	mutex.Lock()
+	defer mutex.Unlock()
 
 	err = clients.DeleteServiceAccount(c, token.AccessToken, realm, clientId)
 	if err != nil {

@@ -2176,6 +2176,27 @@ paths:
       summary: 서비스 어카운트 제거
       tags:
       - ServiceAccount
+    get:
+      parameters:
+      - description: User Id
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.GetServiceAccount'
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: 서비스 어카운트 계정 상세 정보 조회
+      tags:
+      - ServiceAccount
     put:
       parameters:
       - description: body
@@ -2201,28 +2222,6 @@ paths:
       security:
       - Bearer: []
       summary: 서비스 어카운트 정보 변경
-      tags:
-      - ServiceAccount
-  /serviceAccount/{userId}/secret:
-    get:
-      parameters:
-      - description: User Id
-        in: path
-        name: userId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.ClientSecret'
-        "500":
-          description: Internal Server Error
-      security:
-      - Bearer: []
-      summary: 서비스 어카운트 시크릿 조회
       tags:
       - ServiceAccount
   /serviceAccount/{userId}/secret/regenerate:
@@ -2272,27 +2271,6 @@ paths:
       security:
       - Bearer: []
       summary: 유저 삭제
-      tags:
-      - Users
-    get:
-      parameters:
-      - description: User Id
-        in: path
-        name: userId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.GetUserInfo'
-        "500":
-          description: Internal Server Error
-      security:
-      - Bearer: []
-      summary: 유저 상세정보 조회
       tags:
       - Users
   /users/{userId}/groups:
