@@ -913,6 +913,16 @@ func UserInitialize(c *gin.Context) {
 	realm := c.GetString("realm")
 	tenantId := c.Param("tenantId")
 
+	if tenantId == "" {
+		tenant, err := iamdb.GetTenantIdByRealm(realm)
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			return
+		}
+
+		tenantId = tenant
+	}
+
 	email, client_id, err := middlewares.GetInitInfo(token)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")

@@ -649,52 +649,6 @@ func DismissGroupRole(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary 유저 역할 수정 (현재 사용되지 않음)
-// @Tags Authority
-// @Produce  json
-// @Param realm path string true "Realm Id"
-// @Param userId path string true "User Id"
-// @Param roleId path string true "Role Id"
-// @Param tenantId path string true "tenantId"
-// @Param autuhorityUse body models.AutuhorityUse true "AutuhorityUse Yn"
-// @Router /authority/user/{tenantId}/{userId}/roles/{roleId} [put]
-// @Success 204
-// @Failure 400
-// @Failure 500
-func UpdateUserRole(c *gin.Context) {
-	use, err := getUse(c)
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusBadRequest, "")
-		return
-	}
-	userid, err := getUserID(c)
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusBadRequest, "")
-		return
-	}
-	roleId, err := getRoleID(c)
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusBadRequest, "")
-		return
-	}
-
-	tenantId := c.Param("tenantId")
-	if tenantId == "" {
-		common.ErrorProcess(c, errors.New("required 'User id'"), http.StatusBadRequest, "")
-		return
-	}
-
-	err = iamdb.UpdateUserRole(userid, roleId, tenantId, c.GetString("userId"), use.Use)
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
-	}
-
-	c.Status(http.StatusNoContent)
-}
-
-// token godoc
-// @Security Bearer
 // @Summary 유저 활성 권한 목록 조회
 // @Tags Authority
 // @Produce  json

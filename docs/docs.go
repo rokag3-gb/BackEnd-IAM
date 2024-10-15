@@ -1070,72 +1070,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/authority/user/{tenantId}/{userId}/roles/{roleId}": {
-            "put": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Authority"
-                ],
-                "summary": "유저 역할 수정 (현재 사용되지 않음)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Realm Id",
-                        "name": "realm",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "User Id",
-                        "name": "userId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Role Id",
-                        "name": "roleId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "tenantId",
-                        "name": "tenantId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "AutuhorityUse Yn",
-                        "name": "autuhorityUse",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.AutuhorityUse"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    },
-                    "400": {
-                        "description": "Bad Request"
-                    },
-                    "500": {
-                        "description": "Internal Server Error"
-                    }
-                }
-            }
-        },
         "/authority/user/{userId}": {
             "get": {
                 "security": [
@@ -3071,17 +3005,6 @@ const docTemplate = `{
                 "url": {
                     "type": "string"
                 },
-                "useYn": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "models.AutuhorityUse": {
-            "type": "object",
-            "required": [
-                "useYn"
-            ],
-            "properties": {
                 "useYn": {
                     "type": "boolean"
                 }

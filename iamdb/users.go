@@ -275,16 +275,16 @@ func SelectNotExsistRole(client_id, user_id, realm string) ([]string, error) {
 	var arr = make([]string, 0)
 
 	db, err := DBClient()
-	defer db.Close()
 	if err != nil {
 		return arr, err
 	}
+	defer db.Close()
 
 	query := `SELECT roleId FROM IAM.dbo.clientDefaultRole
 	WHERE clientId = ?
 	AND isEnable = 1
 	AND roleId NOT IN
-	(SELECT rId FROM IAM.dbo.UserRole
+	(SELECT roleId FROM IAM.dbo.UserRole
 	WHERE userId = ?)`
 
 	rows, err := db.Query(query, client_id, user_id)
@@ -372,10 +372,10 @@ func GetAccountUserId(id string) ([]string, error) {
 
 func GetUserRealmById(userId string) (string, error) {
 	db, dbErr := DBClient()
-	defer db.Close()
 	if dbErr != nil {
 		return "", dbErr
 	}
+	defer db.Close()
 
 	query := `SELECT REALM_ID from USER_ENTITY WHERE ID = ?`
 
@@ -392,17 +392,19 @@ func GetUserRealmById(userId string) (string, error) {
 			return "", err
 		}
 
-		return realm, nil
+		if realm != "" {
+			return realm, nil
+		}
 	}
-	return "", errors.New("Realm not found")
+	return "", errors.New("realm not found")
 }
 
 func GetTenantIdByRealm(realm string) (string, error) {
 	db, dbErr := DBClient()
-	defer db.Close()
 	if dbErr != nil {
 		return "", dbErr
 	}
+	defer db.Close()
 
 	query := `SELECT TenantId FROM Tenant WHERE RealmName = ?`
 
@@ -419,7 +421,10 @@ func GetTenantIdByRealm(realm string) (string, error) {
 			return "", err
 		}
 
-		return tenantId, nil
+		if tenantId != "" {
+			return tenantId, nil
+		}
 	}
-	return "", errors.New("Realm not found")
+
+	return "", errors.New("realm not found")
 }
