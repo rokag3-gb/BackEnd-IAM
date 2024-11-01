@@ -1,17 +1,12 @@
 package iamdb
 
 import (
+	"database/sql"
 	"errors"
 	"iam/models"
 )
 
-func GetGroup() ([]models.GroupItem, error) {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return nil, dbErr
-	}
-
+func GetGroup(db *sql.DB) ([]models.GroupItem, error) {
 	query := `SELECT g.ID, 
 	g.NAME, 
 	g.REALM_ID, 
@@ -46,13 +41,7 @@ from KEYCLOAK_GROUP g
 	return arr, err
 }
 
-func GroupCreate(groupId, username, realm string) error {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return dbErr
-	}
-
+func GroupCreate(db *sql.DB, groupId, username, realm string) error {
 	query := `UPDATE KEYCLOAK_GROUP SET 
 	createId=B.ID,
 	createDate=GETDATE(),
@@ -68,13 +57,7 @@ func GroupCreate(groupId, username, realm string) error {
 	return err
 }
 
-func GroupUpdate(groupId, username, realm string) error {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return dbErr
-	}
-
+func GroupUpdate(db *sql.DB, groupId, username, realm string) error {
 	query := `UPDATE KEYCLOAK_GROUP SET 
 	modifyId=B.ID,
 	modifyDate=GETDATE()
@@ -88,13 +71,7 @@ func GroupUpdate(groupId, username, realm string) error {
 	return err
 }
 
-func GetGroupRealmById(groupId string) (string, error) {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return "", dbErr
-	}
-
+func GetGroupRealmById(db *sql.DB, groupId string) (string, error) {
 	query := `SELECT g.REALM_ID from KEYCLOAK_GROUP g WHERE ID = ?`
 
 	rows, err := db.Query(query, groupId)

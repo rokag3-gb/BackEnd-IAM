@@ -20,7 +20,14 @@ import (
 // @Success 200 {object} []models.GroupItem
 // @Failure 500
 func GetGroup(c *gin.Context) {
-	arr, err := iamdb.GetGroup()
+	db, err := clients.DBClient()
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+	defer db.Close()
+
+	arr, err := iamdb.GetGroup(db)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -64,7 +71,14 @@ func CreateGroup(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.GroupCreate(newGroup, c.GetString("username"), json.Realm)
+	db, err := clients.DBClient()
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+	defer db.Close()
+
+	err = iamdb.GroupCreate(db, newGroup, c.GetString("username"), json.Realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -91,7 +105,14 @@ func DeleteGroup(c *gin.Context) {
 	}
 	groupid := c.Param("groupid")
 
-	realm, err := iamdb.GetGroupRealmById(groupid)
+	db, err := clients.DBClient()
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+	defer db.Close()
+
+	realm, err := iamdb.GetGroupRealmById(db, groupid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -129,7 +150,14 @@ func UpdateGroup(c *gin.Context) {
 		return
 	}
 
-	realm, err := iamdb.GetGroupRealmById(groupid)
+	db, err := clients.DBClient()
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+	defer db.Close()
+
+	realm, err := iamdb.GetGroupRealmById(db, groupid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -149,7 +177,7 @@ func UpdateGroup(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.GroupUpdate(groupid, c.GetString("username"), realm)
+	err = iamdb.GroupUpdate(db, groupid, c.GetString("username"), realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

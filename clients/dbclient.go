@@ -1,16 +1,11 @@
-package iamdb
+package clients
 
 import (
 	"database/sql"
-	"net/http"
-	"time"
+	"iam/iamdb"
 )
 
 var dbConfig DbConfig = DbConfig{}
-
-var httpClient = &http.Client{
-	Timeout: 10 * time.Second,
-}
 
 type DbConfig struct {
 	DriverName     string
@@ -29,7 +24,7 @@ func InitDbClient(driverName string, dataSourceName string) error {
 		panic(err)
 	}
 
-	ConnectionTest(db)
+	iamdb.ConnectionTest(db)
 
 	return nil
 }

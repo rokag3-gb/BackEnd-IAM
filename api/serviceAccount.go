@@ -46,7 +46,7 @@ func GetServiceAccounts(c *gin.Context) {
 		}
 	}
 
-	db, err := iamdb.DBClient()
+	db, err := clients.DBClient()
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -90,7 +90,7 @@ func GetServiceAccounts(c *gin.Context) {
 // @Success 200 {object} models.GetServiceAccount
 // @Failure 500
 func GetServiceAccount(c *gin.Context) {
-	db, err := iamdb.DBClient()
+	db, err := clients.DBClient()
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
 	}
@@ -131,7 +131,7 @@ func RegenerateServiceAccountSecret(c *gin.Context) {
 	userId := c.Param("id")
 	username := c.GetString("username")
 
-	db, err := iamdb.DBClient()
+	db, err := clients.DBClient()
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
 		return
@@ -226,7 +226,7 @@ func CreateServiceAccount(c *gin.Context) {
 		return
 	}
 
-	db, dbErr := iamdb.DBClient()
+	db, dbErr := clients.DBClient()
 	if dbErr != nil {
 		common.ErrorProcess(c, dbErr, http.StatusInternalServerError, dbErr.Error())
 	}
@@ -280,7 +280,7 @@ func UpdateServiceAccount(c *gin.Context) {
 		realm = c.GetString("realm")
 	}
 
-	db, err := iamdb.DBClient()
+	db, err := clients.DBClient()
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
 		return
@@ -345,7 +345,7 @@ func UpdateServiceAccount(c *gin.Context) {
 func DeleteServiceAccount(c *gin.Context) {
 	userId := c.Param("id")
 
-	db, err := iamdb.DBClient()
+	db, err := clients.DBClient()
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
 		return

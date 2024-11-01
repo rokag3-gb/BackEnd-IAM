@@ -3,7 +3,6 @@ package main
 import (
 	"iam/api"
 	"iam/clients"
-	"iam/iamdb"
 	"log"
 	"net/http"
 	"runtime"
@@ -51,7 +50,7 @@ func main() {
 		conf.Vault_token,
 		conf.Vault_endpoint)
 
-	iamdb.InitDbClient("mssql", conf.Db_connect_string)
+	clients.InitDbClient("mssql", conf.Db_connect_string)
 
 	route := makeRouter()
 

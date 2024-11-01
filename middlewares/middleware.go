@@ -3,6 +3,7 @@ package middlewares
 import (
 	"errors"
 	"fmt"
+	"iam/clients"
 	"iam/common"
 	"iam/config"
 	"iam/iamdb"
@@ -112,7 +113,14 @@ func PageNotFound() gin.HandlerFunc {
 
 func CheckAccountRequestUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		result, err := iamdb.CheckAccountUser(c.Param("accountId"), c.GetString("userId"), c.GetString("realm"))
+		db, err := clients.DBClient()
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
+			return
+		}
+		defer db.Close()
+
+		result, err := iamdb.CheckAccountUser(db, c.Param("accountId"), c.GetString("userId"), c.GetString("realm"))
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
 			return
@@ -127,7 +135,14 @@ func CheckAccountRequestUser() gin.HandlerFunc {
 
 func CheckAccountUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		result, err := iamdb.CheckAccountUser(c.Param("accountId"), c.Param("userid"), c.GetString("realm"))
+		db, err := clients.DBClient()
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
+			return
+		}
+		defer db.Close()
+
+		result, err := iamdb.CheckAccountUser(db, c.Param("accountId"), c.Param("userid"), c.GetString("realm"))
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
 			return
@@ -166,7 +181,6 @@ func GetInitInfo(token string) (string, string, error) {
 
 func AccessControlAllowOrigin() gin.HandlerFunc {
 	return func(c *gin.Context) {
-
 		c.Header("Access-Control-Allow-Origin", config.GetConfig().Access_control_allow_origin)
 		c.Header("Access-Control-Allow-Headers", config.GetConfig().Access_control_allow_headers)
 		c.Header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")

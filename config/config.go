@@ -9,16 +9,16 @@ import (
 	"gopkg.in/ini.v1"
 )
 
-var cfg *IamConfig = nil
+var cfg *Config = nil
 
-func GetConfig() *IamConfig {
+func GetConfig() *Config {
 	if cfg == nil {
 		InitConfig()
 	}
 	return cfg
 }
 
-type IamConfig struct {
+type Config struct {
 	Keycloak_client_id           string
 	Keycloak_client_secret       string
 	Keycloak_endpoint            string
@@ -45,7 +45,7 @@ func InitConfig() error {
 	ctype := os.Getenv("IAM_CONFIG_TYPE")
 
 	if cfg == nil {
-		cfg = new(IamConfig)
+		cfg = new(Config)
 	}
 
 	var err error
@@ -58,7 +58,7 @@ func InitConfig() error {
 	return err
 }
 
-func (conf *IamConfig) initConf() error {
+func (conf *Config) initConf() error {
 	cfg, err := ini.Load("iam.conf")
 	if err != nil {
 		return err
@@ -125,7 +125,7 @@ func (conf *IamConfig) initConf() error {
 	return nil
 }
 
-func (conf *IamConfig) initEnvConfig() error {
+func (conf *Config) initEnvConfig() error {
 	conf.Keycloak_client_id = os.Getenv("KEYCLOAK_CLIENT_ID")
 	conf.Keycloak_client_secret = os.Getenv("KEYCLOAK_CLIENT_SECRET")
 	conf.Keycloak_endpoint = os.Getenv("KEYCLOAK_ENDPOINT")

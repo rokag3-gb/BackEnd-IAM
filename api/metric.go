@@ -32,7 +32,14 @@ func MetricCount(c *gin.Context) {
 		realms = strings.Split(realm, ",")
 	}
 
-	count, err := iamdb.MetricCount(realms)
+	db, err := clients.DBClient()
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+	defer db.Close()
+
+	count, err := iamdb.MetricCount(db, realms)
 
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -88,9 +95,20 @@ func GetMetricSession(c *gin.Context) {
 
 		arr := make([]map[string]interface{}, 0)
 
-		json.Unmarshal(bytes, &arr)
+		err = json.Unmarshal(bytes, &arr)
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			return
+		}
 
-		apps, err := iamdb.GetApplications(realm)
+		db, err := clients.DBClient()
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			return
+		}
+		defer db.Close()
+
+		apps, err := iamdb.GetApplications(db, realm)
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
@@ -135,7 +153,15 @@ func GetLoginApplication(c *gin.Context) {
 	if realm != "" {
 		realms = strings.Split(realm, ",")
 	}
-	m, err := iamdb.GetLoginApplication(c.MustGet("date").(int)-1, realms)
+
+	db, err := clients.DBClient()
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+	defer db.Close()
+
+	m, err := iamdb.GetLoginApplication(db, c.MustGet("date").(int)-1, realms)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -165,7 +191,15 @@ func GetLoginApplicationLog(c *gin.Context) {
 		common.ErrorProcess(c, nil, http.StatusBadRequest, "required 'date'")
 		return
 	}
-	m, err := iamdb.GetLoginApplicationLog(date, realms)
+
+	db, err := clients.DBClient()
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+	defer db.Close()
+
+	m, err := iamdb.GetLoginApplicationLog(db, date, realms)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -190,7 +224,14 @@ func GetLoginApplicationDate(c *gin.Context) {
 	if realm != "" {
 		realms = strings.Split(realm, ",")
 	}
-	m, err := iamdb.GetLoginApplicationDate(c.MustGet("date").(int)-1, realms)
+
+	db, err := clients.DBClient()
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+	defer db.Close()
+	m, err := iamdb.GetLoginApplicationDate(db, c.MustGet("date").(int)-1, realms)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -215,7 +256,15 @@ func GetLoginError(c *gin.Context) {
 	if realm != "" {
 		realms = strings.Split(realm, ",")
 	}
-	m, err := iamdb.GetLoginError(c.MustGet("date").(int)-1, realms)
+
+	db, err := clients.DBClient()
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+	defer db.Close()
+
+	m, err := iamdb.GetLoginError(db, c.MustGet("date").(int)-1, realms)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -239,7 +288,15 @@ func GetIdpCount(c *gin.Context) {
 	if realm != "" {
 		realms = strings.Split(realm, ",")
 	}
-	m, err := iamdb.GetIdpCount(realms)
+
+	db, err := clients.DBClient()
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+	defer db.Close()
+
+	m, err := iamdb.GetIdpCount(db, realms)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

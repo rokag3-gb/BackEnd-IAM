@@ -6,13 +6,7 @@ import (
 	"iam/models"
 )
 
-func GetRoles() ([]models.RolesInfo, error) {
-	db, err := DBClient()
-	defer db.Close()
-	if err != nil {
-		return nil, err
-	}
-
+func GetRoles(db *sql.DB) ([]models.RolesInfo, error) {
 	query := `select r.rId, 
 	r.rName, 
 	r.defaultRole, 
@@ -49,13 +43,7 @@ order by r.rName`
 	return arr, nil
 }
 
-func GetRoleIdByName(rolename, realm string) (string, error) {
-	db, err := DBClient()
-	defer db.Close()
-	if err != nil {
-		return "", err
-	}
-
+func GetRoleIdByName(db *sql.DB, rolename, realm string) (string, error) {
 	query := `select rId from roles
 	where rName = ?
 	AND REALM_ID = ?`
@@ -79,13 +67,7 @@ func GetRoleIdByName(rolename, realm string) (string, error) {
 	return id, nil
 }
 
-func GetAuthIdByName(authname, realm string) (string, error) {
-	db, err := DBClient()
-	defer db.Close()
-	if err != nil {
-		return "", err
-	}
-
+func GetAuthIdByName(db *sql.DB, authname, realm string) (string, error) {
 	query := `select aId from authority
 	where aName = ?
 	AND REALM_ID = ?`
@@ -163,13 +145,7 @@ func UpdateRolesTx(tx *sql.Tx, role *models.RolesInfo, userid string) error {
 }
 
 // 토큰에서 테넌트ID를 받아와야 하는 유형
-func GetMyAuth(id, tenantId string) ([]string, error) {
-	db, err := DBClient()
-	defer db.Close()
-	if err != nil {
-		return nil, err
-	}
-
+func GetMyAuth(db *sql.DB, id, tenantId string) ([]string, error) {
 	query := `select a.aName
 	from UserRole ur 
 		join roles_authority_mapping ra on ur.RoleId = ra.rId
@@ -201,13 +177,7 @@ func GetMyAuth(id, tenantId string) ([]string, error) {
 }
 
 // 토큰에서 테넌트ID를 받아와야 하는 유형
-func GetMenuAuth(id, site, realm string) ([]models.MenuAutuhorityInfo, error) {
-	db, err := DBClient()
-	defer db.Close()
-	if err != nil {
-		return nil, err
-	}
-
+func GetMenuAuth(db *sql.DB, id, site, realm string) ([]models.MenuAutuhorityInfo, error) {
 	query := `declare @values table
 (
 	aName varchar(310)
@@ -265,13 +235,7 @@ SELECT aName, url, method FROM @values ORDER BY aName`
 	return arr, err
 }
 
-func GetRolseAuth(id string) ([]models.RolesInfo, error) {
-	db, err := DBClient()
-	defer db.Close()
-	if err != nil {
-		return nil, err
-	}
-
+func GetRolseAuth(db *sql.DB, id string) ([]models.RolesInfo, error) {
 	query := `select a.aId, 
 	a.aName, 
 	ra.useYn, 
@@ -309,13 +273,7 @@ order by a.aName`
 	return arr, err
 }
 
-func AssignRoleAuth(roleId, authId, userid string) error {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return dbErr
-	}
-
+func AssignRoleAuth(db *sql.DB, roleId, authId, userid string) error {
 	query := `INSERT INTO roles_authority_mapping(rId, aId, createId, modifyId)
 	VALUES(?, ?, ?, ?)`
 
@@ -331,13 +289,7 @@ func AssignRoleAuthTx(tx *sql.Tx, roleID, authID, userid string) error {
 	return err
 }
 
-func DismissRoleAuth(roleID string, authID string) error {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return dbErr
-	}
-
+func DismissRoleAuth(db *sql.DB, roleID string, authID string) error {
 	query := `DELETE FROM roles_authority_mapping where rId = ? AND aId = ? SELECT @@ROWCOUNT`
 
 	rows, err := db.Query(query, roleID, authID)
@@ -345,13 +297,7 @@ func DismissRoleAuth(roleID string, authID string) error {
 	return err
 }
 
-func UpdateRoleAuth(userId, roleId, authId string, use bool) error {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return dbErr
-	}
-
+func UpdateRoleAuth(db *sql.DB, userId, roleId, authId string, use bool) error {
 	query := `UPDATE roles_authority_mapping SET 
 	useYn = ?, 
 	modifyDate=GETDATE(), 
@@ -365,13 +311,7 @@ func UpdateRoleAuth(userId, roleId, authId string, use bool) error {
 	return err
 }
 
-func GetUserRole(userId string) ([]models.RolesInfo, error) {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return nil, dbErr
-	}
-
+func GetUserRole(db *sql.DB, userId string) ([]models.RolesInfo, error) {
 	query := `select r.rId, 
 	r.rName, 
 	r.defaultRole, 
@@ -406,13 +346,7 @@ order by r.rName`
 	return arr, err
 }
 
-func AssignUserRole(userID, tenantId, roleId, reqUserId string) error {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return dbErr
-	}
-
+func AssignUserRole(db *sql.DB, userID, tenantId, roleId, reqUserId string) error {
 	query := `INSERT INTO UserRole(tenantId, UserId, RoleId, SavedAt, SaverId)
 	VALUES(?, ?, ?, GETDATE(), ?)`
 
@@ -428,13 +362,7 @@ func AssignUserRoleTx(tx *sql.Tx, userID, tenantId, roleId, reqUserId string) er
 	return err
 }
 
-func DismissUserRole(userID, roleID, tenantId string) error {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return dbErr
-	}
-
+func DismissUserRole(db *sql.DB, userID, roleID, tenantId string) error {
 	query := `DELETE FROM UserRole where userId = ? AND RoleId = ? AND TenantId = ?
 	SELECT @@ROWCOUNT`
 
@@ -458,13 +386,7 @@ func DeleteUserRoleByRoleIdTx(tx *sql.Tx, roleName string) error {
 	return err
 }
 
-func UpdateUserRole(userId, roleId, tenantId, reqUserId string, use bool) error {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return dbErr
-	}
-
+func UpdateUserRole(db *sql.DB, userId, roleId, tenantId, reqUserId string, use bool) error {
 	query := `UPDATE UserRole SET 
 	useYn = ?, 
 	modifyDate=GETDATE(), 
@@ -477,13 +399,7 @@ func UpdateUserRole(userId, roleId, tenantId, reqUserId string, use bool) error 
 	return err
 }
 
-func GetUserAuth(userID, tenantId string) ([]models.AutuhorityInfo, error) {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return nil, dbErr
-	}
-
+func GetUserAuth(db *sql.DB, userID, tenantId string) ([]models.AutuhorityInfo, error) {
 	query := `SELECT a.aId
 	, a.aName
 	, a.url
@@ -527,13 +443,7 @@ order by a.aName`
 	return arr, nil
 }
 
-func GetUserAuthActive(userName, authName, tenantId string) (map[string]interface{}, error) {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return nil, dbErr
-	}
-
+func GetUserAuthActive(db *sql.DB, userName, authName, tenantId string) (map[string]interface{}, error) {
 	query := `select 1
 from USER_ENTITY u
 	join UserRole ur on u.ID = ur.userId
@@ -560,13 +470,7 @@ where u.USERNAME = ?
 	return m, nil
 }
 
-func GetAuth() ([]models.AutuhorityInfo, error) {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return nil, dbErr
-	}
-
+func GetAuth(db *sql.DB) ([]models.AutuhorityInfo, error) {
 	query := `select 
 	a.aId, 
 	a.aName, 
@@ -603,13 +507,7 @@ order by a.aName`
 	return arr, err
 }
 
-func CreateAuth(auth *models.AutuhorityInfo, userId, realm string) error {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return dbErr
-	}
-
+func CreateAuth(db *sql.DB, auth *models.AutuhorityInfo, userId, realm string) error {
 	query := `INSERT INTO authority(aId, aName, url, method, REALM_ID, createId, modifyId)
 	VALUES(?, ?, ?, ?, ?, ?, ?)`
 
@@ -641,13 +539,7 @@ func DeleteAuthNameTx(tx *sql.Tx, name, realm string) error {
 	return err
 }
 
-func UpdateAuth(auth *models.AutuhorityInfo, userId string) error {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return dbErr
-	}
-
+func UpdateAuth(db *sql.DB, auth *models.AutuhorityInfo, userId string) error {
 	query := `UPDATE authority SET 
 	aName = ?, 
 	url = ?, 
@@ -662,13 +554,7 @@ func UpdateAuth(auth *models.AutuhorityInfo, userId string) error {
 	return err
 }
 
-func GetAuthInfo(authID string) (*models.AutuhorityInfo, error) {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return nil, dbErr
-	}
-
+func GetAuthInfo(db *sql.DB, authID string) (*models.AutuhorityInfo, error) {
 	query := `select 
 	a.aId, 
 	a.aName, 
@@ -723,26 +609,14 @@ func DeleteRolesAuthByAuthNameTx(tx *sql.Tx, roleName, realm string) error {
 	return err
 }
 
-func DeleteUserRoleByUserId(id string) error {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return dbErr
-	}
-
+func DeleteUserRoleByUserId(db *sql.DB, id string) error {
 	query := `DELETE UserRole where userId = ?`
 
 	_, err := db.Query(query, id)
 	return err
 }
 
-func CheckRoleAuthID(roleID, authID string) error {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return dbErr
-	}
-
+func CheckRoleAuthID(db *sql.DB, roleID, authID string) error {
 	query := `select count(*) as result
 	from
 	(
@@ -771,13 +645,7 @@ func CheckRoleAuthID(roleID, authID string) error {
 	return nil
 }
 
-func CheckUserRoleID(userID, roleID string) error {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return dbErr
-	}
-
+func CheckUserRoleID(db *sql.DB, userID, roleID string) error {
 	query := `select count(*) as result
 from
 (

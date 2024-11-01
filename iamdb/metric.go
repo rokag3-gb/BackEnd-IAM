@@ -1,16 +1,12 @@
 package iamdb
 
 import (
+	"database/sql"
 	"fmt"
 	"iam/models"
 )
 
-func MetricCount(realms []string) (map[string]int, error) {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return nil, dbErr
-	}
+func MetricCount(db *sql.DB, realms []string) (map[string]int, error) {
 	queryParams := []interface{}{}
 
 	RealmParam := ""
@@ -62,13 +58,7 @@ func MetricCount(realms []string) (map[string]int, error) {
 	return m, nil
 }
 
-func GetApplications(realm string) ([]string, error) {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return nil, dbErr
-	}
-
+func GetApplications(db *sql.DB, realm string) ([]string, error) {
 	query := `select CLIENT_ID from CLIENT where REALM_ID = ? AND (NAME IS NULL OR LEN(NAME) = 0)`
 
 	rows, err := db.Query(query, realm)
@@ -90,12 +80,7 @@ func GetApplications(realm string) ([]string, error) {
 	return arr, nil
 }
 
-func GetLoginApplication(date int, realms []string) ([]models.MetricItem, error) {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return nil, dbErr
-	}
+func GetLoginApplication(db *sql.DB, date int, realms []string) ([]models.MetricItem, error) {
 	queryParams := []interface{}{}
 
 	RealmParam := ""
@@ -157,12 +142,7 @@ func GetLoginApplication(date int, realms []string) ([]models.MetricItem, error)
 	return arr, nil
 }
 
-func GetLoginApplicationDate(date int, realms []string) ([]map[string]interface{}, error) {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return nil, dbErr
-	}
+func GetLoginApplicationDate(db *sql.DB, date int, realms []string) ([]map[string]interface{}, error) {
 	queryParams := []interface{}{}
 
 	RealmParam := ""
@@ -255,12 +235,7 @@ func GetLoginApplicationDate(date int, realms []string) ([]map[string]interface{
 	return arr, nil
 }
 
-func GetLoginApplicationLog(date string, realms []string) ([]models.MetricLogItem, error) {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return nil, dbErr
-	}
+func GetLoginApplicationLog(db *sql.DB, date string, realms []string) ([]models.MetricLogItem, error) {
 	queryParams := []interface{}{}
 
 	RealmParam := ""
@@ -312,13 +287,7 @@ func GetLoginApplicationLog(date string, realms []string) ([]models.MetricLogIte
 	return arr, nil
 }
 
-func GetLoginError(date int, realms []string) ([]models.MetricItem, error) {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return nil, dbErr
-	}
-
+func GetLoginError(db *sql.DB, date int, realms []string) ([]models.MetricItem, error) {
 	queryParams := []interface{}{}
 
 	RealmParam := ""
@@ -381,13 +350,7 @@ func GetLoginError(date int, realms []string) ([]models.MetricItem, error) {
 	return arr, nil
 }
 
-func GetIdpCount(realms []string) ([]models.MetricItem, error) {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return nil, dbErr
-	}
-
+func GetIdpCount(db *sql.DB, realms []string) ([]models.MetricItem, error) {
 	queryParams := []interface{}{}
 
 	RealmParam := ""

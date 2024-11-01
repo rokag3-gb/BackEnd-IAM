@@ -28,13 +28,7 @@ func DeleteSecretBySecretGroupTx(tx *sql.Tx, secretGroupPath, realm string) erro
 	return err
 }
 
-func MergeSecret(secretPath, secretGroupPath, username, realm string, url *string) error {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return dbErr
-	}
-
+func MergeSecret(db *sql.DB, secretPath, secretGroupPath, username, realm string, url *string) error {
 	query := `MERGE INTO vSecret A
 	USING (SELECT 
 	? as spath, 
@@ -58,13 +52,7 @@ func MergeSecret(secretPath, secretGroupPath, username, realm string, url *strin
 	return err
 }
 
-func DeleteSecret(secretPath, secretGroupPath string) error {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return dbErr
-	}
-
+func DeleteSecret(db *sql.DB, secretPath, secretGroupPath string) error {
 	query := `DELETE FROM vSecret WHERE vSecretPath = ?
 	AND vSecretGroupId = (select vSecretGroupId from vSecretGroup where vSecretGroupPath = ?)
 	SELECT @@ROWCOUNT`
@@ -74,12 +62,7 @@ func DeleteSecret(secretPath, secretGroupPath string) error {
 	return err
 }
 
-func GetSecretGroup(data []models.SecretGroupItem, username, realm string) ([]models.SecretGroupItem, error) {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return nil, dbErr
-	}
+func GetSecretGroup(db *sql.DB, data []models.SecretGroupItem, username, realm string) ([]models.SecretGroupItem, error) {
 	queryParams := []interface{}{}
 
 	query := `declare @values table
@@ -147,13 +130,7 @@ func GetSecretGroup(data []models.SecretGroupItem, username, realm string) ([]mo
 	return arr, err
 }
 
-func GetSecret(groupName, realm string) (map[string]models.SecretItem, error) {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return nil, dbErr
-	}
-
+func GetSecret(db *sql.DB, groupName, realm string) (map[string]models.SecretItem, error) {
 	query := `SELECT s.vSecretPath, s.url, 
 	FORMAT(s.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
 	u1.USERNAME as Creator, 
@@ -188,14 +165,8 @@ func GetSecret(groupName, realm string) (map[string]models.SecretItem, error) {
 	return m, err
 }
 
-func GetSecretGroupMetadata(groupName, realm string) (models.SecretGroupResponse, error) {
+func GetSecretGroupMetadata(db *sql.DB, groupName, realm string) (models.SecretGroupResponse, error) {
 	var result models.SecretGroupResponse
-
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return result, dbErr
-	}
 
 	result.Roles = make([]models.IdItem, 0)
 	result.Users = make([]models.IdItem, 0)
@@ -283,13 +254,7 @@ func GetSecretGroupMetadata(groupName, realm string) (models.SecretGroupResponse
 	return result, err
 }
 
-func GetSecretByName(groupName, secretName, realm string) (*models.SecretItem, error) {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return nil, dbErr
-	}
-
+func GetSecretByName(db *sql.DB, groupName, secretName, realm string) (*models.SecretItem, error) {
 	query := `SELECT s.vSecretPath, s.url, 
 	FORMAT(s.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
 	u1.USERNAME as Creator, 
@@ -319,13 +284,7 @@ func GetSecretByName(groupName, secretName, realm string) (*models.SecretItem, e
 	return m, err
 }
 
-func GetAllSecret(data []models.SecretGroupItem, realm string) ([]models.SecretItem, error) {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return nil, dbErr
-	}
-
+func GetAllSecret(db *sql.DB, data []models.SecretGroupItem, realm string) ([]models.SecretItem, error) {
 	var groups []string
 
 	args := []interface{}{}

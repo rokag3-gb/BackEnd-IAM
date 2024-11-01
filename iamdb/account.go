@@ -1,14 +1,12 @@
 package iamdb
 
-import "strings"
+import (
+	"database/sql"
+	"strings"
+)
 
-func SelectAccount(email, user_id string) (bool, error) {
+func SelectAccount(db *sql.DB, email, user_id string) (bool, error) {
 	ret := false
-	db, err := DBClient()
-	if err != nil {
-		return ret, err
-	}
-	defer db.Close()
 
 	query := `DECLARE @AccId BIGINT
 	DECLARE @UserId varchar(36)
@@ -57,14 +55,8 @@ func SelectAccount(email, user_id string) (bool, error) {
 	return ret, err
 }
 
-func SelectAccountId(userId string) ([]int64, error) {
+func SelectAccountId(db *sql.DB, userId string) ([]int64, error) {
 	ret := make([]int64, 0)
-
-	db, err := DBClient()
-	if err != nil {
-		return ret, err
-	}
-	defer db.Close()
 
 	query := `SELECT [AccountId]
 FROM [Sale].[dbo].[Account_User]
@@ -90,14 +82,8 @@ WHERE [UserId] = ?`
 	return ret, err
 }
 
-func SelectDefaultAccount(email, userId string) ([]int64, error) {
+func SelectDefaultAccount(db *sql.DB, email, userId string) ([]int64, error) {
 	ret := make([]int64, 0)
-
-	db, err := DBClient()
-	if err != nil {
-		return ret, err
-	}
-	defer db.Close()
 
 	if !strings.Contains(email, "@") {
 		return ret, nil
@@ -132,13 +118,7 @@ WHERE UserId = ?)`
 	return ret, err
 }
 
-func CheckAccountUser(accountId, userId, realm string) (bool, error) {
-	db, err := DBClient()
-	defer db.Close()
-	if err != nil {
-		return false, err
-	}
-
+func CheckAccountUser(db *sql.DB, accountId, userId, realm string) (bool, error) {
 	query := `SELECT AU.AccountId
 	FROM [Sale].[dbo].[Account_User] AU
 	JOIN [IAM].[dbo].[USER_ENTITY] U
@@ -161,13 +141,7 @@ func CheckAccountUser(accountId, userId, realm string) (bool, error) {
 	return false, nil
 }
 
-func InsertAccountUser(accountId, userId, saveId string) error {
-	db, dbErr := DBClient()
-	if dbErr != nil {
-		return dbErr
-	}
-	defer db.Close()
-
+func InsertAccountUser(db *sql.DB, accountId, userId, saveId string) error {
 	query := `INSERT INTO Sale.dbo.Account_User(AccountId, UserId, SaveId) VALUES(?, ?, ?)`
 
 	_, err := db.Query(query, accountId, userId, saveId)

@@ -7,13 +7,7 @@ import (
 	"strings"
 )
 
-func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return nil, dbErr
-	}
-
+func GetUsers(db *sql.DB, params map[string][]string) ([]models.GetUserInfo, error) {
 	var rows *sql.Rows
 	var err error
 
@@ -132,13 +126,7 @@ func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 	return arr, err
 }
 
-func GetUserDetail(userId, realm string) ([]models.GetUserInfo, error) {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return nil, dbErr
-	}
-
+func GetUserDetail(db *sql.DB, userId, realm string) ([]models.GetUserInfo, error) {
 	query := `SELECT U.ID, U.ENABLED, U.USERNAME, U.FIRST_NAME, U.LAST_NAME, U.EMAIL, U.PhoneNumber, 
 	(SELECT STRING_AGG(REQUIRED_ACTION, ',') FROM USER_REQUIRED_ACTION WHERE USER_ID=U.ID) as REQUIRED_ACTION,
 	FORMAT(U.createDate, 'yyyy-MM-dd HH:mm') as createDate, 
@@ -182,13 +170,7 @@ func GetUserDetail(userId, realm string) ([]models.GetUserInfo, error) {
 	return arr, err
 }
 
-func UsersCreate(userId, reqUserId string) error {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return dbErr
-	}
-
+func UsersCreate(db *sql.DB, userId, reqUserId string) error {
 	query := `UPDATE USER_ENTITY SET 
 	createId=?,
 	createDate=GETDATE(),
@@ -203,13 +185,7 @@ func UsersCreate(userId, reqUserId string) error {
 	return err
 }
 
-func UsersUpdate(userId, phoneNumber, reqUserId string) error {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return dbErr
-	}
-
+func UsersUpdate(db *sql.DB, userId, phoneNumber, reqUserId string) error {
 	if phoneNumber != "" {
 		query := `UPDATE USER_ENTITY SET 
 		PhoneNumber=?,
@@ -242,13 +218,7 @@ func UsersUpdate(userId, phoneNumber, reqUserId string) error {
 	}
 }
 
-func CreateUserAddDefaultRole(uid, reqUserId string) error {
-	db, dbErr := DBClient()
-	defer db.Close()
-	if dbErr != nil {
-		return dbErr
-	}
-
+func CreateUserAddDefaultRole(db *sql.DB, uid, reqUserId string) error {
 	query := `WITH temp AS (
 		SELECT 
 			TenantId,
@@ -271,14 +241,8 @@ func CreateUserAddDefaultRole(uid, reqUserId string) error {
 	return nil
 }
 
-func SelectNotExsistRole(client_id, user_id, realm string) ([]string, error) {
+func SelectNotExsistRole(db *sql.DB, client_id, user_id, realm string) ([]string, error) {
 	var arr = make([]string, 0)
-
-	db, err := DBClient()
-	if err != nil {
-		return arr, err
-	}
-	defer db.Close()
 
 	query := `SELECT roleId FROM IAM.dbo.clientDefaultRole
 	WHERE clientId = ?
@@ -307,13 +271,7 @@ func SelectNotExsistRole(client_id, user_id, realm string) ([]string, error) {
 	return arr, err
 }
 
-func GetAccountUserId(id string) ([]string, error) {
-	db, dbErr := DBClient()
-	if dbErr != nil {
-		return nil, dbErr
-	}
-	defer db.Close()
-
+func GetAccountUserId(db *sql.DB, id string) ([]string, error) {
 	query := `SELECT Seq 
 	FROM Sale.dbo.Account_User AU
 	JOIN IAM.dbo.USER_ENTITY U ON AU.UserId = ?`
@@ -339,13 +297,7 @@ func GetAccountUserId(id string) ([]string, error) {
 	return arr, nil
 }
 
-func GetUserRealmById(userId string) (string, error) {
-	db, dbErr := DBClient()
-	if dbErr != nil {
-		return "", dbErr
-	}
-	defer db.Close()
-
+func GetUserRealmById(db *sql.DB, userId string) (string, error) {
 	query := `SELECT REALM_ID from USER_ENTITY WHERE ID = ?`
 
 	rows, err := db.Query(query, userId)
@@ -368,13 +320,7 @@ func GetUserRealmById(userId string) (string, error) {
 	return "", errors.New("realm not found")
 }
 
-func GetTenantIdByRealm(realm string) (string, error) {
-	db, dbErr := DBClient()
-	if dbErr != nil {
-		return "", dbErr
-	}
-	defer db.Close()
-
+func GetTenantIdByRealm(db *sql.DB, realm string) (string, error) {
 	query := `SELECT TenantId FROM Tenant WHERE RealmName = ?`
 
 	rows, err := db.Query(query, realm)
