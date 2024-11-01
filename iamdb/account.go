@@ -1,12 +1,14 @@
 package iamdb
 
+import "strings"
+
 func SelectAccount(email, user_id string) (bool, error) {
 	ret := false
 	db, err := DBClient()
-	defer db.Close()
 	if err != nil {
 		return ret, err
 	}
+	defer db.Close()
 
 	query := `DECLARE @AccId BIGINT
 	DECLARE @UserId varchar(36)
@@ -55,6 +57,81 @@ func SelectAccount(email, user_id string) (bool, error) {
 	return ret, err
 }
 
+func SelectAccountId(userId string) ([]int64, error) {
+	ret := make([]int64, 0)
+
+	db, err := DBClient()
+	if err != nil {
+		return ret, err
+	}
+	defer db.Close()
+
+	query := `SELECT [AccountId]
+FROM [Sale].[dbo].[Account_User]
+WHERE [UserId] = ?`
+
+	rows, err := db.Query(query, userId)
+	if err != nil {
+		return ret, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var result int64
+
+		err := rows.Scan(&result)
+		if err != nil {
+			return ret, err
+		}
+
+		ret = append(ret, result)
+	}
+
+	return ret, err
+}
+
+func SelectDefaultAccount(email, userId string) ([]int64, error) {
+	ret := make([]int64, 0)
+
+	db, err := DBClient()
+	if err != nil {
+		return ret, err
+	}
+	defer db.Close()
+
+	if !strings.Contains(email, "@") {
+		return ret, nil
+	}
+
+	emailString := email[strings.Index(email, "@"):]
+
+	query := `SELECT AccountId 
+FROM [Sale].[dbo].[Account]
+WHERE EmailDomain = ?
+AND AccountId NOT IN (SELECT AccountId
+FROM [Sale].[dbo].[Account_User]
+WHERE UserId = ?)`
+
+	rows, err := db.Query(query, emailString, userId)
+	if err != nil {
+		return ret, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var result int64
+
+		err := rows.Scan(&result)
+		if err != nil {
+			return ret, err
+		}
+
+		ret = append(ret, result)
+	}
+
+	return ret, err
+}
+
 func CheckAccountUser(accountId, userId, realm string) (bool, error) {
 	db, err := DBClient()
 	defer db.Close()
@@ -84,12 +161,12 @@ func CheckAccountUser(accountId, userId, realm string) (bool, error) {
 	return false, nil
 }
 
-func CreateAccountUser(accountId string, userId string, saveId string) error {
+func InsertAccountUser(accountId, userId, saveId string) error {
 	db, dbErr := DBClient()
-	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
+	defer db.Close()
 
 	query := `INSERT INTO Sale.dbo.Account_User(AccountId, UserId, SaveId) VALUES(?, ?, ?)`
 

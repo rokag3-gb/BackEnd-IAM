@@ -145,7 +145,7 @@ func CreateUser(c *gin.Context) {
 	}
 
 	if c.Param("accountId") != "" {
-		err = iamdb.CreateAccountUser(c.Param("accountId"), newUserId, c.GetString("userId"))
+		err = iamdb.InsertAccountUser(c.Param("accountId"), newUserId, c.GetString("userId"))
 	}
 
 	err = iamdb.CreateUserAddDefaultRole(newUserId, c.GetString("userId"))
@@ -928,6 +928,19 @@ func UserInitialize(c *gin.Context) {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
+	accountIds, err := iamdb.SelectDefaultAccount(email, c.GetString("userId"))
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+	for _, id := range accountIds {
+		err := iamdb.InsertAccountUser(fmt.Sprintf("%d", id), c.GetString("userId"), c.GetString("userId"))
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			return
+		}
+	}
+
 	result, err := iamdb.SelectAccount(email, c.GetString("userId"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -949,7 +962,7 @@ func UserInitialize(c *gin.Context) {
 		}
 	}
 
-	arr, err := iamdb.SelectAccountList(c.GetString("userId"))
+	arr, err := iamdb.SelectAccountId(c.GetString("userId"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

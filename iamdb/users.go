@@ -307,43 +307,12 @@ func SelectNotExsistRole(client_id, user_id, realm string) ([]string, error) {
 	return arr, err
 }
 
-func SelectAccountList(user_id string) ([]int64, error) {
-	var arr = make([]int64, 0)
-
-	db, err := DBClient()
-	defer db.Close()
-	if err != nil {
-		return arr, err
-	}
-
-	query := `SELECT AccountId FROM SALE.dbo.Account_User WHERE userId = ?`
-
-	rows, err := db.Query(query, user_id)
-	if err != nil {
-		return arr, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var aId int64
-
-		err := rows.Scan(&aId)
-		if err != nil {
-			return arr, err
-		}
-
-		arr = append(arr, aId)
-	}
-
-	return arr, err
-}
-
 func GetAccountUserId(id string) ([]string, error) {
 	db, dbErr := DBClient()
-	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
+	defer db.Close()
 
 	query := `SELECT Seq 
 	FROM Sale.dbo.Account_User AU
