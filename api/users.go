@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"iam/clients"
 	"iam/common"
-	"iam/iamdb"
 	"iam/middlewares"
 	"iam/models"
+	"iam/query"
 	"net/http"
 	"strings"
 
@@ -79,7 +79,7 @@ func Users(c *gin.Context) {
 	}
 	defer db.Close()
 
-	arr, err := iamdb.GetUsers(db, params)
+	arr, err := query.GetUsers(db, params)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -152,17 +152,17 @@ func CreateUser(c *gin.Context) {
 	}
 	defer db.Close()
 
-	err = iamdb.UsersCreate(db, newUserId, c.GetString("userId"))
+	err = query.UsersCreate(db, newUserId, c.GetString("userId"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
 	if c.Param("accountId") != "" {
-		err = iamdb.InsertAccountUser(db, c.Param("accountId"), newUserId, c.GetString("userId"))
+		err = query.InsertAccountUser(db, c.Param("accountId"), newUserId, c.GetString("userId"))
 	}
 
-	err = iamdb.CreateUserAddDefaultRole(db, newUserId, c.GetString("userId"))
+	err = query.CreateUserAddDefaultRole(db, newUserId, c.GetString("userId"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -266,7 +266,7 @@ func UpdateUser(c *gin.Context) {
 	}
 	defer db.Close()
 
-	err = iamdb.UsersUpdate(db, userid, phoneNumber, c.GetString("userId"))
+	err = query.UsersUpdate(db, userid, phoneNumber, c.GetString("userId"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -368,7 +368,7 @@ func UpdateMe(c *gin.Context) {
 	}
 	defer db.Close()
 
-	err = iamdb.UsersUpdate(db, userid, phoneNumber, userid)
+	err = query.UsersUpdate(db, userid, phoneNumber, userid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -402,7 +402,7 @@ func DeleteUser(c *gin.Context) {
 	}
 	defer db.Close()
 
-	arr, err := iamdb.GetAccountUserId(db, userid)
+	arr, err := query.GetAccountUserId(db, userid)
 	if err != nil {
 		logger.Error(err.Error())
 	} else {
@@ -419,7 +419,7 @@ func DeleteUser(c *gin.Context) {
 		}
 	}
 
-	realm, err := iamdb.GetUserRealmById(db, userid)
+	realm, err := query.GetUserRealmById(db, userid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -434,7 +434,7 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.DeleteUserRoleByUserId(db, userid)
+	err = query.DeleteUserRoleByUserId(db, userid)
 	if err != nil {
 		logger.Error(err.Error())
 	}
@@ -477,7 +477,7 @@ func GetUser(c *gin.Context) {
 	defer db.Close()
 
 	userid := c.Param("userid")
-	realm, err := iamdb.GetUserRealmById(db, userid)
+	realm, err := query.GetUserRealmById(db, userid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -492,7 +492,7 @@ func GetUser(c *gin.Context) {
 
 	var params = map[string][]string{}
 	params["U.ID"] = append(params["U.ID"], *user.ID)
-	arr, err := iamdb.GetUsers(db, params)
+	arr, err := query.GetUsers(db, params)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -547,7 +547,7 @@ func GetUserCredentials(c *gin.Context) {
 	}
 	defer db.Close()
 
-	realm, err := iamdb.GetUserRealmById(db, userid)
+	realm, err := query.GetUserRealmById(db, userid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -606,7 +606,7 @@ func ResetUserPassword(c *gin.Context) {
 	}
 	defer db.Close()
 
-	realm, err := iamdb.GetUserRealmById(db, userid)
+	realm, err := query.GetUserRealmById(db, userid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -652,7 +652,7 @@ func GetUserGroups(c *gin.Context) {
 	}
 	defer db.Close()
 
-	realm, err := iamdb.GetUserRealmById(db, userid)
+	realm, err := query.GetUserRealmById(db, userid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -698,7 +698,7 @@ func AddUserToGroup(c *gin.Context) {
 	}
 	defer db.Close()
 
-	realm, err := iamdb.GetUserRealmById(db, userid)
+	realm, err := query.GetUserRealmById(db, userid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -743,7 +743,7 @@ func DeleteUserFromGroup(c *gin.Context) {
 	}
 	defer db.Close()
 
-	realm, err := iamdb.GetUserRealmById(db, userid)
+	realm, err := query.GetUserRealmById(db, userid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -786,7 +786,7 @@ func GetUserSessions(c *gin.Context) {
 	}
 	defer db.Close()
 
-	realm, err := iamdb.GetUserRealmById(db, userid)
+	realm, err := query.GetUserRealmById(db, userid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -828,7 +828,7 @@ func LogoutUserSession(c *gin.Context) {
 	}
 	defer db.Close()
 
-	realm, err := iamdb.GetUserRealmById(db, userid)
+	realm, err := query.GetUserRealmById(db, userid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -890,7 +890,7 @@ func LogoutAllSessions(c *gin.Context) {
 	}
 	defer db.Close()
 
-	realm, err := iamdb.GetUserRealmById(db, userid)
+	realm, err := query.GetUserRealmById(db, userid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -943,7 +943,7 @@ func GetUserFederatedIdentities(c *gin.Context) {
 	}
 	defer db.Close()
 
-	realm, err := iamdb.GetUserRealmById(db, userid)
+	realm, err := query.GetUserRealmById(db, userid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -997,7 +997,7 @@ func DeleteUserFederatedIdentity(c *gin.Context) {
 	}
 	defer db.Close()
 
-	realm, err := iamdb.GetUserRealmById(db, userid)
+	realm, err := query.GetUserRealmById(db, userid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -1034,7 +1034,7 @@ func UserInitialize(c *gin.Context) {
 	defer db.Close()
 
 	if tenantId == "" {
-		tenant, err := iamdb.GetTenantIdByRealm(db, realm)
+		tenant, err := query.GetTenantIdByRealm(db, realm)
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
@@ -1048,33 +1048,33 @@ func UserInitialize(c *gin.Context) {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
-	accountIds, err := iamdb.SelectDefaultAccount(db, email, c.GetString("userId"))
+	accountIds, err := query.SelectDefaultAccount(db, email, c.GetString("userId"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	for _, id := range accountIds {
-		err := iamdb.InsertAccountUser(db, fmt.Sprintf("%d", id), c.GetString("userId"), c.GetString("userId"))
+		err := query.InsertAccountUser(db, fmt.Sprintf("%d", id), c.GetString("userId"), c.GetString("userId"))
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
 		}
 	}
 
-	result, err := iamdb.SelectAccount(db, email, c.GetString("userId"))
+	result, err := query.SelectAccount(db, email, c.GetString("userId"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 	if result {
-		roleIdList, err := iamdb.SelectNotExsistRole(db, client_id, c.GetString("userId"), realm)
+		roleIdList, err := query.SelectNotExsistRole(db, client_id, c.GetString("userId"), realm)
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
 		}
 
 		for _, roleId := range roleIdList {
-			err = iamdb.AssignUserRole(db, c.GetString("userId"), tenantId, roleId, c.GetString("userId"))
+			err = query.AssignUserRole(db, c.GetString("userId"), tenantId, roleId, c.GetString("userId"))
 			if err != nil {
 				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 				return
@@ -1082,7 +1082,7 @@ func UserInitialize(c *gin.Context) {
 		}
 	}
 
-	arr, err := iamdb.SelectAccountId(db, c.GetString("userId"))
+	arr, err := query.SelectAccountId(db, c.GetString("userId"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

@@ -1,4 +1,4 @@
-package iamdb
+package query
 
 import (
 	"database/sql"

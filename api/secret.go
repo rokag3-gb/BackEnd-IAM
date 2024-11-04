@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"iam/clients"
 	"iam/common"
-	"iam/iamdb"
 	"iam/models"
+	"iam/query"
 	"io"
 	"net/http"
 	"strings"
@@ -54,7 +54,7 @@ func CreateSecretGroup(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.CreateSecretGroupTx(tx, sg.Name, c.GetString("username"), realm)
+	err = query.CreateSecretGroupTx(tx, sg.Name, c.GetString("username"), realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -67,21 +67,21 @@ func CreateSecretGroup(c *gin.Context) {
 	rolename := sg.Name + "_Manager"
 	roleId := uuid.New()
 
-	err = iamdb.CreateAuthIdTx(tx, authId.String(), authname, "/iam/secret/"+sg.Name+"/*", "ALL", c.GetString("username"), realm)
+	err = query.CreateAuthIdTx(tx, authId.String(), authname, "/iam/secret/"+sg.Name+"/*", "ALL", c.GetString("username"), realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.CreateRolesIdTx(tx, roleId.String(), rolename, c.GetString("userId"), realm, false)
+	err = query.CreateRolesIdTx(tx, roleId.String(), rolename, c.GetString("userId"), realm, false)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.AssignRoleAuthTx(tx, roleId.String(), authId.String(), c.GetString("userId"))
+	err = query.AssignRoleAuthTx(tx, roleId.String(), authId.String(), c.GetString("userId"))
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -90,7 +90,7 @@ func CreateSecretGroup(c *gin.Context) {
 
 	if sg.RoleId != nil {
 		for _, role := range *sg.RoleId {
-			err = iamdb.AssignRoleAuthTx(tx, role, authId.String(), c.GetString("userId"))
+			err = query.AssignRoleAuthTx(tx, role, authId.String(), c.GetString("userId"))
 			if err != nil {
 				tx.Rollback()
 				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -101,7 +101,7 @@ func CreateSecretGroup(c *gin.Context) {
 
 	if sg.UserId != nil {
 		for _, user := range *sg.UserId {
-			err = iamdb.AssignUserRoleTx(tx, user, roleId.String(), c.GetString("username"), realm)
+			err = query.AssignUserRoleTx(tx, user, roleId.String(), c.GetString("username"), realm)
 			if err != nil {
 				tx.Rollback()
 				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -165,42 +165,42 @@ func DeleteSecretGroup(c *gin.Context) {
 	authname := groupName + "_MANAGER"
 	rolename := groupName + "_Manager"
 
-	err = iamdb.DeleteUserRoleByRoleNameTx(tx, rolename, realm)
+	err = query.DeleteUserRoleByRoleNameTx(tx, rolename, realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.DeleteRolesAuthByAuthNameTx(tx, authname, realm)
+	err = query.DeleteRolesAuthByAuthNameTx(tx, authname, realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.DeleteAuthNameTx(tx, authname, realm)
+	err = query.DeleteAuthNameTx(tx, authname, realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.DeleteRolesNameTx(tx, rolename, realm)
+	err = query.DeleteRolesNameTx(tx, rolename, realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.DeleteSecretBySecretGroupTx(tx, groupName, realm)
+	err = query.DeleteSecretBySecretGroupTx(tx, groupName, realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.DeleteSecretGroupTx(tx, groupName, realm)
+	err = query.DeleteSecretGroupTx(tx, groupName, realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -264,7 +264,7 @@ func GetSecretList(c *gin.Context) {
 	}
 	defer db.Close()
 
-	secrets, err := iamdb.GetSecret(db, groupName, realm)
+	secrets, err := query.GetSecret(db, groupName, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -333,14 +333,14 @@ func UpdateSecretGroup(c *gin.Context) {
 	authName := groupName + "_MANAGER"
 	roleName := groupName + "_Manager"
 
-	authId, err := iamdb.GetAuthIdByName(db, authName, realm)
+	authId, err := query.GetAuthIdByName(db, authName, realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	roleId, err := iamdb.GetRoleIdByName(db, roleName, realm)
+	roleId, err := query.GetRoleIdByName(db, roleName, realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -349,7 +349,7 @@ func UpdateSecretGroup(c *gin.Context) {
 
 	if authId != "" {
 		if sg.RoleId != nil {
-			err = iamdb.DeleteRolesAuthByAuthIdTx(tx, authId)
+			err = query.DeleteRolesAuthByAuthIdTx(tx, authId)
 			if err != nil {
 				tx.Rollback()
 				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -357,7 +357,7 @@ func UpdateSecretGroup(c *gin.Context) {
 			}
 
 			for _, role := range *sg.RoleId {
-				err = iamdb.AssignRoleAuthTx(tx, role, authId, c.GetString("userId"))
+				err = query.AssignRoleAuthTx(tx, role, authId, c.GetString("userId"))
 				if err != nil {
 					tx.Rollback()
 					common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -371,7 +371,7 @@ func UpdateSecretGroup(c *gin.Context) {
 
 	if roleId != "" {
 		if sg.UserId != nil {
-			err = iamdb.DeleteUserRoleByRoleIdTx(tx, roleId)
+			err = query.DeleteUserRoleByRoleIdTx(tx, roleId)
 			if err != nil {
 				tx.Rollback()
 				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -379,7 +379,7 @@ func UpdateSecretGroup(c *gin.Context) {
 			}
 
 			for _, user := range *sg.UserId {
-				err = iamdb.AssignUserRoleTx(tx, user, tenantId, roleId, c.GetString("userId"))
+				err = query.AssignUserRoleTx(tx, user, tenantId, roleId, c.GetString("userId"))
 				if err != nil {
 					tx.Rollback()
 					common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -463,7 +463,7 @@ func GetSecretGroupMetadata(c *gin.Context) {
 	}
 	defer db.Close()
 
-	secretGroup, err := iamdb.GetSecretGroupMetadata(db, groupName, realm)
+	secretGroup, err := query.GetSecretGroupMetadata(db, groupName, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -509,7 +509,7 @@ func GetSecret(c *gin.Context) {
 	}
 	defer db.Close()
 
-	secret, err := iamdb.GetSecretByName(db, groupName, secretName, realm)
+	secret, err := query.GetSecretByName(db, groupName, secretName, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -569,7 +569,7 @@ func MargeSecret(c *gin.Context) {
 	}
 	defer db.Close()
 
-	err = iamdb.MergeSecret(db, secretName, groupName, c.GetString("username"), realm, url.URL)
+	err = query.MergeSecret(db, secretName, groupName, c.GetString("username"), realm, url.URL)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -763,7 +763,7 @@ func DeleteSecretMetadata(c *gin.Context) {
 	}
 	defer db.Close()
 
-	err = iamdb.DeleteSecret(db, secretName, groupName)
+	err = query.DeleteSecret(db, secretName, groupName)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -829,7 +829,7 @@ func GetAllSecretList(c *gin.Context) {
 	}
 	defer db.Close()
 
-	secretGroup, err := iamdb.GetSecretGroup(db, arr, c.GetString("username"), realm)
+	secretGroup, err := query.GetSecretGroup(db, arr, c.GetString("username"), realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -839,7 +839,7 @@ func GetAllSecretList(c *gin.Context) {
 		return
 	}
 
-	secrets, err := iamdb.GetAllSecret(db, secretGroup, realm)
+	secrets, err := query.GetAllSecret(db, secretGroup, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

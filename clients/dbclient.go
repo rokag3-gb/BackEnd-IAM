@@ -2,7 +2,7 @@ package clients
 
 import (
 	"database/sql"
-	"iam/iamdb"
+	"iam/query"
 )
 
 var dbConfig DbConfig = DbConfig{}
@@ -24,7 +24,7 @@ func InitDbClient(driverName string, dataSourceName string) error {
 		panic(err)
 	}
 
-	iamdb.ConnectionTest(db)
+	query.ConnectionTest(db)
 
 	return nil
 }

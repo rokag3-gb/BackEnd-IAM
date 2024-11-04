@@ -6,8 +6,8 @@ import (
 	"iam/clients"
 	"iam/common"
 	"iam/config"
-	"iam/iamdb"
 	"iam/models"
+	"iam/query"
 	"io"
 	"net/http"
 	"strconv"
@@ -39,7 +39,7 @@ func MetricCount(c *gin.Context) {
 	}
 	defer db.Close()
 
-	count, err := iamdb.MetricCount(db, realms)
+	count, err := query.MetricCount(db, realms)
 
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -108,7 +108,7 @@ func GetMetricSession(c *gin.Context) {
 		}
 		defer db.Close()
 
-		apps, err := iamdb.GetApplications(db, realm)
+		apps, err := query.GetApplications(db, realm)
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
@@ -161,7 +161,7 @@ func GetLoginApplication(c *gin.Context) {
 	}
 	defer db.Close()
 
-	m, err := iamdb.GetLoginApplication(db, c.MustGet("date").(int)-1, realms)
+	m, err := query.GetLoginApplication(db, c.MustGet("date").(int)-1, realms)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -199,7 +199,7 @@ func GetLoginApplicationLog(c *gin.Context) {
 	}
 	defer db.Close()
 
-	m, err := iamdb.GetLoginApplicationLog(db, date, realms)
+	m, err := query.GetLoginApplicationLog(db, date, realms)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -231,7 +231,7 @@ func GetLoginApplicationDate(c *gin.Context) {
 		return
 	}
 	defer db.Close()
-	m, err := iamdb.GetLoginApplicationDate(db, c.MustGet("date").(int)-1, realms)
+	m, err := query.GetLoginApplicationDate(db, c.MustGet("date").(int)-1, realms)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -264,7 +264,7 @@ func GetLoginError(c *gin.Context) {
 	}
 	defer db.Close()
 
-	m, err := iamdb.GetLoginError(db, c.MustGet("date").(int)-1, realms)
+	m, err := query.GetLoginError(db, c.MustGet("date").(int)-1, realms)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -296,7 +296,7 @@ func GetIdpCount(c *gin.Context) {
 	}
 	defer db.Close()
 
-	m, err := iamdb.GetIdpCount(db, realms)
+	m, err := query.GetIdpCount(db, realms)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

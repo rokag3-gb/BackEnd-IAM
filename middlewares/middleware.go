@@ -6,7 +6,7 @@ import (
 	"iam/clients"
 	"iam/common"
 	"iam/config"
-	"iam/iamdb"
+	"iam/query"
 	"net/http"
 	"strconv"
 	"strings"
@@ -120,7 +120,7 @@ func CheckAccountRequestUser() gin.HandlerFunc {
 		}
 		defer db.Close()
 
-		result, err := iamdb.CheckAccountUser(db, c.Param("accountId"), c.GetString("userId"), c.GetString("realm"))
+		result, err := query.CheckAccountUser(db, c.Param("accountId"), c.GetString("userId"), c.GetString("realm"))
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
 			return
@@ -142,7 +142,7 @@ func CheckAccountUser() gin.HandlerFunc {
 		}
 		defer db.Close()
 
-		result, err := iamdb.CheckAccountUser(db, c.Param("accountId"), c.Param("userid"), c.GetString("realm"))
+		result, err := query.CheckAccountUser(db, c.Param("accountId"), c.Param("userid"), c.GetString("realm"))
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
 			return

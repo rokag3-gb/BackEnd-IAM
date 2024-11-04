@@ -5,8 +5,8 @@ import (
 	"errors"
 	"iam/clients"
 	"iam/common"
-	"iam/iamdb"
 	"iam/models"
+	"iam/query"
 	"io"
 	"net/http"
 
@@ -31,7 +31,7 @@ func GetRoles(c *gin.Context) {
 	}
 	defer db.Close()
 
-	RolesInfos, err := iamdb.GetRoles(db)
+	RolesInfos, err := query.GetRoles(db)
 
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -81,7 +81,7 @@ func CreateRoles(c *gin.Context) {
 	}
 	roleId := uuid.New()
 
-	err = iamdb.CreateRolesIdTx(tx, roleId.String(), *roles.Name, roles.Realm, c.GetString("userId"), roles.DefaultRole)
+	err = query.CreateRolesIdTx(tx, roleId.String(), *roles.Name, roles.Realm, c.GetString("userId"), roles.DefaultRole)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -90,7 +90,7 @@ func CreateRoles(c *gin.Context) {
 
 	if roles.AuthId != nil {
 		for _, authId := range *roles.AuthId {
-			err = iamdb.AssignRoleAuthTx(tx, roleId.String(), authId, c.GetString("userId"))
+			err = query.AssignRoleAuthTx(tx, roleId.String(), authId, c.GetString("userId"))
 			if err != nil {
 				tx.Rollback()
 				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -140,21 +140,21 @@ func DeleteRoles(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.DeleteRolesAuthByRoleIdTx(tx, roleId)
+	err = query.DeleteRolesAuthByRoleIdTx(tx, roleId)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.DeleteUserRoleByRoleIdTx(tx, roleId)
+	err = query.DeleteUserRoleByRoleIdTx(tx, roleId)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.DeleteRolesTx(tx, roleId)
+	err = query.DeleteRolesTx(tx, roleId)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -208,7 +208,7 @@ func UpdateRoles(c *gin.Context) {
 
 	roles.ID = roleId
 
-	err = iamdb.UpdateRolesTx(tx, roles, c.GetString("userId"))
+	err = query.UpdateRolesTx(tx, roles, c.GetString("userId"))
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -216,7 +216,7 @@ func UpdateRoles(c *gin.Context) {
 	}
 
 	if roles.AuthId != nil {
-		err = iamdb.DeleteRolesAuthByRoleIdTx(tx, roleId)
+		err = query.DeleteRolesAuthByRoleIdTx(tx, roleId)
 		if err != nil {
 			tx.Rollback()
 			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -224,7 +224,7 @@ func UpdateRoles(c *gin.Context) {
 		}
 
 		for _, authId := range *roles.AuthId {
-			err = iamdb.AssignRoleAuthTx(tx, roleId, authId, c.GetString("username"))
+			err = query.AssignRoleAuthTx(tx, roleId, authId, c.GetString("username"))
 			if err != nil {
 				tx.Rollback()
 				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -260,7 +260,7 @@ func GetMyAuth(c *gin.Context) {
 	}
 	defer db.Close()
 
-	arr, err := iamdb.GetMyAuth(db, userId, tenantId)
+	arr, err := query.GetMyAuth(db, userId, tenantId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -296,7 +296,7 @@ func GetMenuAuth(c *gin.Context) {
 	}
 	defer db.Close()
 
-	arr, err := iamdb.GetMenuAuth(db, userId, site, realm)
+	arr, err := query.GetMenuAuth(db, userId, site, realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -329,7 +329,7 @@ func GetRolesAuth(c *gin.Context) {
 	}
 	defer db.Close()
 
-	arr, err := iamdb.GetRolseAuth(db, roleId)
+	arr, err := query.GetRolseAuth(db, roleId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -373,13 +373,13 @@ func AssignRoleAuth(c *gin.Context) {
 	}
 	defer db.Close()
 
-	err = iamdb.CheckRoleAuthID(db, roleId, auth.ID)
+	err = query.CheckRoleAuthID(db, roleId, auth.ID)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.AssignRoleAuth(db, roleId, auth.ID, c.GetString("username"))
+	err = query.AssignRoleAuth(db, roleId, auth.ID, c.GetString("username"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -419,7 +419,7 @@ func DismissRoleAuth(c *gin.Context) {
 	}
 	defer db.Close()
 
-	err = iamdb.DismissRoleAuth(db, roleId, authId)
+	err = query.DismissRoleAuth(db, roleId, authId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -465,7 +465,7 @@ func UpdateRoleAuth(c *gin.Context) {
 	}
 	defer db.Close()
 
-	err = iamdb.UpdateRoleAuth(db, c.GetString("userId"), roleId, authId, use.Use)
+	err = query.UpdateRoleAuth(db, c.GetString("userId"), roleId, authId, use.Use)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -499,7 +499,7 @@ func GetUserRole(c *gin.Context) {
 	}
 	defer db.Close()
 
-	arr, err := iamdb.GetUserRole(db, userId)
+	arr, err := query.GetUserRole(db, userId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -536,7 +536,7 @@ func AssignUserRole(c *gin.Context) {
 
 	tenantId := c.Query("tenantId")
 	if tenantId == "" || tenantId == "<nil>" {
-		tenant, err := iamdb.GetTenantIdByRealm(db, c.GetString("realm"))
+		tenant, err := query.GetTenantIdByRealm(db, c.GetString("realm"))
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusBadRequest, "")
 			return
@@ -554,13 +554,13 @@ func AssignUserRole(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.CheckUserRoleID(db, userid, roles.ID)
+	err = query.CheckUserRoleID(db, userid, roles.ID)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.AssignUserRole(db, userid, tenantId, roles.ID, c.GetString("userId"))
+	err = query.AssignUserRole(db, userid, tenantId, roles.ID, c.GetString("userId"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -603,7 +603,7 @@ func DismissUserRole(c *gin.Context) {
 
 	tenantId := c.Query("tenantId")
 	if tenantId == "" || tenantId == "<nil>" {
-		tenant, err := iamdb.GetTenantIdByRealm(db, c.GetString("realm"))
+		tenant, err := query.GetTenantIdByRealm(db, c.GetString("realm"))
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusBadRequest, "")
 			return
@@ -611,7 +611,7 @@ func DismissUserRole(c *gin.Context) {
 		tenantId = tenant
 	}
 
-	err = iamdb.DismissUserRole(db, userid, roleId, tenantId)
+	err = query.DismissUserRole(db, userid, roleId, tenantId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -648,7 +648,7 @@ func AssignGroupRole(c *gin.Context) {
 
 	tenantId := c.Query("tenantId")
 	if tenantId == "" || tenantId == "<nil>" {
-		tenant, err := iamdb.GetTenantIdByRealm(db, c.GetString("realm"))
+		tenant, err := query.GetTenantIdByRealm(db, c.GetString("realm"))
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusBadRequest, "")
 			return
@@ -666,13 +666,13 @@ func AssignGroupRole(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.CheckUserRoleID(db, userid, roles.ID)
+	err = query.CheckUserRoleID(db, userid, roles.ID)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.AssignUserRole(db, userid, tenantId, roles.ID, c.GetString("userId"))
+	err = query.AssignUserRole(db, userid, tenantId, roles.ID, c.GetString("userId"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -715,7 +715,7 @@ func DismissGroupRole(c *gin.Context) {
 
 	tenantId := c.Query("tenantId")
 	if tenantId == "" || tenantId == "<nil>" {
-		tenant, err := iamdb.GetTenantIdByRealm(db, c.GetString("realm"))
+		tenant, err := query.GetTenantIdByRealm(db, c.GetString("realm"))
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusBadRequest, "")
 			return
@@ -723,7 +723,7 @@ func DismissGroupRole(c *gin.Context) {
 		tenantId = tenant
 	}
 
-	err = iamdb.DismissUserRole(db, userid, roleId, tenantId)
+	err = query.DismissUserRole(db, userid, roleId, tenantId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -754,7 +754,7 @@ func GetUserAuth(c *gin.Context) {
 
 	tenantId := c.Query("tenantId")
 	if tenantId == "" || tenantId == "<nil>" {
-		tenant, err := iamdb.GetTenantIdByRealm(db, c.GetString("realm"))
+		tenant, err := query.GetTenantIdByRealm(db, c.GetString("realm"))
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusBadRequest, "")
 			return
@@ -768,7 +768,7 @@ func GetUserAuth(c *gin.Context) {
 		return
 	}
 
-	arr, err := iamdb.GetUserAuth(db, userid, tenantId)
+	arr, err := query.GetUserAuth(db, userid, tenantId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -800,7 +800,7 @@ func GetUserAuthActive(c *gin.Context) {
 
 	tenantId := c.Query("tenantId")
 	if tenantId == "" || tenantId == "<nil>" {
-		tenant, err := iamdb.GetTenantIdByRealm(db, c.GetString("realm"))
+		tenant, err := query.GetTenantIdByRealm(db, c.GetString("realm"))
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusBadRequest, "")
 			return
@@ -819,7 +819,7 @@ func GetUserAuthActive(c *gin.Context) {
 		return
 	}
 
-	m, err := iamdb.GetUserAuthActive(db, userName, authName, tenantId)
+	m, err := query.GetUserAuthActive(db, userName, authName, tenantId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -845,7 +845,7 @@ func GetAuth(c *gin.Context) {
 	}
 	defer db.Close()
 
-	arr, err := iamdb.GetAuth(db)
+	arr, err := query.GetAuth(db)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -890,7 +890,7 @@ func CreateAuth(c *gin.Context) {
 	}
 	defer db.Close()
 
-	err = iamdb.CreateAuth(db, auth, c.GetString("userId"), auth.Realm)
+	err = query.CreateAuth(db, auth, c.GetString("userId"), auth.Realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -934,14 +934,14 @@ func DeleteAuth(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.DeleteRolesAuthByAuthIdTx(tx, authId)
+	err = query.DeleteRolesAuthByAuthIdTx(tx, authId)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	err = iamdb.DeleteAuth(tx, authId, realm)
+	err = query.DeleteAuth(tx, authId, realm)
 	if err != nil {
 		tx.Rollback()
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -991,7 +991,7 @@ func UpdateAuth(c *gin.Context) {
 	}
 	defer db.Close()
 
-	err = iamdb.UpdateAuth(db, auth, c.GetString("userId"))
+	err = query.UpdateAuth(db, auth, c.GetString("userId"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -1024,7 +1024,7 @@ func GetAuthInfo(c *gin.Context) {
 	}
 	defer db.Close()
 
-	r, err := iamdb.GetAuthInfo(db, authId)
+	r, err := query.GetAuthInfo(db, authId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

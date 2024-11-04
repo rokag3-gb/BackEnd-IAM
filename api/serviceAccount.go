@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"iam/clients"
 	"iam/common"
-	"iam/iamdb"
 	"iam/models"
+	"iam/query"
 	"io"
 	"net/http"
 	"strings"
@@ -53,13 +53,13 @@ func GetServiceAccounts(c *gin.Context) {
 	}
 	defer db.Close()
 
-	arr, idArr, err := iamdb.SelectServiceAccounts(db)
+	arr, idArr, err := query.SelectServiceAccounts(db)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	info, err := iamdb.SelectClientsAttribute(db, idArr)
+	info, err := query.SelectClientsAttribute(db, idArr)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -97,13 +97,13 @@ func GetServiceAccount(c *gin.Context) {
 	defer db.Close()
 
 	userid := c.Param("id")
-	result, err := iamdb.SelectServiceAccount(db, userid)
+	result, err := query.SelectServiceAccount(db, userid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	data, err := iamdb.SelectClientAttribute(db, *result.ClientId)
+	data, err := query.SelectClientAttribute(db, *result.ClientId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -138,7 +138,7 @@ func RegenerateServiceAccountSecret(c *gin.Context) {
 	}
 	defer db.Close()
 
-	clientId, err := iamdb.SelectClientIdFromUserId(db, userId)
+	clientId, err := query.SelectClientIdFromUserId(db, userId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
 		return
@@ -161,7 +161,7 @@ func RegenerateServiceAccountSecret(c *gin.Context) {
 		return
 	}
 
-	idOfClient, err := iamdb.SelectIdFromClientId(db, clientId)
+	idOfClient, err := query.SelectIdFromClientId(db, clientId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
 		return
@@ -169,12 +169,12 @@ func RegenerateServiceAccountSecret(c *gin.Context) {
 
 	curTime := time.Now().In(time.FixedZone("KST", 9*60*60)).Format("2006-01-02,15:04:05")
 
-	err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "modifyDate", curTime)
+	err = query.InsertUpdateClientAttribute(db, idOfClient, "modifyDate", curTime)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
-	err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "modifier", username)
+	err = query.InsertUpdateClientAttribute(db, idOfClient, "modifier", username)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -235,22 +235,22 @@ func CreateServiceAccount(c *gin.Context) {
 	curTime := time.Now().In(time.FixedZone("KST", 9*60*60)).Format("2006-01-02,15:04:05")
 	username := c.GetString("username")
 	{
-		err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "createDate", curTime)
+		err = query.InsertUpdateClientAttribute(db, idOfClient, "createDate", curTime)
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
 		}
-		err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "creator", username)
+		err = query.InsertUpdateClientAttribute(db, idOfClient, "creator", username)
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
 		}
-		err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "modifyDate", curTime)
+		err = query.InsertUpdateClientAttribute(db, idOfClient, "modifyDate", curTime)
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
 		}
-		err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "modifier", username)
+		err = query.InsertUpdateClientAttribute(db, idOfClient, "modifier", username)
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
@@ -287,13 +287,13 @@ func UpdateServiceAccount(c *gin.Context) {
 	}
 	defer db.Close()
 
-	clientId, err := iamdb.SelectClientIdFromUserId(db, userId)
+	clientId, err := query.SelectClientIdFromUserId(db, userId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	idOfClient, err := iamdb.SelectIdOfClientFromClientId(db, clientId)
+	idOfClient, err := query.SelectIdOfClientFromClientId(db, clientId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -319,12 +319,12 @@ func UpdateServiceAccount(c *gin.Context) {
 
 	curTime := time.Now().In(time.FixedZone("KST", 9*60*60)).Format("2006-01-02,15:04:05")
 
-	err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "modifyDate", curTime)
+	err = query.InsertUpdateClientAttribute(db, idOfClient, "modifyDate", curTime)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
-	err = iamdb.InsertUpdateClientAttribute(db, idOfClient, "modifier", username)
+	err = query.InsertUpdateClientAttribute(db, idOfClient, "modifier", username)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -352,7 +352,7 @@ func DeleteServiceAccount(c *gin.Context) {
 	}
 	defer db.Close()
 
-	clientId, err := iamdb.SelectClientIdFromUserId(db, userId)
+	clientId, err := query.SelectClientIdFromUserId(db, userId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
 		return

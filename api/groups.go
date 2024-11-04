@@ -3,8 +3,8 @@ package api
 import (
 	"iam/clients"
 	"iam/common"
-	"iam/iamdb"
 	"iam/models"
+	"iam/query"
 	"net/http"
 
 	"github.com/Nerzal/gocloak/v11"
@@ -27,7 +27,7 @@ func GetGroup(c *gin.Context) {
 	}
 	defer db.Close()
 
-	arr, err := iamdb.GetGroup(db)
+	arr, err := query.GetGroup(db)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -78,7 +78,7 @@ func CreateGroup(c *gin.Context) {
 	}
 	defer db.Close()
 
-	err = iamdb.GroupCreate(db, newGroup, c.GetString("username"), json.Realm)
+	err = query.GroupCreate(db, newGroup, c.GetString("username"), json.Realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -112,7 +112,7 @@ func DeleteGroup(c *gin.Context) {
 	}
 	defer db.Close()
 
-	realm, err := iamdb.GetGroupRealmById(db, groupid)
+	realm, err := query.GetGroupRealmById(db, groupid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -157,7 +157,7 @@ func UpdateGroup(c *gin.Context) {
 	}
 	defer db.Close()
 
-	realm, err := iamdb.GetGroupRealmById(db, groupid)
+	realm, err := query.GetGroupRealmById(db, groupid)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -177,7 +177,7 @@ func UpdateGroup(c *gin.Context) {
 		return
 	}
 
-	err = iamdb.GroupUpdate(db, groupid, c.GetString("username"), realm)
+	err = query.GroupUpdate(db, groupid, c.GetString("username"), realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
