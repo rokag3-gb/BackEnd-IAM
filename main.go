@@ -141,6 +141,8 @@ func makeRouter() *gin.Engine {
 		groups.PUT("/:groupid", api.UpdateGroup)
 	}
 
+	route.GET("/user-initialize", api.UserInitializeKey)
+
 	users := route.Group("/users")
 	{
 		users.GET("", api.Users)

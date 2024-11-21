@@ -90,6 +90,40 @@ WHERE [UserId] = ?`
 	return ret, err
 }
 
+func SelectAccountKey(userId string) ([]string, error) {
+	ret := make([]string, 0)
+
+	db, err := DBClient()
+	if err != nil {
+		return ret, err
+	}
+	defer db.Close()
+
+	query := `SELECT ak.AccountKey
+FROM [Sale].[dbo].[Account_User] au
+JOIN [Sale].[dbo].[AccountKey] ak ON au.AccountId = ak.AccountId
+WHERE [UserId] = ?`
+
+	rows, err := db.Query(query, userId)
+	if err != nil {
+		return ret, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var result string
+
+		err := rows.Scan(&result)
+		if err != nil {
+			return ret, err
+		}
+
+		ret = append(ret, result)
+	}
+
+	return ret, err
+}
+
 func SelectDefaultAccount(email, userId string) ([]int64, error) {
 	ret := make([]int64, 0)
 

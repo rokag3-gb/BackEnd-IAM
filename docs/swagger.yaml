@@ -2201,6 +2201,26 @@ paths:
       summary: 서비스 어카운트 시크릿 재생성
       tags:
       - ServiceAccount
+  /user-initialize:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: User 유저 초기 설정 작업(대상이 자기 자신인 경우에만)
+      tags:
+      - User
   /users/{userId}:
     delete:
       parameters:
