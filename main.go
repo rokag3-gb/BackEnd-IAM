@@ -107,6 +107,12 @@ func makeRouter() *gin.Engine {
 
 	route.Use(middlewares.GetUserMiddleware())
 
+	token := route.Group("/token")
+	{
+		token.GET("", api.GetToken)
+		token.POST("/introspect", api.TokenIntrospect)
+	}
+
 	authority := route.Group("/authority")
 	{
 		authority.GET("/roles", api.GetRoles)

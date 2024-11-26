@@ -1,4 +1,21 @@
 definitions:
+  api.GetTokenResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  api.TokenIntrospectRequest:
+    properties:
+      tenantID:
+        type: string
+      token:
+        type: string
+    type: object
+  api.TokenIntrospectResponse:
+    properties:
+      active:
+        type: boolean
+    type: object
   models.Active:
     properties:
       active:
@@ -2201,6 +2218,47 @@ paths:
       summary: 서비스 어카운트 시크릿 재생성
       tags:
       - ServiceAccount
+  /token:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.GetTokenResponse'
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Token 토큰 생성
+      tags:
+      - Account
+  /token/introspect:
+    post:
+      parameters:
+      - description: body
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/api.TokenIntrospectRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.TokenIntrospectResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Token 토큰 검증
+      tags:
+      - Account
   /user-initialize:
     get:
       produces:
