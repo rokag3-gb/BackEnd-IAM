@@ -367,6 +367,12 @@ func DeleteUser(c *gin.Context) {
 	}
 	userid := c.Param("userid")
 
+	realm, err := iamdb.GetUserRealmById(userid)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
 	arr, err := iamdb.GetAccountUserId(userid)
 	if err != nil {
 		logger.Error(err.Error())
@@ -376,18 +382,12 @@ func DeleteUser(c *gin.Context) {
 				continue
 			}
 
-			str, err := clients.SalesDeleteAccountUser(seq, c.GetString("accessToken"))
+			str, err := clients.SalesDeleteAccountUser(seq, realm, c.GetString("accessToken"))
 			fmt.Println(str)
 			if err != nil {
 				logger.Error("%s", err.Error())
 			}
 		}
-	}
-
-	realm, err := iamdb.GetUserRealmById(userid)
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
 	}
 
 	err = clients.KeycloakClient().DeleteUser(c,
@@ -973,78 +973,6 @@ func UserInitialize(c *gin.Context) {
 	}
 
 	arr, err := iamdb.SelectAccountId(c.GetString("userId"))
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
-	}
-
-	c.JSON(http.StatusOK, arr)
-}
-
-// token godoc
-// @Security Bearer
-// @Summary User 유저 초기 설정 작업(대상이 자기 자신인 경우에만)
-// @Tags User
-// @Produce  json
-// @Router /user-initialize [get]
-// @Success 200 {object} []string
-// @Failure 400
-// @Failure 500
-func UserInitializeKey(c *gin.Context) {
-	token := c.GetString("accessToken")
-	realm := c.GetString("realm")
-	tenantId := c.Param("tenantId")
-
-	if tenantId == "" {
-		tenant, err := iamdb.GetTenantIdByRealm(realm)
-		if err != nil {
-			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-			return
-		}
-
-		tenantId = tenant
-	}
-
-	email, client_id, err := middlewares.GetInitInfo(token)
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusBadRequest, "")
-		return
-	}
-	accountIds, err := iamdb.SelectDefaultAccount(email, c.GetString("userId"))
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
-	}
-	for _, id := range accountIds {
-		err := iamdb.InsertAccountUser(fmt.Sprintf("%d", id), c.GetString("userId"), c.GetString("userId"))
-		if err != nil {
-			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-			return
-		}
-	}
-
-	result, err := iamdb.SelectAccount(email, c.GetString("userId"))
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
-	}
-	if result {
-		roleIdList, err := iamdb.SelectNotExsistRole(client_id, c.GetString("userId"), realm)
-		if err != nil {
-			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-			return
-		}
-
-		for _, roleId := range roleIdList {
-			err = iamdb.AssignUserRole(c.GetString("userId"), tenantId, roleId, c.GetString("userId"))
-			if err != nil {
-				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-				return
-			}
-		}
-	}
-
-	arr, err := iamdb.SelectAccountKey(c.GetString("userId"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

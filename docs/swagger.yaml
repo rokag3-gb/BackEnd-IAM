@@ -1,4 +1,23 @@
 definitions:
+  api.TokenIntrospectRequest:
+    properties:
+      tenantId:
+        type: string
+      token:
+        type: string
+    type: object
+  api.TokenIntrospectResponse:
+    properties:
+      active:
+        type: boolean
+    type: object
+  api.UserInviteRequest:
+    properties:
+      accountKey:
+        type: string
+      email:
+        type: string
+    type: object
   models.Active:
     properties:
       active:
@@ -2201,8 +2220,33 @@ paths:
       summary: 서비스 어카운트 시크릿 재생성
       tags:
       - ServiceAccount
+  /token/introspect:
+    post:
+      parameters:
+      - description: body
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/api.TokenIntrospectRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.TokenIntrospectResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Token 토큰 검증
+      tags:
+      - Token
   /user-initialize:
-    get:
+    post:
       produces:
       - application/json
       responses:
@@ -2218,9 +2262,50 @@ paths:
           description: Internal Server Error
       security:
       - Bearer: []
-      summary: User 유저 초기 설정 작업(대상이 자기 자신인 경우에만)
+      summary: User 유저 초대
       tags:
       - User
+  /user-invite:
+    post:
+      parameters:
+      - description: body
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/api.UserInviteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: 유저 초대
+      tags:
+      - user
+  /user/{userid}/forgot-password:
+    post:
+      parameters:
+      - description: User Id
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: 유저 패스워드 변경 요청
+      tags:
+      - user
   /users/{userId}:
     delete:
       parameters:
