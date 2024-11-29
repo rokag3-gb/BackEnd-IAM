@@ -46,6 +46,14 @@ type IamConfig struct {
 	Developer_mode               bool
 	LogStdout                    bool
 	UseApiDocument               bool
+
+	UserInviteSubject    string
+	UserInviteSenderName string
+	UserInviteMessage    string
+
+	ChangePasswordSubject    string
+	ChangePasswordSenderName string
+	ChangePasswordMessage    string
 }
 
 func InitConfig() error {
@@ -150,6 +158,14 @@ func (conf *IamConfig) initConf() error {
 	conf.UseApiDocument = cfg.Section("debug").Key("useApiDocument").MustBool()
 
 	conf.Api_host_list = map[string]string{}
+
+	conf.UserInviteSubject = cfg.Section("user").Key("user_invite_subject").String()
+	conf.UserInviteSenderName = cfg.Section("user").Key("user_invite_sender_name").String()
+	conf.UserInviteMessage = cfg.Section("user").Key("user_invite_message").String()
+
+	conf.ChangePasswordSubject = cfg.Section("user").Key("change_password_subject").String()
+	conf.ChangePasswordSenderName = cfg.Section("user").Key("change_password_sender_name").String()
+	conf.ChangePasswordMessage = cfg.Section("user").Key("change_password_message").String()
 
 	return nil
 }

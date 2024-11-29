@@ -200,10 +200,10 @@ func PostUserInvite(c *gin.Context) {
 	url := fmt.Sprintf("https://dev.bill.ahnlabcloudmate.com/changePassword?t=%s", token)
 
 	clients.SalesSendEmail(accessToken.AccessToken, realm, clients.EmailRequest{
-		Subject:    "유저 초대 메일",
-		SenderName: "Billing Manager",
+		Subject:    conf.UserInviteSubject,
+		SenderName: conf.UserInviteSenderName,
 		To:         []string{r.Email},
-		Body:       fmt.Sprintf("<p>유저 초대 메일 테스트 입니다.</p><br><a>%s</a>", url),
+		Body:       fmt.Sprintf(conf.UserInviteMessage, url),
 		IsBodyHtml: true,
 	})
 
@@ -281,10 +281,10 @@ func PostForgotPassword(c *gin.Context) {
 	url := fmt.Sprintf("https://dev.bill.ahnlabcloudmate.com/changePassword?t=%s", token)
 
 	clients.SalesSendEmail(accessToken.AccessToken, realm, clients.EmailRequest{
-		Subject:    "유저 비밀번호 변경 메일",
-		SenderName: "Billing Manager",
+		Subject:    conf.ChangePasswordSubject,
+		SenderName: conf.ChangePasswordSenderName,
 		To:         []string{email},
-		Body:       fmt.Sprintf("<p>유저 비밀번호 변경 메일 테스트 입니다.</p><br><a>%s</a>", url),
+		Body:       fmt.Sprintf(conf.ChangePasswordMessage, url),
 		IsBodyHtml: true,
 	})
 
