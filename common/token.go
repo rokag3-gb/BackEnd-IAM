@@ -22,7 +22,7 @@ type MerlinClaims struct {
 	Iat   int64    `json:"iat"`   // (Issued At)
 	Iss   string   `json:"iss"`   // (Issuer)
 	Sub   string   `json:"sub"`   // (Subject)
-	jti   string   `json:"jti"`   // (JWT ID)
+	Jti   string   `json:"jti"`   // (JWT ID)
 	Uid   string   `json:"uid"`   // (User ID)
 	Scope []string `json:"scope"` // (Scope)
 	Tid   string   `json:"tid"`   // (Tenant ID)
@@ -49,7 +49,7 @@ func GetToken(uid, tenantID, sub string, scope []string) (string, error) {
 		Iat:   now.Unix(),
 		Iss:   "Merlin",
 		Sub:   sub,
-		jti:   jti.String(),
+		Jti:   jti.String(),
 		Uid:   uid,
 		Scope: scope,
 		Tid:   tenantID,
@@ -67,7 +67,7 @@ func GetToken(uid, tenantID, sub string, scope []string) (string, error) {
 	defer db.Close()
 
 	data := models.TokenData{
-		TokenId:       claims.jti,
+		TokenId:       claims.Jti,
 		TokenTypeCode: "TKT-PWD",
 		TenantId:      tenantID,
 		IssuedAtUTC:   now.Format(time.DateTime),
@@ -77,7 +77,7 @@ func GetToken(uid, tenantID, sub string, scope []string) (string, error) {
 		ExpiredAtUTC:  exp.Format(time.DateTime),
 		Exp:           claims.Exp,
 		SubjectUserId: claims.Sub,
-		ScopeCSV:      []string{""},
+		ScopeCSV:      scope,
 		Token:         token,
 	}
 

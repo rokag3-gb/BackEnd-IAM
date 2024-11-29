@@ -2642,6 +2642,47 @@ const docTemplate = `{
                 }
             }
         },
+        "/token/consume": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Token"
+                ],
+                "summary": "Token 토큰 만료 요청",
+                "parameters": [
+                    {
+                        "description": "body",
+                        "name": "Body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.TokenIntrospectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.TokenIntrospectResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/token/introspect": {
             "post": {
                 "security": [
@@ -3105,9 +3146,6 @@ const docTemplate = `{
         "api.TokenIntrospectRequest": {
             "type": "object",
             "properties": {
-                "tenantId": {
-                    "type": "string"
-                },
                 "token": {
                     "type": "string"
                 }

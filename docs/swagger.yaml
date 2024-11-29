@@ -1,8 +1,6 @@
 definitions:
   api.TokenIntrospectRequest:
     properties:
-      tenantId:
-        type: string
       token:
         type: string
     type: object
@@ -2220,6 +2218,31 @@ paths:
       summary: 서비스 어카운트 시크릿 재생성
       tags:
       - ServiceAccount
+  /token/consume:
+    post:
+      parameters:
+      - description: body
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/api.TokenIntrospectRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.TokenIntrospectResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Token 토큰 만료 요청
+      tags:
+      - Token
   /token/introspect:
     post:
       parameters:
