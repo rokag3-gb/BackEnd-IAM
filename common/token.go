@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"iam/config"
 	"iam/iamdb"
@@ -17,20 +18,21 @@ import (
 )
 
 type MerlinClaims struct {
-	Exp int64  `json:"exp"` // (Expiration Time)
-	Iat int64  `json:"iat"` // (Issued At)
-	Iss string `json:"iss"` // (Issuer)
-	Sub string `json:"sub"` // (Subject)
-	Jti string `json:"jti"` // (JWT ID)
-	Uid string `json:"uid"` // (User ID)
-	Tid string `json:"tid"` // (Tenant ID)
+	Exp   int64    `json:"exp"`   // (Expiration Time)
+	Iat   int64    `json:"iat"`   // (Issued At)
+	Iss   string   `json:"iss"`   // (Issuer)
+	Sub   string   `json:"sub"`   // (Subject)
+	jti   string   `json:"jti"`   // (JWT ID)
+	Uid   string   `json:"uid"`   // (User ID)
+	Scope []string `json:"scope"` // (Scope)
+	Tid   string   `json:"tid"`   // (Tenant ID)
 }
 
 func (MerlinClaims) Valid() error {
 	return nil
 }
 
-func GetToken(uid, tenantID, sub string) (string, error) {
+func GetToken(uid, tenantID, sub string, scope []string) (string, error) {
 	conf := config.GetConfig()
 
 	key, err := loadPrivateKey(conf.Https_certfile)
@@ -39,17 +41,18 @@ func GetToken(uid, tenantID, sub string) (string, error) {
 	}
 
 	now := time.Now()
-	JTI := uuid.New()
+	jti := uuid.New()
 	exp := now.Add(time.Duration(conf.TokenExpirationMinute) * time.Minute)
 
 	claims := MerlinClaims{
-		Exp: exp.Unix(),
-		Iat: now.Unix(),
-		Iss: "Merlin",
-		Sub: sub,
-		Jti: JTI.String(),
-		Uid: uid,
-		Tid: tenantID,
+		Exp:   exp.Unix(),
+		Iat:   now.Unix(),
+		Iss:   "Merlin",
+		Sub:   sub,
+		jti:   jti.String(),
+		Uid:   uid,
+		Scope: scope,
+		Tid:   tenantID,
 	}
 
 	token, err := createJWT(key, claims)
@@ -64,7 +67,7 @@ func GetToken(uid, tenantID, sub string) (string, error) {
 	defer db.Close()
 
 	data := models.TokenData{
-		TokenId:       claims.Jti,
+		TokenId:       claims.jti,
 		TokenTypeCode: "TKT-PWD",
 		TenantId:      tenantID,
 		IssuedAtUTC:   now.Format(time.DateTime),
@@ -74,6 +77,7 @@ func GetToken(uid, tenantID, sub string) (string, error) {
 		ExpiredAtUTC:  exp.Format(time.DateTime),
 		Exp:           claims.Exp,
 		SubjectUserId: claims.Sub,
+		ScopeCSV:      []string{""},
 		Token:         token,
 	}
 
@@ -85,7 +89,7 @@ func GetToken(uid, tenantID, sub string) (string, error) {
 	return token, nil
 }
 
-func TokenIntrospect(token, tenantID string) (bool, error) {
+func TokenIntrospect(token string) (bool, error) {
 	conf := config.GetConfig()
 
 	key, err := loadPublicKeyFromCert(conf.Https_certfile)
@@ -93,7 +97,7 @@ func TokenIntrospect(token, tenantID string) (bool, error) {
 		return false, err
 	}
 
-	err = verifyJWT(token, tenantID, key)
+	err = verifyJWT(token, key)
 	if err != nil {
 		return false, err
 	}
@@ -148,15 +152,9 @@ func createJWT(privateKey *rsa.PrivateKey, claims MerlinClaims) (string, error) 
 	return token.SignedString(privateKey)
 }
 
-func verifyJWT(token, tenantID string, publicKey *rsa.PublicKey) error {
+func verifyJWT(token string, publicKey *rsa.PublicKey) error {
 	_, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-
-		claims := token.Claims.(jwt.MapClaims)
-		tenantIDClaims := claims["tenantID"].(string)
-		if tenantIDClaims != tenantID {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
@@ -174,4 +172,25 @@ func generateDummyRSAKey() (*rsa.PrivateKey, *rsa.PublicKey) {
 
 	publicKey := &privateKey.PublicKey
 	return privateKey, publicKey
+}
+
+func TokenParse(token string) (string, error) {
+	tokenId := ""
+
+	t, _ := jwt.Parse(token, nil)
+	if t == nil {
+		return tokenId, errors.New("invalid authorization")
+	}
+
+	claims, _ := t.Claims.(jwt.MapClaims)
+	if claims == nil {
+		return tokenId, errors.New("invalid token")
+	}
+
+	tokenId = fmt.Sprintf("%v", claims["jti"])
+	if tokenId == "" {
+		return tokenId, errors.New("invalid token")
+	}
+
+	return tokenId, nil
 }

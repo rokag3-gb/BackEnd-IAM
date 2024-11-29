@@ -311,15 +311,16 @@ type UpdateServiceAccount struct {
 }
 
 type TokenData struct {
-	TokenId       string `json:"TokenId"`
-	TokenTypeCode string `json:"TokenTypeCode"`
-	TenantId      string `json:"TenantId"`
-	IssuedAtUTC   string `json:"IssuedAtUTC"`
-	Iat           int64  `json:"iat"`
-	Issuer        string `json:"Issuer"`
-	IssuedUserId  string `json:"IssuedUserId"`
-	ExpiredAtUTC  string `json:"ExpiredAtUTC"`
-	Exp           int64  `json:"Exp"`
-	SubjectUserId string `json:"SubjectUserId"`
-	Token         string `json:"Token"`
+	TokenId       string   `json:"TokenId"`
+	TokenTypeCode string   `json:"TokenTypeCode"`
+	TenantId      string   `json:"TenantId"`
+	IssuedAtUTC   string   `json:"IssuedAtUTC"`
+	Iat           int64    `json:"iat"`
+	Issuer        string   `json:"Issuer"`
+	IssuedUserId  string   `json:"IssuedUserId"`
+	ExpiredAtUTC  string   `json:"ExpiredAtUTC"`
+	Exp           int64    `json:"Exp"`
+	SubjectUserId string   `json:"SubjectUserId"`
+	ScopeCSV      []string `json:"scopeCSV"`
+	Token         string   `json:"Token"`
 }

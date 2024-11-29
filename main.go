@@ -146,6 +146,7 @@ func makeRouter() *gin.Engine {
 	route.POST("/user/:userid/forgot-password", api.PostForgotPassword)
 
 	route.POST("/token/introspect", api.TokenIntrospect)
+	route.POST("/token/consume", api.ConsumeToken)
 
 	users := route.Group("/users")
 	{

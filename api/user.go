@@ -18,19 +18,6 @@ type UserInviteRequest struct {
 	AccountKey string `json:"accountKey"`
 }
 
-type GetTokenResponse struct {
-	Token string `json:"token"`
-}
-
-type TokenIntrospectRequest struct {
-	Token    string `json:"token"`
-	TenantID string `json:"tenantId"`
-}
-
-type TokenIntrospectResponse struct {
-	Active bool `json:"active"`
-}
-
 // token godoc
 // @Security Bearer
 // @Summary User 유저 초대
@@ -204,7 +191,7 @@ func PostUserInvite(c *gin.Context) {
 
 	//여기쯤에서 같은 토큰 발급자, 대상, 목적을 가진 모든 토큰을 비활성화 해야할지 확인해야 함
 
-	token, err := common.GetToken(userID, tenant, userID)
+	token, err := common.GetToken(userID, tenant, userID, []string{})
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -285,7 +272,7 @@ func PostForgotPassword(c *gin.Context) {
 		return
 	}
 
-	token, err := common.GetToken(senderID, tenant, userID)
+	token, err := common.GetToken(senderID, tenant, userID, []string{})
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -302,29 +289,4 @@ func PostForgotPassword(c *gin.Context) {
 	})
 
 	c.Status(http.StatusOK)
-}
-
-// token godoc
-// @Security Bearer
-// @Summary Token 토큰 검증
-// @Tags Token
-// @Produce  json
-// @Router /token/introspect [post]
-// @Param Body body api.TokenIntrospectRequest true "body"
-// @Success 200 {object} []api.TokenIntrospectResponse
-// @Failure 500
-func TokenIntrospect(c *gin.Context) {
-	var body TokenIntrospectRequest
-	err := c.ShouldBindJSON(&body)
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	result, err := common.TokenIntrospect(body.Token, body.TenantID)
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusBadRequest, err.Error())
-	}
-
-	c.JSON(http.StatusOK, TokenIntrospectResponse{Active: result})
 }

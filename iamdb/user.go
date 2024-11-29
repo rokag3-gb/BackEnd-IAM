@@ -2,40 +2,7 @@ package iamdb
 
 import (
 	"database/sql"
-	"iam/models"
 )
-
-func InsertToken(db *sql.DB, data models.TokenData) error {
-	query := `INSERT INTO Token(
-		TokenId
-		, TokenTypeCode
-		, TenantId
-		, IssuedAtUTC
-		, iat
-		, Issuer
-		, IssuedUserId
-		, ExpiredAtUTC
-		, exp
-		, SubjectUserId
-		, Token
-	)
-	VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-
-	_, err := db.Query(query,
-		data.TokenId,
-		data.TokenTypeCode,
-		data.TenantId,
-		data.IssuedAtUTC,
-		data.Iat,
-		data.Issuer,
-		data.IssuedUserId,
-		data.ExpiredAtUTC,
-		data.Exp,
-		data.SubjectUserId,
-		data.Token,
-	)
-	return err
-}
 
 func SelectUserByEmail(db *sql.DB, email string) (string, error) {
 	userID := ""
@@ -96,14 +63,6 @@ AND u.EMAIL = ?`
 	}
 
 	return false, err
-}
-
-func UpdateToken(db *sql.DB, roleID, authID, userid string) error {
-	query := `UPDATE SET roles_authority_mapping(rId, aId, createId, modifyId)
-	VALUES(?, ?, ?, ?)`
-
-	_, err := db.Query(query, roleID, authID, userid, userid)
-	return err
 }
 
 func SelectAccountIDByAccountKey(db *sql.DB, accountKey string) (int64, error) {
