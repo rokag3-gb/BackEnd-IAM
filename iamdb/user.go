@@ -45,14 +45,13 @@ func SelectEmailByUser(db *sql.DB, userID string) (string, error) {
 }
 
 // 현재 AccountKey를 사용하는 Salse API가 존재하지 않아 이렇게 할 수 밖에 없습니다...
-func SelectAccountUserByEmail(db *sql.DB, email, accountKey string) (bool, error) {
-	query := `SELECT 1 FROM [Sale].[dbo].[AccountKey] ak
-JOIN [Sale].[dbo].[Account_User] au ON ak.AccountId = au.AccountId
+func SelectAccountUserByEmail(db *sql.DB, email string, accountID int64) (bool, error) {
+	query := `SELECT 1 FROM [Sale].[dbo].[Account_User] au
 JOIN [IAM].[dbo].[USER_ENTITY] u ON au.UserId = u.ID
-WHERE ak.AccountKey = ?
+WHERE au.AccountId = ?
 AND u.EMAIL = ?`
 
-	rows, err := db.Query(query, accountKey, email)
+	rows, err := db.Query(query, accountID, email)
 	if err != nil {
 		return false, err
 	}
@@ -63,25 +62,4 @@ AND u.EMAIL = ?`
 	}
 
 	return false, err
-}
-
-func SelectAccountIDByAccountKey(db *sql.DB, accountKey string) (int64, error) {
-	var result int64
-	query := `SELECT AccountId FROM [Sale].[dbo].[AccountKey]
-WHERE AccountKey = ?`
-
-	rows, err := db.Query(query, accountKey)
-	if err != nil {
-		return result, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		err = rows.Scan(&result)
-		if err != nil {
-			return result, err
-		}
-	}
-
-	return result, err
 }

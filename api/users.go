@@ -146,6 +146,10 @@ func CreateUser(c *gin.Context) {
 
 	if c.Param("accountId") != "" {
 		err = iamdb.InsertAccountUser(c.Param("accountId"), newUserId, c.GetString("userId"))
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			return
+		}
 	}
 
 	err = iamdb.CreateUserAddDefaultRole(newUserId, c.GetString("userId"))
@@ -260,7 +264,7 @@ func UpdateUser(c *gin.Context) {
 // @Tags Users
 // @Produce  json
 // @Router /users/me [post]
-// @Param Body body models.CreateUserInfo true "body"
+// @Param Body body models.UpdateUserInfo true "body"
 // @Success 204
 // @Failure 400
 // @Failure 500
@@ -272,18 +276,19 @@ func UpdateUser(c *gin.Context) {
 // @Produce  json
 // @Router /account/{accountId}/users/me [put]
 // @Param accountId path string true "account Id"
-// @Param Body body models.CreateUserInfo true "body"
+// @Param Body body models.UpdateUserInfo true "body"
 // @Success 204
 // @Failure 400
 // @Failure 500
 func UpdateMe(c *gin.Context) {
 	realm := c.GetString("realm")
+	userid := c.GetString("userId")
+
 	token, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
-	userid := c.GetString("userId")
 
 	user, err := clients.KeycloakClient().GetUserByID(c,
 		token.AccessToken, realm, userid)
@@ -334,7 +339,8 @@ func UpdateMe(c *gin.Context) {
 	err = clients.KeycloakClient().UpdateUser(c,
 		token.AccessToken,
 		realm,
-		*user)
+		*user,
+	)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

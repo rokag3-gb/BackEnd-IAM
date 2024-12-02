@@ -33,6 +33,16 @@ func CreateSecretGroup(c *gin.Context) {
 		return
 	}
 
+	tenantId := c.Query("tenantId")
+	if tenantId == "" || tenantId == "<nil>" {
+		tenant, err := iamdb.GetTenantIdByRealm(c.GetString("realm"))
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusBadRequest, "")
+			return
+		}
+		tenantId = tenant
+	}
+
 	var sg *models.SecretGroupItem
 	json.Unmarshal([]byte(value), &sg)
 
@@ -42,11 +52,11 @@ func CreateSecretGroup(c *gin.Context) {
 	}
 
 	db, err := iamdb.DBClient()
-	defer db.Close()
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
+	defer db.Close()
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -101,7 +111,7 @@ func CreateSecretGroup(c *gin.Context) {
 
 	if sg.UserId != nil {
 		for _, user := range *sg.UserId {
-			err = iamdb.AssignUserRoleTx(tx, user, roleId.String(), c.GetString("username"), realm)
+			err = iamdb.AssignUserRoleTx(tx, user, tenantId, roleId.String(), c.GetString("username"))
 			if err != nil {
 				tx.Rollback()
 				common.ErrorProcess(c, err, http.StatusInternalServerError, "")

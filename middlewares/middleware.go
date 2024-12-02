@@ -27,32 +27,53 @@ func GetUserMiddleware() gin.HandlerFunc {
 		}
 		token := strings.TrimPrefix(auth, "Bearer ")
 
-		username, userid, realm, tenantId, err := getDataJWT(token)
-		if err != nil {
+		t, err := jwt.Parse(token, nil)
+		if t == nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
 		}
 
-		c.Set("userId", userid)
-		c.Set("username", username)
-		c.Set("realm", realm)
-		c.Set("accessToken", token)
-		c.Set("tenantId", tenantId)
+		claims, ok := t.Claims.(jwt.MapClaims)
+		if !ok {
+			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			return
+		}
+
+		iss := fmt.Sprintf("%v", claims["iss"])
+
+		if iss == "Merlin" {
+			userid, err := GetMerlinDataJWT(claims)
+			if err != nil {
+				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+				return
+			}
+
+			realm, err := iamdb.GetUserRealmById(userid)
+			if err != nil {
+				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+				return
+			}
+
+			c.Set("userId", userid)
+			c.Set("realm", realm)
+		} else {
+			username, userid, realm, tenantId, err := getDataJWT(claims)
+			if err != nil {
+				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+				return
+			}
+
+			c.Set("userId", userid)
+			c.Set("username", username)
+			c.Set("realm", realm)
+			c.Set("accessToken", token)
+			c.Set("tenantId", tenantId)
+		}
 	}
 }
 
-func getDataJWT(token string) (string, string, string, string, error) {
+func getDataJWT(claims jwt.MapClaims) (string, string, string, string, error) {
 	var username, userId, realm, tenantId string
-
-	t, _ := jwt.Parse(token, nil)
-	if t == nil {
-		return username, userId, realm, tenantId, errors.New("invalid authorization")
-	}
-
-	claims, _ := t.Claims.(jwt.MapClaims)
-	if claims == nil {
-		return username, userId, realm, tenantId, errors.New("invalid token")
-	}
 
 	username = fmt.Sprintf("%v", claims["preferred_username"])
 	if username == "" {
@@ -74,6 +95,17 @@ func getDataJWT(token string) (string, string, string, string, error) {
 	tenantId = fmt.Sprintf("%v", claims["tenantId"])
 
 	return username, userId, realm, tenantId, nil
+}
+
+func GetMerlinDataJWT(claims jwt.MapClaims) (string, error) {
+	var sub string
+
+	sub = fmt.Sprintf("%v", claims["sub"])
+	if sub == "" {
+		return sub, errors.New("invalid token")
+	}
+
+	return sub, nil
 }
 
 func ListQueryRangeMiddleware() gin.HandlerFunc {

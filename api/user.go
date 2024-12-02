@@ -14,13 +14,13 @@ import (
 )
 
 type UserInviteRequest struct {
-	Email      string `json:"email"`
-	AccountKey string `json:"accountKey"`
+	Email     string `json:"email"`
+	AccountID int64  `json:"accountId"`
 }
 
 // token godoc
 // @Security Bearer
-// @Summary User 유저 초대
+// @Summary User 기본 정보 추가
 // @Tags User
 // @Produce  json
 // @Router /user-initialize [post]
@@ -93,7 +93,7 @@ func UserInitializeKey(c *gin.Context) {
 // token godoc
 // @Security Bearer
 // @Summary 유저 초대
-// @Tags user
+// @Tags User
 // @Produce  json
 // @Router /user-invite [post]
 // @Param Body body api.UserInviteRequest true "body"
@@ -107,7 +107,7 @@ func PostUserInvite(c *gin.Context) {
 		return
 	}
 
-	userID := c.GetString("userId")
+	senderID := c.GetString("userId")
 	realm := c.GetString("realm")
 
 	tenant, err := iamdb.GetTenantIdByRealm(realm)
@@ -128,12 +128,6 @@ func PostUserInvite(c *gin.Context) {
 		return
 	}
 
-	accountId, err := iamdb.SelectAccountIDByAccountKey(db, r.AccountKey)
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
-	}
-
 	conf := config.GetConfig()
 	clientData := conf.Keycloak_realm_client_secret[realm]
 	if clientData.ClientID == "" || clientData.ClientSecret == "" {
@@ -148,7 +142,7 @@ func PostUserInvite(c *gin.Context) {
 	}
 
 	if targetUserID != "" {
-		result, err := iamdb.SelectAccountUserByEmail(db, r.Email, r.AccountKey)
+		result, err := iamdb.SelectAccountUserByEmail(db, r.Email, r.AccountID)
 		if err != nil {
 			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 			return
@@ -160,7 +154,7 @@ func PostUserInvite(c *gin.Context) {
 			return
 		}
 
-		_, err = clients.SalesPostAccountUser(accessToken.AccessToken, realm, clients.PostAccountUser{AccountId: accountId, UserId: targetUserID, IsUse: true})
+		_, err = clients.SalesPostAccountUser(accessToken.AccessToken, realm, clients.PostAccountUser{AccountId: r.AccountID, UserId: targetUserID, IsUse: true})
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
@@ -170,7 +164,7 @@ func PostUserInvite(c *gin.Context) {
 		return
 	}
 
-	newUserId, err := clients.KeycloakClient().CreateUser(c,
+	userID, err := clients.KeycloakClient().CreateUser(c,
 		accessToken.AccessToken,
 		realm,
 		gocloak.User{
@@ -183,7 +177,7 @@ func PostUserInvite(c *gin.Context) {
 		return
 	}
 
-	_, err = clients.SalesPostAccountUser(accessToken.AccessToken, realm, clients.PostAccountUser{AccountId: accountId, UserId: newUserId, IsUse: true})
+	_, err = clients.SalesPostAccountUser(accessToken.AccessToken, realm, clients.PostAccountUser{AccountId: r.AccountID, UserId: userID, IsUse: true})
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -191,13 +185,17 @@ func PostUserInvite(c *gin.Context) {
 
 	//여기쯤에서 같은 토큰 발급자, 대상, 목적을 가진 모든 토큰을 비활성화 해야할지 확인해야 함
 
-	token, err := common.GetToken(userID, tenant, userID, []string{})
+	token, err := common.GetToken(senderID, tenant, userID, []string{
+		fmt.Sprintf("PUT /%s/users/update/me", conf.MerlinDefaultURL),
+		fmt.Sprintf("PUT /%s/users/%s/reset-password", conf.MerlinDefaultURL, userID),
+		fmt.Sprintf("POST /%s/token/consume", conf.MerlinDefaultURL),
+	})
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	url := fmt.Sprintf("https://dev.bill.ahnlabcloudmate.com/changePassword?t=%s", token)
+	url := fmt.Sprintf(conf.UserInviteURL, token)
 
 	clients.SalesSendEmail(accessToken.AccessToken, realm, clients.EmailRequest{
 		Subject:    conf.UserInviteSubject,
@@ -213,7 +211,7 @@ func PostUserInvite(c *gin.Context) {
 // token godoc
 // @Security Bearer
 // @Summary 유저 패스워드 변경 요청
-// @Tags user
+// @Tags User
 // @Produce  json
 // @Router /user/{userid}/forgot-password [post]
 // @Param userId path string true "User Id"
@@ -272,13 +270,17 @@ func PostForgotPassword(c *gin.Context) {
 		return
 	}
 
-	token, err := common.GetToken(senderID, tenant, userID, []string{})
+	token, err := common.GetToken(senderID, tenant, userID, []string{
+		fmt.Sprintf("PUT /%s/users/update/me", conf.MerlinDefaultURL),
+		fmt.Sprintf("PUT /%s/users/%s/reset-password", conf.MerlinDefaultURL, userID),
+		fmt.Sprintf("POST /%s/token/consume", conf.MerlinDefaultURL),
+	})
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	url := fmt.Sprintf("https://dev.bill.ahnlabcloudmate.com/changePassword?t=%s", token)
+	url := fmt.Sprintf(conf.ChangePasswordURL, token)
 
 	clients.SalesSendEmail(accessToken.AccessToken, realm, clients.EmailRequest{
 		Subject:    conf.ChangePasswordSubject,

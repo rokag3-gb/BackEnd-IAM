@@ -514,7 +514,7 @@ func AssignUserRole(c *gin.Context) {
 // @Param tenantId query string true "tenantId"
 // @Param userId path string true "User Id"
 // @Param roleId path string true "Role Id"
-// @Router /authority/{tenantId}/user/{userId}/roles/{roleId} [delete]
+// @Router /authority/user/{userId}/roles/{roleId} [delete]
 // @Success 204
 // @Failure 400
 // @Failure 500

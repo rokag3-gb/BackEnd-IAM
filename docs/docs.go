@@ -1227,6 +1227,63 @@ const docTemplate = `{
                 }
             }
         },
+        "/authority/user/{userId}/roles/{roleId}": {
+            "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authority"
+                ],
+                "summary": "유저 역할 제외",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Realm Id",
+                        "name": "realm",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "tenantId",
+                        "name": "tenantId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User Id",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Role Id",
+                        "name": "roleId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/authority/user/{userName}/auth/{authName}": {
             "get": {
                 "security": [
@@ -1320,63 +1377,6 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Group Id",
                         "name": "groupId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Role Id",
-                        "name": "roleId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    },
-                    "400": {
-                        "description": "Bad Request"
-                    },
-                    "500": {
-                        "description": "Internal Server Error"
-                    }
-                }
-            }
-        },
-        "/authority/{tenantId}/user/{userId}/roles/{roleId}": {
-            "delete": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Authority"
-                ],
-                "summary": "유저 역할 제외",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Realm Id",
-                        "name": "realm",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "tenantId",
-                        "name": "tenantId",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "User Id",
-                        "name": "userId",
                         "in": "path",
                         "required": true
                     },
@@ -2737,7 +2737,7 @@ const docTemplate = `{
                 "tags": [
                     "User"
                 ],
-                "summary": "User 유저 초대",
+                "summary": "User 기본 정보 추가",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2768,7 +2768,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "user"
+                    "User"
                 ],
                 "summary": "유저 초대",
                 "parameters": [
@@ -2803,7 +2803,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "user"
+                    "User"
                 ],
                 "summary": "유저 패스워드 변경 요청",
                 "parameters": [
@@ -3162,8 +3162,8 @@ const docTemplate = `{
         "api.UserInviteRequest": {
             "type": "object",
             "properties": {
-                "accountKey": {
-                    "type": "string"
+                "accountId": {
+                    "type": "integer"
                 },
                 "email": {
                     "type": "string"
