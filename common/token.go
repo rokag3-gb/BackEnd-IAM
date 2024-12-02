@@ -32,7 +32,7 @@ func (MerlinClaims) Valid() error {
 	return nil
 }
 
-func GetToken(uid, tenantID, sub string, scope []string) (string, error) {
+func GetToken(uid, tenantID, sub, code string, scope []string) (string, error) {
 	conf := config.GetConfig()
 
 	key, err := loadPrivateKey(conf.Https_certfile)
@@ -68,7 +68,7 @@ func GetToken(uid, tenantID, sub string, scope []string) (string, error) {
 
 	data := models.TokenData{
 		TokenId:       claims.Jti,
-		TokenTypeCode: "TKT-PWD",
+		TokenTypeCode: code,
 		TenantId:      tenantID,
 		IssuedAtUTC:   now.Format(time.DateTime),
 		Iat:           now.Unix(),

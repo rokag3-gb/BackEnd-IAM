@@ -185,7 +185,7 @@ func PostUserInvite(c *gin.Context) {
 
 	//여기쯤에서 같은 토큰 발급자, 대상, 목적을 가진 모든 토큰을 비활성화 해야할지 확인해야 함
 
-	token, err := common.GetToken(senderID, tenant, userID, []string{
+	token, err := common.GetToken(senderID, tenant, userID, "TKT-PWD", []string{
 		fmt.Sprintf("PUT /%s/users/update/me", conf.MerlinDefaultURL),
 		fmt.Sprintf("PUT /%s/users/%s/reset-password", conf.MerlinDefaultURL, userID),
 		fmt.Sprintf("POST /%s/token/consume", conf.MerlinDefaultURL),
@@ -270,7 +270,7 @@ func PostForgotPassword(c *gin.Context) {
 		return
 	}
 
-	token, err := common.GetToken(senderID, tenant, userID, []string{
+	token, err := common.GetToken(senderID, tenant, userID, "TKT-PWD", []string{
 		fmt.Sprintf("PUT /%s/users/update/me", conf.MerlinDefaultURL),
 		fmt.Sprintf("PUT /%s/users/%s/reset-password", conf.MerlinDefaultURL, userID),
 		fmt.Sprintf("POST /%s/token/consume", conf.MerlinDefaultURL),
