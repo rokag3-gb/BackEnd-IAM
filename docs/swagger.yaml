@@ -9,6 +9,20 @@ definitions:
       active:
         type: boolean
     type: object
+  api.TokenRequest:
+    properties:
+      scope:
+        items:
+          type: string
+        type: array
+      sub:
+        type: string
+    type: object
+  api.TokenResponse:
+    properties:
+      token:
+        type: string
+    type: object
   api.UserInviteRequest:
     properties:
       accountId:
@@ -553,6 +567,31 @@ definitions:
       enabled:
         type: boolean
     type: object
+  models.UpdateUserInfo:
+    properties:
+      attributes:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
+      email:
+        type: string
+      enabled:
+        type: boolean
+      firstName:
+        type: string
+      lastName:
+        type: string
+      phoneNumber:
+        type: string
+      requiredActions:
+        items:
+          type: string
+        type: array
+      username:
+        type: string
+    type: object
   models.UserIdProviderData:
     properties:
       identityProvider:
@@ -802,7 +841,7 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/models.CreateUserInfo'
+          $ref: '#/definitions/models.UpdateUserInfo'
       produces:
       - application/json
       responses:
@@ -2218,6 +2257,29 @@ paths:
       summary: 서비스 어카운트 시크릿 재생성
       tags:
       - ServiceAccount
+  /token:
+    post:
+      parameters:
+      - description: body
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/api.TokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.TokenResponse'
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Token 토큰 발급
+      tags:
+      - Token
   /token/consume:
     post:
       parameters:
@@ -2232,10 +2294,6 @@ paths:
       responses:
         "200":
           description: OK
-          schema:
-            items:
-              $ref: '#/definitions/api.TokenIntrospectResponse'
-            type: array
         "500":
           description: Internal Server Error
       security:
@@ -2258,9 +2316,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/api.TokenIntrospectResponse'
-            type: array
+            $ref: '#/definitions/api.TokenIntrospectResponse'
         "500":
           description: Internal Server Error
       security:

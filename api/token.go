@@ -31,8 +31,8 @@ type TokenIntrospectResponse struct {
 // @Tags Token
 // @Produce  json
 // @Router /token [post]
-// @Param Body body api.TokenIntrospectRequest true "body"
-// @Success 200 {object} []api.TokenIntrospectResponse
+// @Param Body body api.TokenRequest true "body"
+// @Success 200 {object} api.TokenResponse
 // @Failure 500
 func PostToken(c *gin.Context) {
 	var body TokenRequest
@@ -70,7 +70,7 @@ func PostToken(c *gin.Context) {
 // @Produce  json
 // @Router /token/introspect [post]
 // @Param Body body api.TokenIntrospectRequest true "body"
-// @Success 200 {object} []api.TokenIntrospectResponse
+// @Success 200 {object} api.TokenIntrospectResponse
 // @Failure 500
 func TokenIntrospect(c *gin.Context) {
 	var body TokenIntrospectRequest
@@ -95,7 +95,7 @@ func TokenIntrospect(c *gin.Context) {
 // @Produce  json
 // @Router /token/consume [post]
 // @Param Body body api.TokenIntrospectRequest true "body"
-// @Success 200 {object} []api.TokenIntrospectResponse
+// @Success 200
 // @Failure 500
 func ConsumeToken(c *gin.Context) {
 	var body TokenIntrospectRequest
