@@ -113,6 +113,10 @@ func CreateUser(c *gin.Context) {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
+	if json.Realm == "" {
+		json.Realm = c.GetString("realm")
+	}
+
 	newUserId, err := clients.KeycloakClient().CreateUser(c,
 		token.AccessToken,
 		json.Realm,
@@ -152,7 +156,7 @@ func CreateUser(c *gin.Context) {
 		}
 	}
 
-	err = iamdb.CreateUserAddDefaultRole(newUserId, c.GetString("userId"))
+	err = iamdb.CreateUserAddDefaultRole(newUserId, json.Realm, c.GetString("userId"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

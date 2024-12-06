@@ -92,7 +92,6 @@ definitions:
     required:
     - email
     - password
-    - realm
     - username
     type: object
   models.CredentialRepresentation:
@@ -210,7 +209,6 @@ definitions:
         type: string
     required:
     - name
-    - realm
     type: object
   models.GroupItem:
     properties:
@@ -259,7 +257,9 @@ definitions:
       url:
         type: string
     required:
+    - method
     - name
+    - url
     type: object
   models.MetricAppItem:
     properties:
@@ -1036,11 +1036,6 @@ paths:
       - description: Site
         in: path
         name: site
-        required: true
-        type: string
-      - description: tenantId
-        in: path
-        name: tenantId
         required: true
         type: string
       produces:

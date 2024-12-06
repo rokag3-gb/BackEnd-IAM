@@ -50,6 +50,9 @@ func CreateGroup(c *gin.Context) {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
+	if json.Realm == "" {
+		json.Realm = c.GetString("realm")
+	}
 
 	group := gocloak.Group{
 		Name: gocloak.StringP(json.Name),

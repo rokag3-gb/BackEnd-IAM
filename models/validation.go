@@ -2,7 +2,7 @@ package models
 
 type GroupInfo struct {
 	Name  string `json:"name" binding:"required"`
-	Realm string `json:"realm" binding:"required"`
+	Realm string `json:"realm"`
 }
 
 type CreateUserInfo struct {
@@ -11,7 +11,7 @@ type CreateUserInfo struct {
 	LastName  string `json:"lastName"`
 	Email     string `json:"email" binding:"required"`
 	Password  string `json:"password" binding:"required"`
-	Realm     string `json:"realm" binding:"required"`
+	Realm     string `json:"realm"`
 }
 
 type UpdateUserInfo struct {
@@ -92,8 +92,8 @@ type AutuhorityInfo struct {
 
 type MenuAutuhorityInfo struct {
 	Name   string  `json:"name" binding:"required"`
-	URL    *string `json:"url,required"`
-	Method *string `json:"method,required"`
+	URL    *string `json:"url" binding:"required"`
+	Method *string `json:"method" binding:"required"`
 }
 
 type GroupItem struct {

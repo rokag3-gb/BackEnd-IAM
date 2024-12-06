@@ -303,6 +303,16 @@ func UpdateSecretGroup(c *gin.Context) {
 	groupName := c.Param("groupName")
 	tenantId := c.GetString("tenantId")
 	realm := c.GetString("realm")
+
+	if tenantId == "" || tenantId == "<nil>" {
+		tenant, err := iamdb.GetTenantIdByRealm(c.GetString("realm"))
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusBadRequest, "")
+			return
+		}
+		tenantId = tenant
+	}
+
 	authorityMessage := ""
 	roleMessage := ""
 
@@ -321,11 +331,11 @@ func UpdateSecretGroup(c *gin.Context) {
 	}
 
 	db, err := iamdb.DBClient()
-	defer db.Close()
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
+	defer db.Close()
 
 	tx, err := db.Begin()
 	if err != nil {

@@ -513,13 +513,6 @@ const docTemplate = `{
                         "name": "site",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "tenantId",
-                        "name": "tenantId",
-                        "in": "path",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -3295,7 +3288,6 @@ const docTemplate = `{
             "required": [
                 "email",
                 "password",
-                "realm",
                 "username"
             ],
             "properties": {
@@ -3482,8 +3474,7 @@ const docTemplate = `{
         "models.GroupInfo": {
             "type": "object",
             "required": [
-                "name",
-                "realm"
+                "name"
             ],
             "properties": {
                 "name": {
@@ -3554,7 +3545,9 @@ const docTemplate = `{
         "models.MenuAutuhorityInfo": {
             "type": "object",
             "required": [
-                "name"
+                "method",
+                "name",
+                "url"
             ],
             "properties": {
                 "method": {

@@ -245,6 +245,15 @@ func GetMyAuth(c *gin.Context) {
 	userId := c.GetString("userId")
 	tenantId := c.GetString("tenantId")
 
+	if tenantId == "" || tenantId == "<nil>" {
+		tenant, err := iamdb.GetTenantIdByRealm(c.GetString("realm"))
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusBadRequest, "")
+			return
+		}
+		tenantId = tenant
+	}
+
 	arr, err := iamdb.GetMyAuth(userId, tenantId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -261,7 +270,6 @@ func GetMyAuth(c *gin.Context) {
 // @Produce  json
 // @Param site path string true "Site"
 // @Router /authority/auth/menu/{site} [get]
-// @Param tenantId path string true "tenantId"
 // @Success 200 {object} []models.MenuAutuhorityInfo
 // @Failure 400
 // @Failure 500
