@@ -208,43 +208,36 @@ func GetMenuAuth(id, site, realm string) ([]models.MenuAutuhorityInfo, error) {
 		return nil, err
 	}
 
-	query := `declare @values table
-(
-	aName varchar(310)
-	, url varchar(310)
-	, method varchar(310)
+	query := `WITH CTE AS (
+    SELECT 
+        a.aName, 
+        a.url, 
+        a.method,
+        ROW_NUMBER() OVER (PARTITION BY a.url ORDER BY CASE a.method WHEN 'DISABLE' THEN 1 ELSE 2 END) AS rn
+    FROM 
+        UserRole ur 
+        JOIN roles_authority_mapping ra ON ur.RoleId = ra.rId
+        JOIN authority a ON ra.aId = a.aId
+    WHERE 
+        ur.userId = ?
+        AND ra.useYn = 1
+        AND a.REALM_ID = ?
+        AND (a.method = 'DISABLE' OR a.method = 'SHOW')
+        AND PATINDEX('SIDE_MENU/' + ? + '/%', a.url) = 1
 )
-	
-insert @values(aName, url, method)
-	(select a.aName
-	, a.url
-	, a.method
-from UserRole ur 
-	join roles_authority_mapping ra on ur.RoleId = ra.rId
-	join authority a on ra.aId = a.aId
-where userId = ?
-	and	ra.useYn = 1
-	AND a.REALM_ID = ?
-	AND (a.method = 'DISABLE')
-	AND PATINDEX('SIDE_MENU/' + ? +'/%', a.url) = 1)
-	
-insert @values(aName, url, method)
-	(select a.aName
-	, a.url
-	, a.method
-from UserRole ur 
-	join roles_authority_mapping ra on ur.RoleId = ra.rId
-	join authority a on ra.aId = a.aId
-where userId = ?
-	and	ra.useYn = 1
-	AND a.REALM_ID = ?
-	AND (a.method = 'SHOW')
-	AND PATINDEX('SIDE_MENU/' + ? +'/%', a.url) = 1
-	AND a.url NOT IN(SELECT url FROM @values))
-	
-SELECT aName, url, method FROM @values ORDER BY aName`
+SELECT 
+    aName, 
+    url, 
+    method
+FROM 
+    CTE
+WHERE 
+    rn = 1
+ORDER BY 
+    aName;
+`
 
-	rows, err := db.Query(query, id, realm, site, id, realm, site)
+	rows, err := db.Query(query, id, realm, site)
 	if err != nil {
 		return nil, err
 	}

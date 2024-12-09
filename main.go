@@ -144,6 +144,7 @@ func makeRouter() *gin.Engine {
 	route.GET("/user-initialize", api.UserInitializeKey)
 	route.POST("/user-invite", api.PostUserInvite)
 	route.POST("/user/:userid/forgot-password", api.PostForgotPassword)
+	route.POST("/user/change-password", api.PostChangePassword)
 
 	route.POST("/token", api.PostToken)
 	route.POST("/token/introspect", api.TokenIntrospect)
@@ -155,7 +156,7 @@ func makeRouter() *gin.Engine {
 		users.POST("", api.CreateUser)
 		users.POST("/initialize", api.UserInitialize)
 		users.GET("/initialize", api.UserInitialize)
-		users.PUT("/update/me", api.UpdateMe)
+		users.PUT("/me", api.UpdateMe)
 		users.PUT("/:userid", api.UpdateUser)
 		users.DELETE("/:userid", api.DeleteUser)
 		users.GET("/:userid", api.GetUser)
@@ -181,17 +182,18 @@ func makeRouter() *gin.Engine {
 		serviceAccount.DELETE("/:id", api.DeleteServiceAccount)
 	}
 
-	accountUser := route.Group("/account/:accountId/users")
-	{
-		accountUser.GET("", middlewares.CheckAccountRequestUser(), api.Users)
-		accountUser.POST("", middlewares.CheckAccountRequestUser(), api.CreateUser)
-		accountUser.PUT("/:userid", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.UpdateUser)
-		accountUser.GET("/:userid", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.GetUser)
-		accountUser.GET("/:userid/credentials", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.GetUserCredentials)
-		accountUser.PUT("/:userid/reset-password", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.ResetUserPassword)
-		accountUser.GET("/:userid/federated-identity", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.GetUserFederatedIdentities)
-		accountUser.DELETE("/:userid/federated-identity/:providerId", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.DeleteUserFederatedIdentity)
-	}
+	// 현재 사용하지 않는 기능이므로 주석처리함
+	// accountUser := route.Group("/account/:accountId/users")
+	// {
+	// 	accountUser.GET("", middlewares.CheckAccountRequestUser(), api.Users)
+	// 	accountUser.POST("", middlewares.CheckAccountRequestUser(), api.CreateUser)
+	// 	accountUser.PUT("/:userid", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.UpdateUser)
+	// 	accountUser.GET("/:userid", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.GetUser)
+	// 	accountUser.GET("/:userid/credentials", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.GetUserCredentials)
+	// 	accountUser.PUT("/:userid/reset-password", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.ResetUserPassword)
+	// 	accountUser.GET("/:userid/federated-identity", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.GetUserFederatedIdentities)
+	// 	accountUser.DELETE("/:userid/federated-identity/:providerId", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.DeleteUserFederatedIdentity)
+	// }
 
 	secret := route.Group("/secret")
 	{

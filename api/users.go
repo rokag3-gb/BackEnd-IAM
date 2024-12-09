@@ -33,19 +33,19 @@ var SearchUsers = map[string]string{
 
 // token godoc
 // @Security Bearer
-// @Summary 유저 목록
-// @Tags Users
+// @Summary Account 유저 목록
+// @Tags Account
 // @Produce  json
-// @Router /users [get]
+// @Router /account/{accountId}/users [get]
 // @Success 200 {object} []models.GetUserInfo
 // @Failure 500
 
 // token godoc
 // @Security Bearer
-// @Summary Account 유저 목록
-// @Tags Account
+// @Summary 유저 목록
+// @Tags Users
 // @Produce  json
-// @Router /account/{accountId}/users [get]
+// @Router /users [get]
 // @Success 200 {object} []models.GetUserInfo
 // @Failure 500
 func Users(c *gin.Context) {
@@ -83,10 +83,10 @@ func Users(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary 유저 생성
-// @Tags Users
+// @Summary Account 유저 생성
+// @Tags Account
 // @Produce  json
-// @Router /users [post]
+// @Router /account/{accountId}/users [post]
 // @Param Body body models.CreateUserInfo true "body"
 // @Success 200 {object} models.Id
 // @Failure 400
@@ -94,10 +94,10 @@ func Users(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary Account 유저 생성
-// @Tags Account
+// @Summary 유저 생성
+// @Tags Users
 // @Produce  json
-// @Router /account/{accountId}/users [post]
+// @Router /users [post]
 // @Param Body body models.CreateUserInfo true "body"
 // @Success 200 {object} models.Id
 // @Failure 400
@@ -167,10 +167,11 @@ func CreateUser(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary 유저 정보 변경
-// @Tags Users
+// @Summary Account 유저 정보 변경
+// @Tags Account
 // @Produce  json
-// @Router /users/{userId} [put]
+// @Router /account/{accountId}/users/{userId} [put]
+// @Param accountId path string true "account Id"
 // @Param userId path string true "User Id"
 // @Param Body body models.CreateUserInfo true "body"
 // @Success 204
@@ -179,11 +180,10 @@ func CreateUser(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary Account 유저 정보 변경
-// @Tags Account
+// @Summary 유저 정보 변경
+// @Tags Users
 // @Produce  json
-// @Router /account/{accountId}/users/{userId} [put]
-// @Param accountId path string true "account Id"
+// @Router /users/{userId} [put]
 // @Param userId path string true "User Id"
 // @Param Body body models.CreateUserInfo true "body"
 // @Success 204
@@ -264,10 +264,11 @@ func UpdateUser(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary 자신의 계정 정보 변경
-// @Tags Users
+// @Summary Account 자신의 계정 정보 변경
+// @Tags Account
 // @Produce  json
-// @Router /users/me [post]
+// @Router /account/{accountId}/users/me [put]
+// @Param accountId path string true "account Id"
 // @Param Body body models.UpdateUserInfo true "body"
 // @Success 204
 // @Failure 400
@@ -275,11 +276,10 @@ func UpdateUser(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary Account 자신의 계정 정보 변경
-// @Tags Account
+// @Summary 자신의 계정 정보 변경
+// @Tags Users
 // @Produce  json
-// @Router /account/{accountId}/users/me [put]
-// @Param accountId path string true "account Id"
+// @Router /users/me [post]
 // @Param Body body models.UpdateUserInfo true "body"
 // @Success 204
 // @Failure 400
@@ -419,21 +419,21 @@ func DeleteUser(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary 유저 상세정보 조회
-// @Tags Users
+// @Summary Account 유저 상세정보 조회
+// @Tags Account
 // @Produce  json
-// @Router /users/{userId} [get]
+// @Router /account/{accountId}/users/{userId} [get]
+// @Param accountId path string true "account Id"
 // @Param userId path string true "User Id"
 // @Success 200 {object} models.GetUserInfo
 // @Failure 500
 
 // token godoc
 // @Security Bearer
-// @Summary Account 유저 상세정보 조회
-// @Tags Account
+// @Summary 유저 상세정보 조회
+// @Tags Users
 // @Produce  json
-// @Router /account/{accountId}/users/{userId} [get]
-// @Param accountId path string true "account Id"
+// @Router /users/{userId} [get]
 // @Param userId path string true "User Id"
 // @Success 200 {object} models.GetUserInfo
 // @Failure 500
@@ -481,21 +481,21 @@ func GetUser(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary 유저 자격증명 조회
-// @Tags Users
+// @Summary Account 유저 자격증명 조회
+// @Tags Account
 // @Produce  json
-// @Router /users/{userId}/credentials [get]
+// @Router /account/{accountId}/users/{userId}/credentials [get]
+// @Param accountId path string true "account Id"
 // @Param userId path string true "User Id"
 // @Success 200 {object} []models.CredentialRepresentation
 // @Failure 500
 
 // token godoc
 // @Security Bearer
-// @Summary Account 유저 자격증명 조회
-// @Tags Account
+// @Summary 유저 자격증명 조회
+// @Tags Users
 // @Produce  json
-// @Router /account/{accountId}/users/{userId}/credentials [get]
-// @Param accountId path string true "account Id"
+// @Router /users/{userId}/credentials [get]
 // @Param userId path string true "User Id"
 // @Success 200 {object} []models.CredentialRepresentation
 // @Failure 500
@@ -525,10 +525,11 @@ func GetUserCredentials(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary 유저 비밀번호 변경
-// @Tags Users
+// @Summary Account 유저 비밀번호 변경
+// @Tags Account
 // @Produce  json
-// @Router /users/{userId}/reset-password [put]
+// @Router /account/{accountId}/users/{userId}/reset-password [put]
+// @Param accountId path string true "account Id"
 // @Param userId path string true "User Id"
 // @Param roleId body models.ResetUserPasswordInfo true "ResetUserPasswordInfo"
 // @Success 204
@@ -536,11 +537,10 @@ func GetUserCredentials(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary Account 유저 비밀번호 변경
-// @Tags Account
+// @Summary 유저 비밀번호 변경
+// @Tags Users
 // @Produce  json
-// @Router /account/{accountId}/users/{userId}/reset-password [put]
-// @Param accountId path string true "account Id"
+// @Router /users/{userId}/reset-password [put]
 // @Param userId path string true "User Id"
 // @Param roleId body models.ResetUserPasswordInfo true "ResetUserPasswordInfo"
 // @Success 204
@@ -821,21 +821,21 @@ func LogoutAllSessions(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary 유저 ID 제공자 조회
-// @Tags Users
+// @Summary Account 유저 ID 제공자 조회
+// @Tags Account
 // @Produce  json
-// @Router /users/{userId}/federated-identity [get]
+// @Router /account/{accountId}/users/{userId}/federated-identity [get]
+// @Param accountId path string true "account Id"
 // @Param userId path string true "User Id"
 // @Success 200 {object} models.UserIdProviderData
 // @Failure 500
 
 // token godoc
 // @Security Bearer
-// @Summary Account 유저 ID 제공자 조회
-// @Tags Account
+// @Summary 유저 ID 제공자 조회
+// @Tags Users
 // @Produce  json
-// @Router /account/{accountId}/users/{userId}/federated-identity [get]
-// @Param accountId path string true "account Id"
+// @Router /users/{userId}/federated-identity [get]
 // @Param userId path string true "User Id"
 // @Success 200 {object} models.UserIdProviderData
 // @Failure 500
@@ -865,10 +865,11 @@ func GetUserFederatedIdentities(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary 유저 ID 제공자 제거
-// @Tags Users
+// @Summary Account 유저 ID 제공자 제거
+// @Tags Account
 // @Produce  json
-// @Router /users/{userId}/federated-identity/{providerId} [delete]
+// @Router /account/{accountId}/users/{userId}/federated-identity/{providerId} [delete]
+// @Param accountId path string true "account Id"
 // @Param userId path string true "User Id"
 // @Param providerId path string true "Provider Id"
 // @Success 204
@@ -876,11 +877,10 @@ func GetUserFederatedIdentities(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary Account 유저 ID 제공자 제거
-// @Tags Account
+// @Summary 유저 ID 제공자 제거
+// @Tags Users
 // @Produce  json
-// @Router /account/{accountId}/users/{userId}/federated-identity/{providerId} [delete]
-// @Param accountId path string true "account Id"
+// @Router /users/{userId}/federated-identity/{providerId} [delete]
 // @Param userId path string true "User Id"
 // @Param providerId path string true "Provider Id"
 // @Success 204

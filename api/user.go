@@ -18,6 +18,12 @@ type UserInviteRequest struct {
 	AccountID int64  `json:"accountId"`
 }
 
+type PostChangePasswordRequest struct {
+	Password        string `json:"password" binding:"required,eqfield=PasswordConfirm"`
+	PasswordConfirm string `json:"passwordConfirm" binding:"required"`
+	Token           string `json:"token"`
+}
+
 // token godoc
 // @Security Bearer
 // @Summary User 기본 정보 추가
@@ -109,6 +115,17 @@ func PostUserInvite(c *gin.Context) {
 
 	senderID := c.GetString("userId")
 	realm := c.GetString("realm")
+	accessToken := c.GetString("accessToken")
+
+	result, err := common.TokenIntrospect(accessToken)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !result {
+		common.ErrorProcess(c, nil, http.StatusUnauthorized, "invalid token")
+		return
+	}
 
 	tenant, err := iamdb.GetTenantIdByRealm(realm)
 	if err != nil {
@@ -186,9 +203,7 @@ func PostUserInvite(c *gin.Context) {
 	//여기쯤에서 같은 토큰 발급자, 대상, 목적을 가진 모든 토큰을 비활성화 해야할지 확인해야 함
 
 	token, err := common.GetToken(senderID, tenant, userID, "TKT-PWD", []string{
-		fmt.Sprintf("PUT /%s/users/update/me", conf.MerlinDefaultURL),
-		fmt.Sprintf("PUT /%s/users/%s/reset-password", conf.MerlinDefaultURL, userID),
-		fmt.Sprintf("POST /%s/token/consume", conf.MerlinDefaultURL),
+		fmt.Sprintf("POST /%s/user/change-password", conf.MerlinDefaultURL),
 	})
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -271,9 +286,7 @@ func PostForgotPassword(c *gin.Context) {
 	}
 
 	token, err := common.GetToken(senderID, tenant, userID, "TKT-PWD", []string{
-		fmt.Sprintf("PUT /%s/users/update/me", conf.MerlinDefaultURL),
-		fmt.Sprintf("PUT /%s/users/%s/reset-password", conf.MerlinDefaultURL, userID),
-		fmt.Sprintf("POST /%s/token/consume", conf.MerlinDefaultURL),
+		fmt.Sprintf("POST /%s/user/change-password", conf.MerlinDefaultURL),
 	})
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -289,6 +302,83 @@ func PostForgotPassword(c *gin.Context) {
 		Body:       fmt.Sprintf(conf.ChangePasswordMessage, url),
 		IsBodyHtml: true,
 	})
+
+	c.Status(http.StatusOK)
+}
+
+// token godoc
+// @Security Bearer
+// @Summary 유저 패스워드 변경
+// @Tags User
+// @Produce  json
+// @Router /user/change-password [post]
+// @Param Body body api.PostChangePasswordRequest true "PostChangePasswordRequest"
+// @Success 200
+// @Failure 400
+// @Failure 500
+func PostChangePassword(c *gin.Context) {
+	realm := c.GetString("realm")
+	userid := c.GetString("userId")
+
+	var data PostChangePasswordRequest
+	if err := c.ShouldBindJSON(&data); err != nil {
+		common.ErrorProcess(c, err, http.StatusBadRequest, "")
+		return
+	}
+
+	token, err := clients.KeycloakToken(c)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	user, err := clients.KeycloakClient().GetUserByID(c,
+		token.AccessToken, realm, userid)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	user.Enabled = gocloak.BoolP(true)
+
+	err = clients.KeycloakClient().UpdateUser(c,
+		token.AccessToken,
+		realm,
+		*user,
+	)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	err = clients.KeycloakClient().SetPassword(c,
+		token.AccessToken,
+		userid,
+		realm,
+		data.Password,
+		false)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	tokenID, err := common.TokenParse(data.Token)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	db, err := iamdb.DBClient()
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	err = iamdb.UpdateTokenConsume(db, tokenID)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
 
 	c.Status(http.StatusOK)
 }

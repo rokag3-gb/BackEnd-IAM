@@ -41,6 +41,8 @@ func GetUserMiddleware() gin.HandlerFunc {
 
 		iss := fmt.Sprintf("%v", claims["iss"])
 
+		c.Set("accessToken", token)
+
 		if iss == "Merlin" {
 			userid, err := GetMerlinDataJWT(claims)
 			if err != nil {
@@ -66,7 +68,6 @@ func GetUserMiddleware() gin.HandlerFunc {
 			c.Set("userId", userid)
 			c.Set("username", username)
 			c.Set("realm", realm)
-			c.Set("accessToken", token)
 			c.Set("tenantId", tenantId)
 		}
 	}
