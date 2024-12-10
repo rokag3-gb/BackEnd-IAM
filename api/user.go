@@ -9,6 +9,7 @@ import (
 	"iam/middlewares"
 	"net/http"
 
+	logger "cloudmt.co.kr/mateLogger"
 	"github.com/Nerzal/gocloak/v11"
 	"github.com/gin-gonic/gin"
 )
@@ -117,16 +118,6 @@ func PostUserInvite(c *gin.Context) {
 	realm := c.GetString("realm")
 	accessToken := c.GetString("accessToken")
 
-	result, err := common.TokenIntrospect(accessToken)
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
-		return
-	}
-	if !result {
-		common.ErrorProcess(c, nil, http.StatusUnauthorized, "invalid token")
-		return
-	}
-
 	tenant, err := iamdb.GetTenantIdByRealm(realm)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -139,20 +130,14 @@ func PostUserInvite(c *gin.Context) {
 		return
 	}
 
-	targetUserID, err := iamdb.SelectUserByEmail(db, r.Email)
+	conf := config.GetConfig()
+	keycloakToken, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	conf := config.GetConfig()
-	clientData := conf.Keycloak_realm_client_secret[realm]
-	if clientData.ClientID == "" || clientData.ClientSecret == "" {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "service config error")
-		return
-	}
-
-	accessToken, err := clients.KeycloakRealmToken(c, clientData.ClientID, clientData.ClientSecret, realm)
+	targetUserID, err := iamdb.SelectUserByEmail(db, r.Email)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -171,7 +156,7 @@ func PostUserInvite(c *gin.Context) {
 			return
 		}
 
-		_, err = clients.SalesPostAccountUser(accessToken.AccessToken, realm, clients.PostAccountUser{AccountId: r.AccountID, UserId: targetUserID, IsUse: true})
+		_, err = clients.SalesPostAccountUser(accessToken, realm, clients.PostAccountUser{AccountId: r.AccountID, UserId: targetUserID, IsUse: true})
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return
@@ -182,7 +167,7 @@ func PostUserInvite(c *gin.Context) {
 	}
 
 	userID, err := clients.KeycloakClient().CreateUser(c,
-		accessToken.AccessToken,
+		keycloakToken.AccessToken,
 		realm,
 		gocloak.User{
 			Username: gocloak.StringP(r.Email),
@@ -194,31 +179,45 @@ func PostUserInvite(c *gin.Context) {
 		return
 	}
 
-	_, err = clients.SalesPostAccountUser(accessToken.AccessToken, realm, clients.PostAccountUser{AccountId: r.AccountID, UserId: userID, IsUse: true})
+	_, err = clients.SalesPostAccountUser(accessToken, realm, clients.PostAccountUser{AccountId: r.AccountID, UserId: userID, IsUse: true})
 	if err != nil {
+		err := DeleteUserData(userID, accessToken)
+		if err != nil {
+			logger.Error(err.Error())
+		}
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
-
-	//여기쯤에서 같은 토큰 발급자, 대상, 목적을 가진 모든 토큰을 비활성화 해야할지 확인해야 함
 
 	token, err := common.GetToken(senderID, tenant, userID, "TKT-PWD", []string{
 		fmt.Sprintf("POST /%s/user/change-password", conf.MerlinDefaultURL),
 	})
 	if err != nil {
+		err := DeleteUserData(userID, accessToken)
+		if err != nil {
+			logger.Error(err.Error())
+		}
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
 	url := fmt.Sprintf(conf.UserInviteURL, token)
 
-	clients.SalesSendEmail(accessToken.AccessToken, realm, clients.EmailRequest{
+	_, err = clients.SalesSendEmail(accessToken, realm, clients.EmailRequest{
 		Subject:    conf.UserInviteSubject,
 		SenderName: conf.UserInviteSenderName,
 		To:         []string{r.Email},
 		Body:       fmt.Sprintf(conf.UserInviteMessage, url),
 		IsBodyHtml: true,
 	})
+	if err != nil {
+		err := DeleteUserData(userID, accessToken)
+		if err != nil {
+			logger.Error(err.Error())
+		}
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
 
 	c.Status(http.StatusOK)
 }
@@ -323,6 +322,17 @@ func PostChangePassword(c *gin.Context) {
 	var data PostChangePasswordRequest
 	if err := c.ShouldBindJSON(&data); err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
+		return
+	}
+	getToken := c.GetString("accessToken")
+
+	result, err := common.TokenIntrospect(getToken)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !result {
+		common.ErrorProcess(c, nil, http.StatusUnauthorized, "invalid token")
 		return
 	}
 

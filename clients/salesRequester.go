@@ -56,6 +56,7 @@ func salesRequest(token, realm, method, url string, body []byte) (string, error)
 
 	req, err := http.NewRequest(method, conf.Sales_Reqeuest_Url+url, io.NopCloser(bytes.NewReader(body)))
 	if err != nil {
+		logger.Error(err.Error())
 		return "", err
 	}
 	req.Header.Add("Authorization", "Bearer "+token)
@@ -67,6 +68,7 @@ func salesRequest(token, realm, method, url string, body []byte) (string, error)
 
 	resp, err := client.Do(req)
 	if err != nil {
+		logger.Error(err.Error())
 		return "", err
 	}
 

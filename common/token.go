@@ -35,7 +35,7 @@ func (MerlinClaims) Valid() error {
 func GetToken(uid, tenantID, sub, code string, scope []string) (string, error) {
 	conf := config.GetConfig()
 
-	key, err := loadPrivateKey(conf.Https_certfile)
+	key, err := loadPrivateKey(conf.Https_keyfile)
 	if err != nil {
 		return "", err
 	}

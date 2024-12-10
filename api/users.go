@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"iam/clients"
 	"iam/common"
@@ -375,15 +376,24 @@ func DeleteUser(c *gin.Context) {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
-	userid := c.Param("userid")
+	userID := c.Param("userid")
 
-	realm, err := iamdb.GetUserRealmById(userid)
+	err = DeleteUserData(userID, token.AccessToken)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	arr, err := iamdb.GetAccountUserId(userid)
+	c.Status(http.StatusNoContent)
+}
+
+func DeleteUserData(userID, token string) error {
+	realm, err := iamdb.GetUserRealmById(userID)
+	if err != nil {
+		return err
+	}
+
+	arr, err := iamdb.GetAccountUserId(userID)
 	if err != nil {
 		logger.Error(err.Error())
 	} else {
@@ -392,7 +402,7 @@ func DeleteUser(c *gin.Context) {
 				continue
 			}
 
-			str, err := clients.SalesDeleteAccountUser(seq, realm, c.GetString("accessToken"))
+			str, err := clients.SalesDeleteAccountUser(seq, realm, token)
 			fmt.Println(str)
 			if err != nil {
 				logger.Error("%s", err.Error())
@@ -400,21 +410,22 @@ func DeleteUser(c *gin.Context) {
 		}
 	}
 
-	err = clients.KeycloakClient().DeleteUser(c,
-		token.AccessToken,
+	ctx := context.Background()
+	err = clients.KeycloakClient().DeleteUser(
+		ctx,
+		token,
 		realm,
-		userid)
+		userID)
 	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
+		return err
 	}
 
-	err = iamdb.DeleteUserRoleByUserId(userid)
+	err = iamdb.DeleteUserRoleByUserId(userID)
 	if err != nil {
 		logger.Error(err.Error())
 	}
 
-	c.Status(http.StatusNoContent)
+	return nil
 }
 
 // token godoc
