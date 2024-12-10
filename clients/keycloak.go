@@ -221,7 +221,7 @@ func DeleteUserCredential(ctx context.Context, token, realm, userID string) erro
 	return nil
 }
 
-func SetUserDiabled(ctx context.Context, token, realm, userID string) error {
+func SetUserDisabled(ctx context.Context, token, realm, userID string) error {
 	client := KeycloakClient()
 
 	user, err := client.GetUserByID(

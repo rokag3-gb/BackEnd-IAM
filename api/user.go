@@ -272,7 +272,7 @@ func PostForgotPassword(c *gin.Context) {
 		return
 	}
 
-	err = clients.SetUserDiabled(c, accessToken.AccessToken, realm, userID)
+	err = clients.SetUserDisabled(c, accessToken.AccessToken, realm, userID)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
