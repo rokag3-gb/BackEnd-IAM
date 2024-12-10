@@ -2126,12 +2126,12 @@ paths:
       summary: 유저 초대
       tags:
       - User
-  /user/{userid}/forgot-password:
+  /user/{userID}/forgot-password:
     post:
       parameters:
       - description: User Id
         in: path
-        name: userId
+        name: userID
         required: true
         type: string
       produces:

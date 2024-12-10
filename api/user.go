@@ -227,8 +227,8 @@ func PostUserInvite(c *gin.Context) {
 // @Summary 유저 패스워드 변경 요청
 // @Tags User
 // @Produce  json
-// @Router /user/{userid}/forgot-password [post]
-// @Param userId path string true "User Id"
+// @Router /user/{userID}/forgot-password [post]
+// @Param userID path string true "User Id"
 // @Success 200
 // @Failure 500
 func PostForgotPassword(c *gin.Context) {

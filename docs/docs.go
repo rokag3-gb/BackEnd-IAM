@@ -2460,7 +2460,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/user/{userid}/forgot-password": {
+        "/user/{userID}/forgot-password": {
             "post": {
                 "security": [
                     {
@@ -2478,7 +2478,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "User Id",
-                        "name": "userId",
+                        "name": "userID",
                         "in": "path",
                         "required": true
                     }
