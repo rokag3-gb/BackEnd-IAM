@@ -26,13 +26,14 @@ type MerlinClaims struct {
 	Uid   string   `json:"uid"`   // (User ID)
 	Scope []string `json:"scope"` // (Scope)
 	Tid   string   `json:"tid"`   // (Tenant ID)
+	Email string   `json:"email"` // (Email)
 }
 
 func (MerlinClaims) Valid() error {
 	return nil
 }
 
-func GetToken(uid, tenantID, sub, code string, scope []string) (string, error) {
+func GetToken(uid, tenantID, sub, code, email string, scope []string) (string, error) {
 	conf := config.GetConfig()
 
 	key, err := loadPrivateKey(conf.Https_keyfile)
@@ -53,6 +54,7 @@ func GetToken(uid, tenantID, sub, code string, scope []string) (string, error) {
 		Uid:   uid,
 		Scope: scope,
 		Tid:   tenantID,
+		Email: email,
 	}
 
 	token, err := createJWT(key, claims)

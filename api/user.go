@@ -189,8 +189,9 @@ func PostUserInvite(c *gin.Context) {
 		return
 	}
 
-	token, err := common.GetToken(senderID, tenant, userID, "TKT-PWD", []string{
+	token, err := common.GetToken(senderID, tenant, userID, "TKT-PWD", r.Email, []string{
 		fmt.Sprintf("POST /%s/user/change-password", conf.MerlinDefaultURL),
+		fmt.Sprintf("POST /%s/token/introspect", conf.MerlinDefaultURL),
 	})
 	if err != nil {
 		err := DeleteUserData(userID, accessToken)
@@ -284,8 +285,9 @@ func PostForgotPassword(c *gin.Context) {
 		return
 	}
 
-	token, err := common.GetToken(senderID, tenant, userID, "TKT-PWD", []string{
+	token, err := common.GetToken(senderID, tenant, userID, "TKT-PWD", email, []string{
 		fmt.Sprintf("POST /%s/user/change-password", conf.MerlinDefaultURL),
+		fmt.Sprintf("POST /%s/token/introspect", conf.MerlinDefaultURL),
 	})
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")

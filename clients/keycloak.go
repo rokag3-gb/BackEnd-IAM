@@ -111,6 +111,10 @@ func TokenLogout(ctx context.Context, refreshToken string, clientid string, clie
 func TokenGetToken(ctx context.Context, data []byte, secret *string, realm string) (*gocloak.JWT, error) {
 	options := gocloak.TokenOptions{}
 	err := json.Unmarshal([]byte(data), &options)
+	if err != nil {
+		return nil, err
+	}
+
 	if secret != nil {
 		options.ClientSecret = secret
 	}

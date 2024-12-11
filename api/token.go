@@ -54,7 +54,7 @@ func PostToken(c *gin.Context) {
 		body.Scope = []string{}
 	}
 
-	token, err := common.GetToken(senderID, tenant, body.Sub, "TKT-COM", body.Scope)
+	token, err := common.GetToken(senderID, tenant, body.Sub, "TKT-COM", "", body.Scope)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
