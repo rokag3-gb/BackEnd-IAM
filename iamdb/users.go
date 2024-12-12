@@ -227,7 +227,7 @@ func UsersUpdate(userId, phoneNumber, reqUserId string) error {
 		where A.ID = ?
 		SELECT @@ROWCOUNT`
 
-		rows, err := db.Query(query, phoneNumber, reqUserId)
+		rows, err := db.Query(query, phoneNumber, reqUserId, userId)
 		if err != nil {
 			return err
 		}
