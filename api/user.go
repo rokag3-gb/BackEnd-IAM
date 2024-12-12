@@ -202,15 +202,38 @@ func PostUserInvite(c *gin.Context) {
 		return
 	}
 
+	senderEmail, err := iamdb.SelectEmailByUser(db, senderID)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+	if senderEmail == "" {
+		common.ErrorProcess(c, nil, http.StatusBadRequest, "user does not have an email address set")
+		return
+	}
+
 	url := fmt.Sprintf(conf.UserInviteURL, token)
 
-	_, err = clients.SalesSendEmail(accessToken, realm, clients.EmailRequest{
+	emailItem := clients.EmailItem{
+		From: senderEmail,
+		To:   r.Email,
+		URL:  url,
+	}
+	emailBody, err := emailItem.MakeInviteEmailBody()
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	emailRequest := clients.EmailRequest{
 		Subject:    conf.UserInviteSubject,
 		SenderName: conf.UserInviteSenderName,
 		To:         []string{r.Email},
-		Body:       fmt.Sprintf(conf.UserInviteMessage, url),
+		Body:       emailBody,
 		IsBodyHtml: true,
-	})
+	}
+
+	_, err = emailRequest.SalesSendEmail(accessToken, realm)
 	if err != nil {
 		err := DeleteUserData(userID, accessToken)
 		if err != nil {
@@ -250,6 +273,16 @@ func PostForgotPassword(c *gin.Context) {
 		return
 	}
 	if email == "" {
+		common.ErrorProcess(c, nil, http.StatusBadRequest, "user does not have an email address set")
+		return
+	}
+
+	senderEmail, err := iamdb.SelectEmailByUser(db, senderID)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+	if senderEmail == "" {
 		common.ErrorProcess(c, nil, http.StatusBadRequest, "user does not have an email address set")
 		return
 	}
@@ -296,13 +329,34 @@ func PostForgotPassword(c *gin.Context) {
 
 	url := fmt.Sprintf(conf.ChangePasswordURL, token)
 
-	clients.SalesSendEmail(accessToken.AccessToken, realm, clients.EmailRequest{
+	emailItem := clients.EmailItem{
+		From: senderEmail,
+		To:   email,
+		URL:  url,
+	}
+	emailBody, err := emailItem.MakeChangeEmailBody()
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	emailRequest := clients.EmailRequest{
 		Subject:    conf.ChangePasswordSubject,
 		SenderName: conf.ChangePasswordSenderName,
 		To:         []string{email},
-		Body:       fmt.Sprintf(conf.ChangePasswordMessage, url),
+		Body:       emailBody,
 		IsBodyHtml: true,
-	})
+	}
+
+	_, err = emailRequest.SalesSendEmail(accessToken.AccessToken, realm)
+	if err != nil {
+		err := DeleteUserData(userID, accessToken.AccessToken)
+		if err != nil {
+			logger.Error(err.Error())
+		}
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
 
 	c.Status(http.StatusOK)
 }

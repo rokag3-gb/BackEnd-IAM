@@ -71,6 +71,7 @@ func PostToken(c *gin.Context) {
 // @Router /token/introspect [post]
 // @Param Body body api.TokenIntrospectRequest true "body"
 // @Success 200 {object} api.TokenIntrospectResponse
+// @Failure 401
 // @Failure 500
 func TokenIntrospect(c *gin.Context) {
 	var body TokenIntrospectRequest
@@ -83,6 +84,12 @@ func TokenIntrospect(c *gin.Context) {
 	result, err := common.TokenIntrospect(body.Token)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if !result {
+		c.Status(http.StatusUnauthorized)
+		return
 	}
 
 	c.JSON(http.StatusOK, TokenIntrospectResponse{Active: result})

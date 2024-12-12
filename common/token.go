@@ -41,7 +41,7 @@ func GetToken(uid, tenantID, sub, code, email string, scope []string) (string, e
 		return "", err
 	}
 
-	now := time.Now()
+	now := time.Now().UTC()
 	jti := uuid.New()
 	exp := now.Add(time.Duration(conf.TokenExpirationMinute) * time.Minute)
 

@@ -2,14 +2,19 @@ package clients
 
 import (
 	"bytes"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"iam/config"
 	"io"
 	"net/http"
+	"strings"
 
 	logger "cloudmt.co.kr/mateLogger"
 )
+
+//go:embed html/*.html
+var Templates embed.FS
 
 type PostAccountUser struct {
 	AccountId int64  `json:"accountId"`
@@ -28,6 +33,53 @@ type EmailRequest struct {
 	IsBodyHtml bool     `json:"isBodyHtml"` // 본문이 HTML 형식인지 여부
 }
 
+type EmailItem struct {
+	From string
+	To   string
+	URL  string
+}
+
+func (e EmailItem) MakeInviteEmailBody() (string, error) {
+	data, err := Templates.ReadFile("html/InviteEmail.html")
+	if err != nil {
+		return "", err
+	}
+
+	body := e.replaceText(data)
+
+	return body, nil
+}
+
+func (e EmailItem) MakeChangeEmailBody() (string, error) {
+	data, err := Templates.ReadFile("html/ChangePasswordEmail.html")
+	if err != nil {
+		return "", err
+	}
+
+	body := e.replaceText(data)
+
+	return body, nil
+}
+
+func (e EmailItem) replaceText(data []byte) string {
+	body := string(data)
+
+	body = strings.ReplaceAll(body, "{{from}}", e.From)
+	body = strings.ReplaceAll(body, "{{to}}", e.To)
+	body = strings.ReplaceAll(body, "{{url}}", e.URL)
+
+	return body
+}
+
+func (e EmailRequest) SalesSendEmail(token, realm string) (string, error) {
+	body, err := json.Marshal(e)
+	if err != nil {
+		return "", err
+	}
+
+	return salesRequest(token, realm, "POST", "/email/send", body)
+}
+
 func SalesDeleteAccountUser(id, realm string, token string) (string, error) {
 	return salesRequest(token, realm, "DELETE", "/accountUser/"+id, nil)
 }
@@ -39,15 +91,6 @@ func SalesPostAccountUser(token, realm string, data PostAccountUser) (string, er
 	}
 
 	return salesRequest(token, realm, "POST", "/accountUser", body)
-}
-
-func SalesSendEmail(token, realm string, data EmailRequest) (string, error) {
-	body, err := json.Marshal(data)
-	if err != nil {
-		return "", err
-	}
-
-	return salesRequest(token, realm, "POST", "/email/send", body)
 }
 
 func salesRequest(token, realm, method, url string, body []byte) (string, error) {
