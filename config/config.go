@@ -51,12 +51,10 @@ type IamConfig struct {
 
 	UserInviteSubject    string
 	UserInviteSenderName string
-	UserInviteMessage    string
 	UserInviteURL        string
 
 	ChangePasswordSubject    string
 	ChangePasswordSenderName string
-	ChangePasswordMessage    string
 	ChangePasswordURL        string
 }
 
@@ -167,12 +165,10 @@ func (conf *IamConfig) initConf() error {
 
 	conf.UserInviteSubject = cfg.Section("user").Key("user_invite_subject").String()
 	conf.UserInviteSenderName = cfg.Section("user").Key("user_invite_sender_name").String()
-	conf.UserInviteMessage = cfg.Section("user").Key("user_invite_message").String()
 	conf.UserInviteURL = cfg.Section("user").Key("user_invite_url").String()
 
 	conf.ChangePasswordSubject = cfg.Section("user").Key("change_password_subject").String()
 	conf.ChangePasswordSenderName = cfg.Section("user").Key("change_password_sender_name").String()
-	conf.ChangePasswordMessage = cfg.Section("user").Key("change_password_message").String()
 	conf.ChangePasswordURL = cfg.Section("user").Key("change_password_url").String()
 
 	return nil
