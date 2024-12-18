@@ -2348,6 +2348,9 @@ const docTemplate = `{
                             "$ref": "#/definitions/api.TokenIntrospectResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
                     "500": {
                         "description": "Internal Server Error"
                     }
@@ -3215,6 +3218,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "email": {
+                    "type": "string"
+                },
+                "senderEmail": {
                     "type": "string"
                 }
             }

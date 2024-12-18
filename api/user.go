@@ -15,8 +15,9 @@ import (
 )
 
 type UserInviteRequest struct {
-	Email     string `json:"email"`
-	AccountID int64  `json:"accountId"`
+	SenderEmail string `json:"senderEmail"`
+	Email       string `json:"email"`
+	AccountID   int64  `json:"accountId"`
 }
 
 type PostChangePasswordRequest struct {
@@ -202,20 +203,10 @@ func PostUserInvite(c *gin.Context) {
 		return
 	}
 
-	senderEmail, err := iamdb.SelectEmailByUser(db, senderID)
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
-	}
-	if senderEmail == "" {
-		common.ErrorProcess(c, nil, http.StatusBadRequest, "user does not have an email address set")
-		return
-	}
-
 	url := fmt.Sprintf(conf.UserInviteURL, token)
 
 	emailItem := clients.EmailItem{
-		From: senderEmail,
+		From: r.SenderEmail,
 		To:   r.Email,
 		URL:  url,
 	}
@@ -277,16 +268,6 @@ func PostForgotPassword(c *gin.Context) {
 		return
 	}
 
-	senderEmail, err := iamdb.SelectEmailByUser(db, senderID)
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
-	}
-	if senderEmail == "" {
-		common.ErrorProcess(c, nil, http.StatusBadRequest, "user does not have an email address set")
-		return
-	}
-
 	conf := config.GetConfig()
 	clientData := conf.Keycloak_realm_client_secret[realm]
 	if clientData.ClientID == "" || clientData.ClientSecret == "" {
@@ -330,9 +311,8 @@ func PostForgotPassword(c *gin.Context) {
 	url := fmt.Sprintf(conf.ChangePasswordURL, token)
 
 	emailItem := clients.EmailItem{
-		From: senderEmail,
-		To:   email,
-		URL:  url,
+		To:  email,
+		URL: url,
 	}
 	emailBody, err := emailItem.MakeChangeEmailBody()
 	if err != nil {
