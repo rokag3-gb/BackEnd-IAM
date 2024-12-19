@@ -399,6 +399,59 @@ order by r.rName`
 	return arr, err
 }
 
+func GetUsersRole(userIds []string) (map[string][]models.UserRoles, error) {
+	var arr = make(map[string][]models.UserRoles)
+	queryParams := []interface{}{}
+
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+	defer db.Close()
+
+	query := `
+select 
+	ur.UserId,
+	r.rId, 
+	r.rName
+from roles r 
+	join UserRole ur on r.rId = ur.RoleId
+	join Tenant t on ur.TenantId = t.TenantId
+	LEFT OUTER JOIN USER_ENTITY u1 on ur.SaverId = u1.ID
+where ur.userId IN (`
+
+	for _, userID := range userIds {
+		query += "?,"
+		queryParams = append(queryParams, userID)
+	}
+
+	query = query[:len(query)-1] + `) order by r.rName`
+
+	rows, err := db.Query(query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var userID string
+		var r models.UserRoles
+
+		err := rows.Scan(&userID, &r.RoleID, &r.RoleName)
+		if err != nil {
+			return nil, err
+		}
+
+		_, find := arr[userID]
+		if !find {
+			arr[userID] = make([]models.UserRoles, 0)
+		}
+		arr[userID] = append(arr[userID], r)
+	}
+
+	return arr, err
+}
+
 func AssignUserRole(userID, tenantId, roleId, reqUserId string) error {
 	db, dbErr := DBClient()
 	defer db.Close()
