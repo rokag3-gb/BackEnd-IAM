@@ -945,6 +945,48 @@ const docTemplate = `{
                 }
             }
         },
+        "/authority/users/roles": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authority"
+                ],
+                "summary": "여러 유저 할당 역할 목록 조회",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User Id",
+                        "name": "userId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.UserRolesList"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/authority/{tenantId}/group/{groupId}/roles/{roleId}": {
             "delete": {
                 "security": [
@@ -4079,6 +4121,39 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "userName": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UserRoles": {
+            "type": "object",
+            "required": [
+                "roleId",
+                "roleName"
+            ],
+            "properties": {
+                "roleId": {
+                    "type": "string"
+                },
+                "roleName": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UserRolesList": {
+            "type": "object",
+            "required": [
+                "roles",
+                "userId"
+            ],
+            "properties": {
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.UserRoles"
+                    }
+                },
+                "userId": {
                     "type": "string"
                 }
             }

@@ -118,6 +118,7 @@ func makeRouter() *gin.Engine {
 		authority.DELETE("/roles/:roleId/auth/:authId", api.DismissRoleAuth)
 		authority.PUT("/roles/:roleId/auth/:authId", api.UpdateRoleAuth)
 		authority.GET("/user/:userid", api.GetUserRole)
+		authority.GET("/users/roles", api.GetUsersRole)
 		authority.POST("/user/:userid/roles", api.AssignUserRole)
 		authority.DELETE("/user/:userid/roles/:roleId", api.DismissUserRole)
 		authority.GET("/user/:userid/auth", api.GetUserAuth)

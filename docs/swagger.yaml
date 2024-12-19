@@ -619,6 +619,28 @@ definitions:
     - userId
     - userName
     type: object
+  models.UserRoles:
+    properties:
+      roleId:
+        type: string
+      roleName:
+        type: string
+    required:
+    - roleId
+    - roleName
+    type: object
+  models.UserRolesList:
+    properties:
+      roles:
+        items:
+          $ref: '#/definitions/models.UserRoles'
+        type: array
+      userId:
+        type: string
+    required:
+    - roles
+    - userId
+    type: object
 info:
   contact: {}
   title: IAM.Backend API Document
@@ -1244,6 +1266,32 @@ paths:
       security:
       - Bearer: []
       summary: 유저 권한 조회
+      tags:
+      - Authority
+  /authority/users/roles:
+    get:
+      parameters:
+      - description: User Id
+        in: query
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.UserRolesList'
+            type: array
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: 여러 유저 할당 역할 목록 조회
       tags:
       - Authority
   /groups:

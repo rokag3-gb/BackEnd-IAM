@@ -77,6 +77,16 @@ type RolesInfo struct {
 	Modifier    *string   `json:"modifier,omitempty"`
 }
 
+type UserRoles struct {
+	RoleID   string `json:"roleId" binding:"required"`
+	RoleName string `json:"roleName" binding:"required"`
+}
+
+type UserRolesList struct {
+	UserID string      `json:"userId" binding:"required"`
+	Roles  []UserRoles `json:"roles" binding:"required"`
+}
+
 type AutuhorityInfo struct {
 	ID         string  `json:"id" binding:"required"`
 	Name       string  `json:"name" binding:"required"`
