@@ -946,7 +946,7 @@ const docTemplate = `{
             }
         },
         "/authority/users/roles": {
-            "get": {
+            "post": {
                 "security": [
                     {
                         "Bearer": []
@@ -961,11 +961,13 @@ const docTemplate = `{
                 "summary": "여러 유저 할당 역할 목록 조회",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "User Id",
+                        "description": "User Ids",
                         "name": "userId",
-                        "in": "query",
-                        "required": true
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UsersRolesRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -4155,6 +4157,20 @@ const docTemplate = `{
                 },
                 "userId": {
                     "type": "string"
+                }
+            }
+        },
+        "models.UsersRolesRequest": {
+            "type": "object",
+            "required": [
+                "userId"
+            ],
+            "properties": {
+                "userId": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         }

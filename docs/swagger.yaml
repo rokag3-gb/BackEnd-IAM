@@ -641,6 +641,15 @@ definitions:
     - roles
     - userId
     type: object
+  models.UsersRolesRequest:
+    properties:
+      userId:
+        items:
+          type: string
+        type: array
+    required:
+    - userId
+    type: object
 info:
   contact: {}
   title: IAM.Backend API Document
@@ -1269,13 +1278,14 @@ paths:
       tags:
       - Authority
   /authority/users/roles:
-    get:
+    post:
       parameters:
-      - description: User Id
-        in: query
+      - description: User Ids
+        in: body
         name: userId
         required: true
-        type: string
+        schema:
+          $ref: '#/definitions/models.UsersRolesRequest'
       produces:
       - application/json
       responses:
