@@ -8,7 +8,6 @@ import (
 	"iam/models"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -465,21 +464,25 @@ func GetUserRole(c *gin.Context) {
 // @Summary 여러 유저 할당 역할 목록 조회
 // @Tags Authority
 // @Produce  json
-// @Router /authority/users/roles [get]
-// @Param userId query string true "User Id"
+// @Router /authority/users/roles [post]
+// @Param userId body models.UsersRolesRequest true "User Ids"
 // @Success 200 {object} []models.UserRolesList
 // @Failure 400
 // @Failure 500
 func GetUsersRole(c *gin.Context) {
-	userID := c.Query("userId")
-	userIDs := strings.Split(userID, ",")
+	var r models.UsersRolesRequest
+	err := c.ShouldBindJSON(&r)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
 
-	if len(userIDs) == 0 {
+	if len(r.UserID) == 0 {
 		c.String(http.StatusBadRequest, "required 'userId'")
 		return
 	}
 
-	mapData, err := iamdb.GetUsersRole(userIDs)
+	mapData, err := iamdb.GetUsersRole(r.UserID)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

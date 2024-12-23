@@ -87,6 +87,10 @@ type UserRolesList struct {
 	Roles  []UserRoles `json:"roles" binding:"required"`
 }
 
+type UsersRolesRequest struct {
+	UserID []string `json:"userId" binding:"required"`
+}
+
 type AutuhorityInfo struct {
 	ID         string  `json:"id" binding:"required"`
 	Name       string  `json:"name" binding:"required"`
