@@ -1,6 +1,8 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"iam/api"
 	"iam/clients"
 	"iam/iamdb"
@@ -23,15 +25,25 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+const version = "v1.1.3.RC1"
+
 var g errgroup.Group
 
 // @title IAM.Backend API Document
-// @version 1.0
+// @version v1.1.3.RC1
 // @securityDefinitions.apikey Bearer
 // @in header
 // @name Authorization
 // @description Type "Bearer" followed by a space and JWT token.
 func main() {
+	versionFlag := flag.Bool("v", false, "Print the version and exit")
+	flag.Parse()
+
+	if *versionFlag {
+		fmt.Println("Version:", version)
+		return
+	}
+
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	if err := config.InitConfig(); err != nil {
 		panic(err.Error())
