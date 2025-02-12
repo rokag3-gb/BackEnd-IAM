@@ -402,10 +402,10 @@ func DeleteUserData(userID, token string) error {
 				continue
 			}
 
-			str, err := clients.SalesDeleteAccountUser(seq, realm, token)
+			status, str, err := clients.SalesDeleteAccountUser(seq, realm, token)
 			fmt.Println(str)
 			if err != nil {
-				logger.Error("%s", err.Error())
+				logger.Error("SalesDeleteAccountUser, %d, %s", status, err.Error())
 			}
 		}
 	}

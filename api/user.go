@@ -157,9 +157,9 @@ func PostUserInvite(c *gin.Context) {
 			return
 		}
 
-		_, err = clients.SalesPostAccountUser(accessToken, realm, clients.PostAccountUser{AccountId: r.AccountID, UserId: targetUserID, IsUse: true})
+		status, body, err := clients.SalesPostAccountUser(accessToken, realm, clients.PostAccountUser{AccountId: r.AccountID, UserId: targetUserID, IsUse: true})
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.JSON(status, body)
 			return
 		}
 
@@ -180,13 +180,13 @@ func PostUserInvite(c *gin.Context) {
 		return
 	}
 
-	_, err = clients.SalesPostAccountUser(accessToken, realm, clients.PostAccountUser{AccountId: r.AccountID, UserId: userID, IsUse: true})
+	_, _, err = clients.SalesPostAccountUser(accessToken, realm, clients.PostAccountUser{AccountId: r.AccountID, UserId: userID, IsUse: true})
 	if err != nil {
 		err := DeleteUserData(userID, accessToken)
 		if err != nil {
 			logger.Error(err.Error())
 		}
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "add account user error")
 		return
 	}
 
@@ -224,13 +224,13 @@ func PostUserInvite(c *gin.Context) {
 		IsBodyHtml: true,
 	}
 
-	_, err = emailRequest.SalesSendEmail(accessToken, realm)
+	_, _, err = emailRequest.SalesSendEmail(accessToken, realm)
 	if err != nil {
 		err := DeleteUserData(userID, accessToken)
 		if err != nil {
 			logger.Error(err.Error())
 		}
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "send email error")
 		return
 	}
 
@@ -328,13 +328,13 @@ func PostForgotPassword(c *gin.Context) {
 		IsBodyHtml: true,
 	}
 
-	_, err = emailRequest.SalesSendEmail(accessToken.AccessToken, realm)
+	_, _, err = emailRequest.SalesSendEmail(accessToken.AccessToken, realm)
 	if err != nil {
 		err := DeleteUserData(userID, accessToken.AccessToken)
 		if err != nil {
 			logger.Error(err.Error())
 		}
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "send email error")
 		return
 	}
 
