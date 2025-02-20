@@ -25,12 +25,10 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-const version = "v1.1.3.RC1"
-
 var g errgroup.Group
 
 // @title IAM.Backend API Document
-// @version v1.1.3.RC1
+// @version v1.1.3.RC2
 // @securityDefinitions.apikey Bearer
 // @in header
 // @name Authorization
@@ -40,7 +38,7 @@ func main() {
 	flag.Parse()
 
 	if *versionFlag {
-		fmt.Println("Version:", version)
+		fmt.Println("Version:", docs.SwaggerInfo.Version)
 		return
 	}
 

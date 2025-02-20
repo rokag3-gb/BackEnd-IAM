@@ -71,36 +71,36 @@ func (e EmailItem) replaceText(data []byte) string {
 	return body
 }
 
-func (e EmailRequest) SalesSendEmail(token, realm string) (string, error) {
+func (e EmailRequest) SalesSendEmail(token, realm string) (int, string, error) {
 	body, err := json.Marshal(e)
 	if err != nil {
-		return "", err
+		return 0, "", err
 	}
 
 	return salesRequest(token, realm, "POST", "/email/send", body)
 }
 
-func SalesDeleteAccountUser(id, realm string, token string) (string, error) {
+func SalesDeleteAccountUser(id, realm string, token string) (int, string, error) {
 	return salesRequest(token, realm, "DELETE", "/accountUser/"+id, nil)
 }
 
-func SalesPostAccountUser(token, realm string, data PostAccountUser) (string, error) {
+func SalesPostAccountUser(token, realm string, data PostAccountUser) (int, string, error) {
 	body, err := json.Marshal(data)
 	if err != nil {
-		return "", err
+		return 0, "", err
 	}
 
 	return salesRequest(token, realm, "POST", "/accountUser", body)
 }
 
-func salesRequest(token, realm, method, url string, body []byte) (string, error) {
+func salesRequest(token, realm, method, url string, body []byte) (int, string, error) {
 	conf := config.GetConfig()
 	client := &http.Client{}
 
 	req, err := http.NewRequest(method, conf.Sales_Reqeuest_Url+url, io.NopCloser(bytes.NewReader(body)))
 	if err != nil {
 		logger.Error(err.Error())
-		return "", err
+		return 0, "", err
 	}
 	req.Header.Add("Authorization", "Bearer "+token)
 	req.Header.Add("X-Target-Realm", realm)
@@ -112,7 +112,7 @@ func salesRequest(token, realm, method, url string, body []byte) (string, error)
 	resp, err := client.Do(req)
 	if err != nil {
 		logger.Error(err.Error())
-		return "", err
+		return 0, "", err
 	}
 
 	defer resp.Body.Close()
@@ -122,8 +122,8 @@ func salesRequest(token, realm, method, url string, body []byte) (string, error)
 
 	if resp.StatusCode >= 400 && resp.StatusCode < 600 {
 		logger.Error(str)
-		return str, fmt.Errorf("sales status error[%d]", resp.StatusCode)
+		return resp.StatusCode, str, fmt.Errorf("sales status error[%d]", resp.StatusCode)
 	}
 
-	return str, nil
+	return resp.StatusCode, str, nil
 }

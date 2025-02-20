@@ -17,6 +17,10 @@ import (
 
 func GetUserMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		for k, v := range c.Request.Header {
+			fmt.Println(k, ", ", v)
+		}
+
 		if strings.HasPrefix(c.Request.RequestURI, "/swagger") {
 			return
 		}
