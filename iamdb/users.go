@@ -9,10 +9,10 @@ import (
 
 func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 	db, dbErr := DBClient()
-	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
+	defer db.Close()
 
 	var rows *sql.Rows
 	var err error
@@ -134,10 +134,10 @@ func GetUsers(params map[string][]string) ([]models.GetUserInfo, error) {
 
 func GetUserDetail(userId, realm string) ([]models.GetUserInfo, error) {
 	db, dbErr := DBClient()
-	defer db.Close()
 	if dbErr != nil {
 		return nil, dbErr
 	}
+	defer db.Close()
 
 	query := `SELECT U.ID, U.ENABLED, U.USERNAME, U.FIRST_NAME, U.LAST_NAME, U.EMAIL, U.PhoneNumber, 
 	(SELECT STRING_AGG(REQUIRED_ACTION, ',') FROM USER_REQUIRED_ACTION WHERE USER_ID=U.ID) as REQUIRED_ACTION,
@@ -184,10 +184,10 @@ func GetUserDetail(userId, realm string) ([]models.GetUserInfo, error) {
 
 func UsersCreate(userId, reqUserId string) error {
 	db, dbErr := DBClient()
-	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
+	defer db.Close()
 
 	query := `UPDATE USER_ENTITY SET 
 	createId=?,
@@ -199,16 +199,24 @@ func UsersCreate(userId, reqUserId string) error {
 	SELECT @@ROWCOUNT`
 
 	rows, err := db.Query(query, reqUserId, reqUserId, userId)
+	if err != nil {
+		return err
+	}
+
 	err = resultErrorCheck(rows)
-	return err
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func UsersUpdate(userId, phoneNumber, reqUserId string) error {
 	db, dbErr := DBClient()
-	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
+	defer db.Close()
 
 	if phoneNumber != "" {
 		query := `UPDATE USER_ENTITY SET 
@@ -219,7 +227,7 @@ func UsersUpdate(userId, phoneNumber, reqUserId string) error {
 		where A.ID = ?
 		SELECT @@ROWCOUNT`
 
-		rows, err := db.Query(query, phoneNumber, reqUserId)
+		rows, err := db.Query(query, phoneNumber, reqUserId, userId)
 		if err != nil {
 			return err
 		}
@@ -242,28 +250,27 @@ func UsersUpdate(userId, phoneNumber, reqUserId string) error {
 	}
 }
 
-func CreateUserAddDefaultRole(uid, reqUserId string) error {
+func CreateUserAddDefaultRole(uid, realmID, reqUserId string) error {
 	db, dbErr := DBClient()
-	defer db.Close()
 	if dbErr != nil {
 		return dbErr
 	}
+	defer db.Close()
 
 	query := `WITH temp AS (
-		SELECT 
-			TenantId,
-			TRIM(value) AS RoleId
-		FROM 
-			IAM.dbo.Tenant T
-		JOIN Sale.dbo.Account_User AU ON AU.AccountId = T.CustomerAccountId AND AU.UserId = ?
-		CROSS APPLY 
-			STRING_SPLIT(DefaultRoleIds_CSV, ',')
-		)
+	SELECT 
+		ro.rId AS RoleId
+		, t.TenantId
+	FROM Roles ro
+	JOIN REALM re ON re.ID = ?
+	JOIN Tenant t ON t.RealmName = re.ID
+	WHERE ro.defaultRole = 1
+)
 	INSERT INTO 
 		IAM.dbo.UserRole(UserId, RoleId, TenantId, SaverId, SavedAt)
 		(SELECT ?, RoleId, TenantId, ?, GETDATE() from temp)`
 
-	_, err := db.Query(query, uid, uid, reqUserId)
+	_, err := db.Query(query, realmID, uid, reqUserId)
 	if err != nil {
 		return err
 	}

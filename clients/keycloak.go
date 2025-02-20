@@ -56,6 +56,18 @@ func KeycloakToken(ctx context.Context) (*gocloak.JWT, error) {
 	return token, nil
 }
 
+func KeycloakRealmToken(ctx context.Context, clientID, clientSecret, realm string) (*gocloak.JWT, error) {
+	token, err := keycloakClient.LoginClient(ctx,
+		clientID,
+		clientSecret,
+		realm,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return token, nil
+}
+
 func Token(ctx context.Context, clientid string, clientSecret string, username string, password string, realm string) (*gocloak.JWT, error) {
 	token, err := keycloakClient.Login(ctx,
 		clientid,
@@ -99,6 +111,10 @@ func TokenLogout(ctx context.Context, refreshToken string, clientid string, clie
 func TokenGetToken(ctx context.Context, data []byte, secret *string, realm string) (*gocloak.JWT, error) {
 	options := gocloak.TokenOptions{}
 	err := json.Unmarshal([]byte(data), &options)
+	if err != nil {
+		return nil, err
+	}
+
 	if secret != nil {
 		options.ClientSecret = secret
 	}
@@ -189,4 +205,50 @@ func DeleteServiceAccount(ctx context.Context, token, realm, clientid string) er
 	}
 
 	return errors.New("ServiceAccount not found")
+}
+
+func DeleteUserCredential(ctx context.Context, token, realm, userID string) error {
+	client := KeycloakClient()
+
+	credentials, err := client.GetCredentials(ctx, token, realm, userID)
+	if err != nil {
+		return err
+	}
+
+	for _, credential := range credentials {
+		err := client.DeleteCredentials(ctx, token, realm, userID, *credential.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func SetUserDisabled(ctx context.Context, token, realm, userID string) error {
+	client := KeycloakClient()
+
+	user, err := client.GetUserByID(
+		ctx,
+		token,
+		realm,
+		userID,
+	)
+	if err != nil {
+		return err
+	}
+
+	*user.Enabled = false
+
+	err = client.UpdateUser(
+		ctx,
+		token,
+		realm,
+		*user,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

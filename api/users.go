@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"iam/clients"
 	"iam/common"
@@ -33,19 +34,19 @@ var SearchUsers = map[string]string{
 
 // token godoc
 // @Security Bearer
-// @Summary 유저 목록
-// @Tags Users
+// @Summary Account 유저 목록
+// @Tags Account
 // @Produce  json
-// @Router /users [get]
+// @Router /account/{accountId}/users [get]
 // @Success 200 {object} []models.GetUserInfo
 // @Failure 500
 
 // token godoc
 // @Security Bearer
-// @Summary Account 유저 목록
-// @Tags Account
+// @Summary 유저 목록
+// @Tags Users
 // @Produce  json
-// @Router /account/{accountId}/users [get]
+// @Router /users [get]
 // @Success 200 {object} []models.GetUserInfo
 // @Failure 500
 func Users(c *gin.Context) {
@@ -83,10 +84,10 @@ func Users(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary 유저 생성
-// @Tags Users
+// @Summary Account 유저 생성
+// @Tags Account
 // @Produce  json
-// @Router /users [post]
+// @Router /account/{accountId}/users [post]
 // @Param Body body models.CreateUserInfo true "body"
 // @Success 200 {object} models.Id
 // @Failure 400
@@ -94,10 +95,10 @@ func Users(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary Account 유저 생성
-// @Tags Account
+// @Summary 유저 생성
+// @Tags Users
 // @Produce  json
-// @Router /account/{accountId}/users [post]
+// @Router /users [post]
 // @Param Body body models.CreateUserInfo true "body"
 // @Success 200 {object} models.Id
 // @Failure 400
@@ -113,6 +114,10 @@ func CreateUser(c *gin.Context) {
 		common.ErrorProcess(c, err, http.StatusBadRequest, "")
 		return
 	}
+	if json.Realm == "" {
+		json.Realm = c.GetString("realm")
+	}
+
 	newUserId, err := clients.KeycloakClient().CreateUser(c,
 		token.AccessToken,
 		json.Realm,
@@ -146,9 +151,13 @@ func CreateUser(c *gin.Context) {
 
 	if c.Param("accountId") != "" {
 		err = iamdb.InsertAccountUser(c.Param("accountId"), newUserId, c.GetString("userId"))
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+			return
+		}
 	}
 
-	err = iamdb.CreateUserAddDefaultRole(newUserId, c.GetString("userId"))
+	err = iamdb.CreateUserAddDefaultRole(newUserId, json.Realm, c.GetString("userId"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -159,10 +168,11 @@ func CreateUser(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary 유저 정보 변경
-// @Tags Users
+// @Summary Account 유저 정보 변경
+// @Tags Account
 // @Produce  json
-// @Router /users/{userId} [put]
+// @Router /account/{accountId}/users/{userId} [put]
+// @Param accountId path string true "account Id"
 // @Param userId path string true "User Id"
 // @Param Body body models.CreateUserInfo true "body"
 // @Success 204
@@ -171,11 +181,10 @@ func CreateUser(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary Account 유저 정보 변경
-// @Tags Account
+// @Summary 유저 정보 변경
+// @Tags Users
 // @Produce  json
-// @Router /account/{accountId}/users/{userId} [put]
-// @Param accountId path string true "account Id"
+// @Router /users/{userId} [put]
 // @Param userId path string true "User Id"
 // @Param Body body models.CreateUserInfo true "body"
 // @Success 204
@@ -256,34 +265,35 @@ func UpdateUser(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary 자신의 계정 정보 변경
-// @Tags Users
+// @Summary Account 자신의 계정 정보 변경
+// @Tags Account
 // @Produce  json
-// @Router /users/me [post]
-// @Param Body body models.CreateUserInfo true "body"
+// @Router /account/{accountId}/users/me [put]
+// @Param accountId path string true "account Id"
+// @Param Body body models.UpdateUserInfo true "body"
 // @Success 204
 // @Failure 400
 // @Failure 500
 
 // token godoc
 // @Security Bearer
-// @Summary Account 자신의 계정 정보 변경
-// @Tags Account
+// @Summary 자신의 계정 정보 변경
+// @Tags Users
 // @Produce  json
-// @Router /account/{accountId}/users/me [put]
-// @Param accountId path string true "account Id"
-// @Param Body body models.CreateUserInfo true "body"
+// @Router /users/me [post]
+// @Param Body body models.UpdateUserInfo true "body"
 // @Success 204
 // @Failure 400
 // @Failure 500
 func UpdateMe(c *gin.Context) {
 	realm := c.GetString("realm")
+	userid := c.GetString("userId")
+
 	token, err := clients.KeycloakToken(c)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
-	userid := c.GetString("userId")
 
 	user, err := clients.KeycloakClient().GetUserByID(c,
 		token.AccessToken, realm, userid)
@@ -334,7 +344,8 @@ func UpdateMe(c *gin.Context) {
 	err = clients.KeycloakClient().UpdateUser(c,
 		token.AccessToken,
 		realm,
-		*user)
+		*user,
+	)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
@@ -365,9 +376,24 @@ func DeleteUser(c *gin.Context) {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return
 	}
-	userid := c.Param("userid")
+	userID := c.Param("userid")
 
-	arr, err := iamdb.GetAccountUserId(userid)
+	err = DeleteUserData(userID, token.AccessToken)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+func DeleteUserData(userID, token string) error {
+	realm, err := iamdb.GetUserRealmById(userID)
+	if err != nil {
+		return err
+	}
+
+	arr, err := iamdb.GetAccountUserId(userID)
 	if err != nil {
 		logger.Error(err.Error())
 	} else {
@@ -376,46 +402,31 @@ func DeleteUser(c *gin.Context) {
 				continue
 			}
 
-			str, err := clients.SalesDeleteAccountUser(seq, c.GetString("accessToken"))
+			status, str, err := clients.SalesDeleteAccountUser(seq, realm, token)
 			fmt.Println(str)
 			if err != nil {
-				logger.Error("%s", err.Error())
+				logger.Error("SalesDeleteAccountUser, %d, %s", status, err.Error())
 			}
 		}
 	}
 
-	realm, err := iamdb.GetUserRealmById(userid)
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
-	}
-
-	err = clients.KeycloakClient().DeleteUser(c,
-		token.AccessToken,
+	ctx := context.Background()
+	err = clients.KeycloakClient().DeleteUser(
+		ctx,
+		token,
 		realm,
-		userid)
+		userID)
 	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
+		return err
 	}
 
-	err = iamdb.DeleteUserRoleByUserId(userid)
+	err = iamdb.DeleteUserRoleByUserId(userID)
 	if err != nil {
 		logger.Error(err.Error())
 	}
 
-	c.Status(http.StatusNoContent)
+	return nil
 }
-
-// token godoc
-// @Security Bearer
-// @Summary 유저 상세정보 조회
-// @Tags Users
-// @Produce  json
-// @Router /users/{userId} [get]
-// @Param userId path string true "User Id"
-// @Success 200 {object} models.GetUserInfo
-// @Failure 500
 
 // token godoc
 // @Security Bearer
@@ -424,6 +435,16 @@ func DeleteUser(c *gin.Context) {
 // @Produce  json
 // @Router /account/{accountId}/users/{userId} [get]
 // @Param accountId path string true "account Id"
+// @Param userId path string true "User Id"
+// @Success 200 {object} models.GetUserInfo
+// @Failure 500
+
+// token godoc
+// @Security Bearer
+// @Summary 유저 상세정보 조회
+// @Tags Users
+// @Produce  json
+// @Router /users/{userId} [get]
 // @Param userId path string true "User Id"
 // @Success 200 {object} models.GetUserInfo
 // @Failure 500
@@ -471,21 +492,21 @@ func GetUser(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary 유저 자격증명 조회
-// @Tags Users
+// @Summary Account 유저 자격증명 조회
+// @Tags Account
 // @Produce  json
-// @Router /users/{userId}/credentials [get]
+// @Router /account/{accountId}/users/{userId}/credentials [get]
+// @Param accountId path string true "account Id"
 // @Param userId path string true "User Id"
 // @Success 200 {object} []models.CredentialRepresentation
 // @Failure 500
 
 // token godoc
 // @Security Bearer
-// @Summary Account 유저 자격증명 조회
-// @Tags Account
+// @Summary 유저 자격증명 조회
+// @Tags Users
 // @Produce  json
-// @Router /account/{accountId}/users/{userId}/credentials [get]
-// @Param accountId path string true "account Id"
+// @Router /users/{userId}/credentials [get]
 // @Param userId path string true "User Id"
 // @Success 200 {object} []models.CredentialRepresentation
 // @Failure 500
@@ -515,10 +536,11 @@ func GetUserCredentials(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary 유저 비밀번호 변경
-// @Tags Users
+// @Summary Account 유저 비밀번호 변경
+// @Tags Account
 // @Produce  json
-// @Router /users/{userId}/reset-password [put]
+// @Router /account/{accountId}/users/{userId}/reset-password [put]
+// @Param accountId path string true "account Id"
 // @Param userId path string true "User Id"
 // @Param roleId body models.ResetUserPasswordInfo true "ResetUserPasswordInfo"
 // @Success 204
@@ -526,11 +548,10 @@ func GetUserCredentials(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary Account 유저 비밀번호 변경
-// @Tags Account
+// @Summary 유저 비밀번호 변경
+// @Tags Users
 // @Produce  json
-// @Router /account/{accountId}/users/{userId}/reset-password [put]
-// @Param accountId path string true "account Id"
+// @Router /users/{userId}/reset-password [put]
 // @Param userId path string true "User Id"
 // @Param roleId body models.ResetUserPasswordInfo true "ResetUserPasswordInfo"
 // @Success 204
@@ -811,21 +832,21 @@ func LogoutAllSessions(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary 유저 ID 제공자 조회
-// @Tags Users
+// @Summary Account 유저 ID 제공자 조회
+// @Tags Account
 // @Produce  json
-// @Router /users/{userId}/federated-identity [get]
+// @Router /account/{accountId}/users/{userId}/federated-identity [get]
+// @Param accountId path string true "account Id"
 // @Param userId path string true "User Id"
 // @Success 200 {object} models.UserIdProviderData
 // @Failure 500
 
 // token godoc
 // @Security Bearer
-// @Summary Account 유저 ID 제공자 조회
-// @Tags Account
+// @Summary 유저 ID 제공자 조회
+// @Tags Users
 // @Produce  json
-// @Router /account/{accountId}/users/{userId}/federated-identity [get]
-// @Param accountId path string true "account Id"
+// @Router /users/{userId}/federated-identity [get]
 // @Param userId path string true "User Id"
 // @Success 200 {object} models.UserIdProviderData
 // @Failure 500
@@ -855,10 +876,11 @@ func GetUserFederatedIdentities(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary 유저 ID 제공자 제거
-// @Tags Users
+// @Summary Account 유저 ID 제공자 제거
+// @Tags Account
 // @Produce  json
-// @Router /users/{userId}/federated-identity/{providerId} [delete]
+// @Router /account/{accountId}/users/{userId}/federated-identity/{providerId} [delete]
+// @Param accountId path string true "account Id"
 // @Param userId path string true "User Id"
 // @Param providerId path string true "Provider Id"
 // @Success 204
@@ -866,11 +888,10 @@ func GetUserFederatedIdentities(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
-// @Summary Account 유저 ID 제공자 제거
-// @Tags Account
+// @Summary 유저 ID 제공자 제거
+// @Tags Users
 // @Produce  json
-// @Router /account/{accountId}/users/{userId}/federated-identity/{providerId} [delete]
-// @Param accountId path string true "account Id"
+// @Router /users/{userId}/federated-identity/{providerId} [delete]
 // @Param userId path string true "User Id"
 // @Param providerId path string true "Provider Id"
 // @Success 204
@@ -973,78 +994,6 @@ func UserInitialize(c *gin.Context) {
 	}
 
 	arr, err := iamdb.SelectAccountId(c.GetString("userId"))
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
-	}
-
-	c.JSON(http.StatusOK, arr)
-}
-
-// token godoc
-// @Security Bearer
-// @Summary User 유저 초기 설정 작업(대상이 자기 자신인 경우에만)
-// @Tags User
-// @Produce  json
-// @Router /user-initialize [get]
-// @Success 200 {object} []string
-// @Failure 400
-// @Failure 500
-func UserInitializeKey(c *gin.Context) {
-	token := c.GetString("accessToken")
-	realm := c.GetString("realm")
-	tenantId := c.Param("tenantId")
-
-	if tenantId == "" {
-		tenant, err := iamdb.GetTenantIdByRealm(realm)
-		if err != nil {
-			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-			return
-		}
-
-		tenantId = tenant
-	}
-
-	email, client_id, err := middlewares.GetInitInfo(token)
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusBadRequest, "")
-		return
-	}
-	accountIds, err := iamdb.SelectDefaultAccount(email, c.GetString("userId"))
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
-	}
-	for _, id := range accountIds {
-		err := iamdb.InsertAccountUser(fmt.Sprintf("%d", id), c.GetString("userId"), c.GetString("userId"))
-		if err != nil {
-			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-			return
-		}
-	}
-
-	result, err := iamdb.SelectAccount(email, c.GetString("userId"))
-	if err != nil {
-		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-		return
-	}
-	if result {
-		roleIdList, err := iamdb.SelectNotExsistRole(client_id, c.GetString("userId"), realm)
-		if err != nil {
-			common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-			return
-		}
-
-		for _, roleId := range roleIdList {
-			err = iamdb.AssignUserRole(c.GetString("userId"), tenantId, roleId, c.GetString("userId"))
-			if err != nil {
-				common.ErrorProcess(c, err, http.StatusInternalServerError, "")
-				return
-			}
-		}
-	}
-
-	arr, err := iamdb.SelectAccountKey(c.GetString("userId"))
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
 		return

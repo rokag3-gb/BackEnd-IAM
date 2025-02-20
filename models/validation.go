@@ -2,7 +2,7 @@ package models
 
 type GroupInfo struct {
 	Name  string `json:"name" binding:"required"`
-	Realm string `json:"realm" binding:"required"`
+	Realm string `json:"realm"`
 }
 
 type CreateUserInfo struct {
@@ -11,7 +11,7 @@ type CreateUserInfo struct {
 	LastName  string `json:"lastName"`
 	Email     string `json:"email" binding:"required"`
 	Password  string `json:"password" binding:"required"`
-	Realm     string `json:"realm" binding:"required"`
+	Realm     string `json:"realm"`
 }
 
 type UpdateUserInfo struct {
@@ -77,6 +77,20 @@ type RolesInfo struct {
 	Modifier    *string   `json:"modifier,omitempty"`
 }
 
+type UserRoles struct {
+	RoleID   string `json:"roleId" binding:"required"`
+	RoleName string `json:"roleName" binding:"required"`
+}
+
+type UserRolesList struct {
+	UserID string      `json:"userId" binding:"required"`
+	Roles  []UserRoles `json:"roles" binding:"required"`
+}
+
+type UsersRolesRequest struct {
+	UserID []string `json:"userId" binding:"required"`
+}
+
 type AutuhorityInfo struct {
 	ID         string  `json:"id" binding:"required"`
 	Name       string  `json:"name" binding:"required"`
@@ -92,8 +106,8 @@ type AutuhorityInfo struct {
 
 type MenuAutuhorityInfo struct {
 	Name   string  `json:"name" binding:"required"`
-	URL    *string `json:"url,required"`
-	Method *string `json:"method,required"`
+	URL    *string `json:"url" binding:"required"`
+	Method *string `json:"method" binding:"required"`
 }
 
 type GroupItem struct {
@@ -308,4 +322,19 @@ type CreateServiceAccount struct {
 
 type UpdateServiceAccount struct {
 	Enabled bool `json:"enabled"`
+}
+
+type TokenData struct {
+	TokenId       string   `json:"TokenId"`
+	TokenTypeCode string   `json:"TokenTypeCode"`
+	TenantId      string   `json:"TenantId"`
+	IssuedAtUTC   string   `json:"IssuedAtUTC"`
+	Iat           int64    `json:"iat"`
+	Issuer        string   `json:"Issuer"`
+	IssuedUserId  string   `json:"IssuedUserId"`
+	ExpiredAtUTC  string   `json:"ExpiredAtUTC"`
+	Exp           int64    `json:"Exp"`
+	SubjectUserId string   `json:"SubjectUserId"`
+	ScopeCSV      []string `json:"scopeCSV"`
+	Token         string   `json:"Token"`
 }

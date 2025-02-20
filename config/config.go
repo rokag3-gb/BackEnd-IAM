@@ -18,9 +18,15 @@ func GetConfig() *IamConfig {
 	return cfg
 }
 
+type ClientData struct {
+	ClientID     string
+	ClientSecret string
+}
+
 type IamConfig struct {
 	Keycloak_client_id           string
 	Keycloak_client_secret       string
+	Keycloak_realm_client_secret map[string]ClientData
 	Keycloak_endpoint            string
 	Vault_token                  string
 	Vault_endpoint               string
@@ -32,6 +38,7 @@ type IamConfig struct {
 	Https_keyfile                string
 	ReadTimeout                  int
 	WriteTimeout                 int
+	TokenExpirationMinute        int64
 	Access_control_allow_origin  string
 	Access_control_allow_headers string
 	Api_host_list                map[string]string
@@ -39,6 +46,16 @@ type IamConfig struct {
 	Developer_mode               bool
 	LogStdout                    bool
 	UseApiDocument               bool
+
+	MerlinDefaultURL string
+
+	UserInviteSubject    string
+	UserInviteSenderName string
+	UserInviteURL        string
+
+	ChangePasswordSubject    string
+	ChangePasswordSenderName string
+	ChangePasswordURL        string
 }
 
 func InitConfig() error {
@@ -70,6 +87,24 @@ func (conf *IamConfig) initConf() error {
 
 	if conf.Keycloak_client_id == "" || conf.Keycloak_client_secret == "" || conf.Keycloak_endpoint == "" {
 		return errors.New("check config")
+	}
+
+	conf.Keycloak_realm_client_secret = make(map[string]ClientData)
+	index := 0
+	for {
+		realmID := cfg.Section("keycloak").Key(fmt.Sprintf("realm_realm_id_%d", index)).String()
+		clientID := cfg.Section("keycloak").Key(fmt.Sprintf("realm_client_id_%d", index)).String()
+		clientSecret := cfg.Section("keycloak").Key(fmt.Sprintf("realm_client_secret_%d", index)).String()
+
+		if realmID == "" || clientID == "" || clientSecret == "" {
+			break
+		}
+
+		conf.Keycloak_realm_client_secret[realmID] = ClientData{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+		}
+		index++
 	}
 
 	conf.Vault_token = cfg.Section("vault").Key("token").String()
@@ -106,6 +141,10 @@ func (conf *IamConfig) initConf() error {
 	if err != nil {
 		conf.WriteTimeout = 10
 	}
+	conf.TokenExpirationMinute, err = cfg.Section("token").Key("token_expiration_minute").Int64()
+	if err != nil {
+		conf.TokenExpirationMinute = 10
+	}
 	conf.Access_control_allow_origin = cfg.Section("network").Key("access_control_allow_origin").String()
 	if conf.Access_control_allow_origin == "" {
 		conf.Access_control_allow_origin = "*"
@@ -121,6 +160,16 @@ func (conf *IamConfig) initConf() error {
 	conf.UseApiDocument = cfg.Section("debug").Key("useApiDocument").MustBool()
 
 	conf.Api_host_list = map[string]string{}
+
+	conf.MerlinDefaultURL = cfg.Section("user").Key("merlin_default_url").String()
+
+	conf.UserInviteSubject = cfg.Section("user").Key("user_invite_subject").String()
+	conf.UserInviteSenderName = cfg.Section("user").Key("user_invite_sender_name").String()
+	conf.UserInviteURL = cfg.Section("user").Key("user_invite_url").String()
+
+	conf.ChangePasswordSubject = cfg.Section("user").Key("change_password_subject").String()
+	conf.ChangePasswordSenderName = cfg.Section("user").Key("change_password_sender_name").String()
+	conf.ChangePasswordURL = cfg.Section("user").Key("change_password_url").String()
 
 	return nil
 }

@@ -208,43 +208,36 @@ func GetMenuAuth(id, site, realm string) ([]models.MenuAutuhorityInfo, error) {
 		return nil, err
 	}
 
-	query := `declare @values table
-(
-	aName varchar(310)
-	, url varchar(310)
-	, method varchar(310)
+	query := `WITH CTE AS (
+    SELECT 
+        a.aName, 
+        a.url, 
+        a.method,
+        ROW_NUMBER() OVER (PARTITION BY a.url ORDER BY CASE a.method WHEN 'DISABLE' THEN 1 ELSE 2 END) AS rn
+    FROM 
+        UserRole ur 
+        JOIN roles_authority_mapping ra ON ur.RoleId = ra.rId
+        JOIN authority a ON ra.aId = a.aId
+    WHERE 
+        ur.userId = ?
+        AND ra.useYn = 1
+        AND a.REALM_ID = ?
+        AND (a.method = 'DISABLE' OR a.method = 'SHOW')
+        AND PATINDEX('SIDE_MENU/' + ? + '/%', a.url) = 1
 )
-	
-insert @values(aName, url, method)
-	(select a.aName
-	, a.url
-	, a.method
-from UserRole ur 
-	join roles_authority_mapping ra on ur.RoleId = ra.rId
-	join authority a on ra.aId = a.aId
-where userId = ?
-	and	ra.useYn = 1
-	AND a.REALM_ID = ?
-	AND (a.method = 'DISABLE')
-	AND PATINDEX('SIDE_MENU/' + ? +'/%', a.url) = 1)
-	
-insert @values(aName, url, method)
-	(select a.aName
-	, a.url
-	, a.method
-from UserRole ur 
-	join roles_authority_mapping ra on ur.RoleId = ra.rId
-	join authority a on ra.aId = a.aId
-where userId = ?
-	and	ra.useYn = 1
-	AND a.REALM_ID = ?
-	AND (a.method = 'SHOW')
-	AND PATINDEX('SIDE_MENU/' + ? +'/%', a.url) = 1
-	AND a.url NOT IN(SELECT url FROM @values))
-	
-SELECT aName, url, method FROM @values ORDER BY aName`
+SELECT 
+    aName, 
+    url, 
+    method
+FROM 
+    CTE
+WHERE 
+    rn = 1
+ORDER BY 
+    aName;
+`
 
-	rows, err := db.Query(query, id, realm, site, id, realm, site)
+	rows, err := db.Query(query, id, realm, site)
 	if err != nil {
 		return nil, err
 	}
@@ -403,6 +396,59 @@ order by r.rName`
 
 		arr = append(arr, r)
 	}
+	return arr, err
+}
+
+func GetUsersRole(userIds []string) (map[string][]models.UserRoles, error) {
+	var arr = make(map[string][]models.UserRoles)
+	queryParams := []interface{}{}
+
+	db, dbErr := DBClient()
+	if dbErr != nil {
+		return nil, dbErr
+	}
+	defer db.Close()
+
+	query := `
+select 
+	ur.UserId,
+	r.rId, 
+	r.rName
+from roles r 
+	join UserRole ur on r.rId = ur.RoleId
+	join Tenant t on ur.TenantId = t.TenantId
+	LEFT OUTER JOIN USER_ENTITY u1 on ur.SaverId = u1.ID
+where ur.userId IN (`
+
+	for _, userID := range userIds {
+		query += "?,"
+		queryParams = append(queryParams, userID)
+	}
+
+	query = query[:len(query)-1] + `) order by r.rName`
+
+	rows, err := db.Query(query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var userID string
+		var r models.UserRoles
+
+		err := rows.Scan(&userID, &r.RoleID, &r.RoleName)
+		if err != nil {
+			return nil, err
+		}
+
+		_, find := arr[userID]
+		if !find {
+			arr[userID] = make([]models.UserRoles, 0)
+		}
+		arr[userID] = append(arr[userID], r)
+	}
+
 	return arr, err
 }
 

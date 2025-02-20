@@ -245,6 +245,15 @@ func GetMyAuth(c *gin.Context) {
 	userId := c.GetString("userId")
 	tenantId := c.GetString("tenantId")
 
+	if tenantId == "" || tenantId == "<nil>" {
+		tenant, err := iamdb.GetTenantIdByRealm(c.GetString("realm"))
+		if err != nil {
+			common.ErrorProcess(c, err, http.StatusBadRequest, "")
+			return
+		}
+		tenantId = tenant
+	}
+
 	arr, err := iamdb.GetMyAuth(userId, tenantId)
 	if err != nil {
 		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
@@ -261,7 +270,6 @@ func GetMyAuth(c *gin.Context) {
 // @Produce  json
 // @Param site path string true "Site"
 // @Router /authority/auth/menu/{site} [get]
-// @Param tenantId path string true "tenantId"
 // @Success 200 {object} []models.MenuAutuhorityInfo
 // @Failure 400
 // @Failure 500
@@ -453,6 +461,48 @@ func GetUserRole(c *gin.Context) {
 
 // token godoc
 // @Security Bearer
+// @Summary 여러 유저 할당 역할 목록 조회
+// @Tags Authority
+// @Produce  json
+// @Router /authority/users/roles [post]
+// @Param userId body models.UsersRolesRequest true "User Ids"
+// @Success 200 {object} []models.UserRolesList
+// @Failure 400
+// @Failure 500
+func GetUsersRole(c *gin.Context) {
+	var r models.UsersRolesRequest
+	err := c.ShouldBindJSON(&r)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	if len(r.UserID) == 0 {
+		c.String(http.StatusBadRequest, "required 'userId'")
+		return
+	}
+
+	mapData, err := iamdb.GetUsersRole(r.UserID)
+	if err != nil {
+		common.ErrorProcess(c, err, http.StatusInternalServerError, "")
+		return
+	}
+
+	result := make([]models.UserRolesList, 0)
+	for key, data := range mapData {
+		r := models.UserRolesList{
+			UserID: key,
+			Roles:  data,
+		}
+
+		result = append(result, r)
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+// token godoc
+// @Security Bearer
 // @Summary 유저 역할 할당
 // @Tags Authority
 // @Produce  json
@@ -514,7 +564,7 @@ func AssignUserRole(c *gin.Context) {
 // @Param tenantId query string true "tenantId"
 // @Param userId path string true "User Id"
 // @Param roleId path string true "Role Id"
-// @Router /authority/{tenantId}/user/{userId}/roles/{roleId} [delete]
+// @Router /authority/user/{userId}/roles/{roleId} [delete]
 // @Success 204
 // @Failure 400
 // @Failure 500

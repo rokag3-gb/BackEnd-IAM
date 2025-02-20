@@ -1,6 +1,8 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"iam/api"
 	"iam/clients"
 	"iam/iamdb"
@@ -26,12 +28,20 @@ import (
 var g errgroup.Group
 
 // @title IAM.Backend API Document
-// @version 1.0
+// @version v1.1.3.RC2
 // @securityDefinitions.apikey Bearer
 // @in header
 // @name Authorization
 // @description Type "Bearer" followed by a space and JWT token.
 func main() {
+	versionFlag := flag.Bool("v", false, "Print the version and exit")
+	flag.Parse()
+
+	if *versionFlag {
+		fmt.Println("Version:", docs.SwaggerInfo.Version)
+		return
+	}
+
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	if err := config.InitConfig(); err != nil {
 		panic(err.Error())
@@ -118,6 +128,7 @@ func makeRouter() *gin.Engine {
 		authority.DELETE("/roles/:roleId/auth/:authId", api.DismissRoleAuth)
 		authority.PUT("/roles/:roleId/auth/:authId", api.UpdateRoleAuth)
 		authority.GET("/user/:userid", api.GetUserRole)
+		authority.POST("/users/roles", api.GetUsersRole)
 		authority.POST("/user/:userid/roles", api.AssignUserRole)
 		authority.DELETE("/user/:userid/roles/:roleId", api.DismissUserRole)
 		authority.GET("/user/:userid/auth", api.GetUserAuth)
@@ -142,6 +153,13 @@ func makeRouter() *gin.Engine {
 	}
 
 	route.GET("/user-initialize", api.UserInitializeKey)
+	route.POST("/user-invite", api.PostUserInvite)
+	route.POST("/user/:userid/forgot-password", api.PostForgotPassword)
+	route.POST("/user/change-password", api.PostChangePassword)
+
+	route.POST("/token", api.PostToken)
+	route.POST("/token/introspect", api.TokenIntrospect)
+	route.POST("/token/consume", api.ConsumeToken)
 
 	users := route.Group("/users")
 	{
@@ -149,7 +167,7 @@ func makeRouter() *gin.Engine {
 		users.POST("", api.CreateUser)
 		users.POST("/initialize", api.UserInitialize)
 		users.GET("/initialize", api.UserInitialize)
-		users.PUT("/update/me", api.UpdateMe)
+		users.PUT("/me", api.UpdateMe)
 		users.PUT("/:userid", api.UpdateUser)
 		users.DELETE("/:userid", api.DeleteUser)
 		users.GET("/:userid", api.GetUser)
@@ -175,17 +193,18 @@ func makeRouter() *gin.Engine {
 		serviceAccount.DELETE("/:id", api.DeleteServiceAccount)
 	}
 
-	accountUser := route.Group("/account/:accountId/users")
-	{
-		accountUser.GET("", middlewares.CheckAccountRequestUser(), api.Users)
-		accountUser.POST("", middlewares.CheckAccountRequestUser(), api.CreateUser)
-		accountUser.PUT("/:userid", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.UpdateUser)
-		accountUser.GET("/:userid", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.GetUser)
-		accountUser.GET("/:userid/credentials", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.GetUserCredentials)
-		accountUser.PUT("/:userid/reset-password", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.ResetUserPassword)
-		accountUser.GET("/:userid/federated-identity", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.GetUserFederatedIdentities)
-		accountUser.DELETE("/:userid/federated-identity/:providerId", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.DeleteUserFederatedIdentity)
-	}
+	// 현재 사용하지 않는 기능이므로 주석처리함
+	// accountUser := route.Group("/account/:accountId/users")
+	// {
+	// 	accountUser.GET("", middlewares.CheckAccountRequestUser(), api.Users)
+	// 	accountUser.POST("", middlewares.CheckAccountRequestUser(), api.CreateUser)
+	// 	accountUser.PUT("/:userid", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.UpdateUser)
+	// 	accountUser.GET("/:userid", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.GetUser)
+	// 	accountUser.GET("/:userid/credentials", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.GetUserCredentials)
+	// 	accountUser.PUT("/:userid/reset-password", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.ResetUserPassword)
+	// 	accountUser.GET("/:userid/federated-identity", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.GetUserFederatedIdentities)
+	// 	accountUser.DELETE("/:userid/federated-identity/:providerId", middlewares.CheckAccountRequestUser(), middlewares.CheckAccountUser(), api.DeleteUserFederatedIdentity)
+	// }
 
 	secret := route.Group("/secret")
 	{

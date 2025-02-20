@@ -1,23 +1,17 @@
-# CLOUDMATE IAM Middleware Server
+# Ahnlab Cloudmate Merlin API Server
 
-## 환경변수
+## 개요
+Merlin API Server 는 Keycloak, Vault 와 연동하여 사용자 정보 및 권한정보를 관리할 수 있는 API 를 제공합니다.
 
-- `KEYCLOAK_CLIENT_ID`: 연동할 Keycloak 서버에 등록한 Client의 ID
-- `KEYCLOAK_CLIENT_SECRET`: 연동할 Keycloak 서버가 발급한 Client Secret
-- `KEYCLOAK_REALM`: 연동할 Keycloak 서버에 등록한 Realm 이름
-- `KEYCLOAK_ENDPOINT`: 연동할 Keycloak 서버의 주소
+## Keycloak 연동 기능
+Keycloak 연동기능으로는 User, Group, Service Account 등을 관리, 조회 할 수 있습니다.
 
-## 실행
+## Vault 연동 기능
+Vault 기능으로는 Secret 등을 관리, 조회 할 수 있습니다.
 
-실행 전 환경변수 설정 필요
+## Sale Backend 연동 기능
+Sale Backend 시스템과 연동하여 Account 를 관리하는 기능이 있습니다.
 
-```bash
-go get -u
-
-# 빌드 후 실행
-go build .
-./iam
-
-# 바로 빌드 및 실행
-go run .
-```
+## 자체 기능
+Keycloak, Vault 에 속하지 않는 Merlin의 자체 기능으로는 Role, Authority 등이 있습니다. 
+Role 기능은 Keycloak 의 Role 과는 다른 기능이며 Database 상에서도 데이터가 분리되어있습니다.
